@@ -47,6 +47,21 @@
           "next": "rulers"
         },
         {
+          "text": "dialogue.vtm.opt.roads",
+          "show": {
+            "no_flag": "asked_roads"
+          },
+          "effects": [
+            {
+              "flag": "asked_roads",
+              "nemesis": {
+                "intel": "city"
+              }
+            }
+          ],
+          "next": "roads"
+        },
+        {
           "text": "dialogue.vtm.opt.leave"
         }
       ]
@@ -87,6 +102,21 @@
         {
           "text": "dialogue.vtm.opt.b_rulers",
           "next": "rulers"
+        },
+        {
+          "text": "dialogue.vtm.opt.roads",
+          "show": {
+            "no_flag": "asked_roads"
+          },
+          "effects": [
+            {
+              "flag": "asked_roads",
+              "nemesis": {
+                "intel": "city"
+              }
+            }
+          ],
+          "next": "roads"
         },
         {
           "text": "dialogue.vtm.opt.leave"
@@ -131,6 +161,78 @@
           "next": "rulers"
         },
         {
+          "text": "dialogue.vtm.opt.roads",
+          "show": {
+            "no_flag": "asked_roads"
+          },
+          "effects": [
+            {
+              "flag": "asked_roads",
+              "nemesis": {
+                "intel": "city"
+              }
+            }
+          ],
+          "next": "roads"
+        },
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
+    },
+    "roads": {
+      "text": "dialogue.vtm.bartender.roads",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.b_order",
+          "show": {
+            "no_flag": "ordered"
+          },
+          "effects": [
+            {
+              "flag": "ordered",
+              "rapport": 1
+            }
+          ],
+          "next": "order"
+        },
+        {
+          "text": "dialogue.vtm.opt.b_regulars",
+          "show": {
+            "no_flag": "regulars",
+            "min_rapport": 1
+          },
+          "effects": [
+            {
+              "flag": "regulars",
+              "nemesis": {
+                "intel": "any",
+                "count": 2
+              }
+            }
+          ],
+          "next": "regulars"
+        },
+        {
+          "text": "dialogue.vtm.opt.b_rulers",
+          "next": "rulers"
+        },
+        {
+          "text": "dialogue.vtm.opt.roads",
+          "show": {
+            "no_flag": "asked_roads"
+          },
+          "effects": [
+            {
+              "flag": "asked_roads",
+              "nemesis": {
+                "intel": "city"
+              }
+            }
+          ],
+          "next": "roads"
+        },
+        {
           "text": "dialogue.vtm.opt.leave"
         }
       ]
@@ -171,6 +273,21 @@
         {
           "text": "dialogue.vtm.opt.b_rulers",
           "next": "rulers"
+        },
+        {
+          "text": "dialogue.vtm.opt.roads",
+          "show": {
+            "no_flag": "asked_roads"
+          },
+          "effects": [
+            {
+              "flag": "asked_roads",
+              "nemesis": {
+                "intel": "city"
+              }
+            }
+          ],
+          "next": "roads"
         },
         {
           "text": "dialogue.vtm.opt.leave"

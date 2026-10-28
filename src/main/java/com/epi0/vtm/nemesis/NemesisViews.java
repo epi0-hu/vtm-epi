@@ -110,15 +110,30 @@ public final class NemesisViews {
         ).apply(i, Court::new));
     }
 
-    public record Snapshot(List<Entry> entries, List<Court> courts, List<ChronicleEntry> chronicle, long now) {
+    /** A city the player knows of. The warden is named only if the player knows who they are. */
+    public record Domain(UUID id, String name, ResourceLocation owner, int strength, Optional<String> warden, GlobalPos place,
+                         int heat) {
+        static final Codec<Domain> CODEC = RecordCodecBuilder.create(i -> i.group(
+                UUIDUtil.CODEC.fieldOf("id").forGetter(Domain::id),
+                Codec.STRING.fieldOf("name").forGetter(Domain::name),
+                ResourceLocation.CODEC.fieldOf("owner").forGetter(Domain::owner),
+                Codec.INT.fieldOf("strength").forGetter(Domain::strength),
+                Codec.STRING.optionalFieldOf("warden").forGetter(Domain::warden),
+                GlobalPos.CODEC.fieldOf("place").forGetter(Domain::place),
+                Codec.INT.fieldOf("heat").forGetter(Domain::heat)
+        ).apply(i, Domain::new));
+    }
+
+    public record Snapshot(List<Entry> entries, List<Court> courts, List<ChronicleEntry> chronicle, List<Domain> domains, long now) {
         public static final Codec<Snapshot> CODEC = RecordCodecBuilder.create(i -> i.group(
                 Entry.CODEC.listOf().fieldOf("entries").forGetter(Snapshot::entries),
                 Court.CODEC.listOf().fieldOf("courts").forGetter(Snapshot::courts),
                 ChronicleEntry.CODEC.listOf().fieldOf("chronicle").forGetter(Snapshot::chronicle),
+                Domain.CODEC.listOf().fieldOf("domains").forGetter(Snapshot::domains),
                 Codec.LONG.fieldOf("now").forGetter(Snapshot::now)
         ).apply(i, Snapshot::new));
 
-        public static final Snapshot EMPTY = new Snapshot(List.of(), List.of(), List.of(), 0L);
+        public static final Snapshot EMPTY = new Snapshot(List.of(), List.of(), List.of(), List.of(), 0L);
     }
 
     public static Snapshot build(MinecraftServer server, ServerPlayer player) {
@@ -150,7 +165,18 @@ public final class NemesisViews {
                 .filter(c -> c.publicNews() || c.involved().stream().anyMatch(id -> knowledge.about(id).isPresent()))
                 .toList();
         news = news.subList(Math.max(0, news.size() - CHRONICLE_LINES), news.size());
-        return new Snapshot(entries, courts, news, server.overworld().getGameTime());
+        List<Domain> domains = new ArrayList<>();
+        var cityKnowledge = com.epi0.vtm.city.CityKnowledge.of(player);
+        for (com.epi0.vtm.city.City city : com.epi0.vtm.city.CityData.get(server).all()) {
+            if (cityKnowledge.knows(city.id)) {
+                NemesisRecord warden = city.warden == null ? null : data.get(city.warden);
+                Optional<String> wardenName = warden != null && warden.alive() && knowledge.about(warden.id).isPresent()
+                        ? Optional.of(warden.name) : Optional.empty();
+                domains.add(new Domain(city.id, city.name, city.owner, city.strength, wardenName,
+                        com.epi0.vtm.city.Territory.where(city), city.heatOf(player.getUUID())));
+            }
+        }
+        return new Snapshot(entries, courts, news, domains, server.overworld().getGameTime());
     }
 
     private static Entry entry(NemesisData data, ServerPlayer player, NemesisRecord r, NemesisKnowledge.Known known, NemesisKnowledge knowledge) {

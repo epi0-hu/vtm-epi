@@ -49,7 +49,9 @@ public final class Harness {
             return;
         }
         if (STEPS.isEmpty()) {
-            if (SCENARIO.equals("city")) {
+            if (SCENARIO.equals("domains")) {
+                domainsScript(mc);
+            } else if (SCENARIO.equals("city")) {
                 cityScript(mc);
             } else if (SCENARIO.equals("lairs")) {
                 lairScript(mc);
@@ -127,6 +129,50 @@ public final class Harness {
                 }
             }
             VtmMod.LOGGER.info("HARNESS option {} not in {}", textKey, session.node());
+        });
+    }
+
+    /** The Domains tab with several cities of different rulers on the map. */
+    private static void domainsScript(Minecraft mc) {
+        mc.options.pauseOnLostFocus = false;
+        for (String c : new String[]{"gamerule sendCommandFeedback false", "time set 18000", "gamerule doDaylightCycle false",
+                "gamerule doMobSpawning false", "gamemode creative", "vtm embrace @s toreador", "vtm sect join @s vtm:camarilla"}) {
+            cmd(mc, 3, c);
+        }
+        server(mc, 10, p -> {
+            var server = p.getServer();
+            var random = server.overworld().random;
+            var nem = com.epi0.vtm.nemesis.NemesisManager.data(server);
+            nem.records().clear();
+            nem.chronicle().clear();
+            com.epi0.vtm.nemesis.NemesisSimulator.populate(server, nem, random);
+            com.epi0.vtm.nemesis.NemesisSimulator.succession(server, nem);
+            var cities = com.epi0.vtm.city.CityData.get(server);
+            cities.clear();
+            String[] names = {"Ashford", "Blackmoor", "Ravenhollow", "Saltport", "Kingsbridge"};
+            String[] owners = {"camarilla", "sabbat", "anarch", "camarilla", "sabbat"};
+            int[][] at = {{-120, 90}, {260, -40}, {40, 310}, {-300, -180}, {420, 220}};
+            for (int i = 0; i < names.length; i++) {
+                var layout = new com.epi0.vtm.city.City(java.util.UUID.randomUUID(), names[i], net.minecraft.world.level.Level.OVERWORLD,
+                        new net.minecraft.core.BlockPos(at[i][0], -53, at[i][1]), VtmMod.id(owners[i]));
+                var city = com.epi0.vtm.city.CityRegistry.register(p.serverLevel(), layout.center, names[i], layout.owner, com.epi0.vtm.city.CityRegistry.write(layout));
+                city.strength = 30 + i * 14;
+                com.epi0.vtm.city.Territory.seatWarden(server, nem, city);
+                com.epi0.vtm.city.Territory.discover(p, city);
+                if (i == 1) {
+                    city.heat.put(p.getUUID(), 72);
+                }
+                if (i == 0) {
+                    com.epi0.vtm.nemesis.Intel.knowFully(p, nem.get(city.warden));
+                }
+            }
+            com.epi0.vtm.nemesis.NemesisActions.send(p);
+        });
+        then(15, () -> mc.setScreen(new NemesisScreen(NemesisScreen.Tab.DOMAINS)));
+        shot(mc, "nem_domains");
+        then(10, () -> {
+            VtmMod.LOGGER.info("HARNESS DONE");
+            mc.stop();
         });
     }
 

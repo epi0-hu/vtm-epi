@@ -29,7 +29,7 @@ import java.util.Optional;
  * @param bind        bind them to the player with the player's blood (needs blood, a free place, a vampire player)
  * @param tithe       feed a bound vampire some blood to keep them loyal
  * @param release     free a bound vampire
- * @param intel       tell the player something: of the NPC itself ({@code self}), its kin and rivals ({@code kin}), the
+ * @param intel       tell the player something (or {@code city}: of a city they do not know): of the NPC itself ({@code self}), its kin and rivals ({@code kin}), the
  *                    NPC's faction's court ({@code faction}), its enemies' courts ({@code enemies}), or anyone ({@code any})
  * @param count       how many things {@code intel} reveals
  * @param enmity      change to the NPC's hatred of the player
@@ -58,7 +58,16 @@ public record NemesisEffect(boolean execute, boolean spare, boolean humiliate, b
         VampireNpc body = npc instanceof VampireNpc v ? v : null;
         NemesisRecord r = body == null ? null : NemesisManager.recordOf(body);
 
-        intel.ifPresent(target -> {
+        intel.filter("city"::equals).ifPresent(target -> {
+            for (int i = 0; i < count; i++) {
+                Optional<Component> learned = com.epi0.vtm.city.Territory.revealCity(player, player.getRandom());
+                player.displayClientMessage(learned.orElse(Component.translatable("message.vtm.nemesis.nothing_new")), false);
+                if (learned.isEmpty()) {
+                    break;
+                }
+            }
+        });
+        intel.filter(t -> !t.equals("city")).ifPresent(target -> {
             List<NemesisRecord> pool = pool(target, npc, r, data, player);
             for (int i = 0; i < count; i++) {
                 Optional<Component> learned = Intel.revealAbout(player, pool, player.getRandom());

@@ -3,6 +3,9 @@ package com.epi0.vtm.city;
 import com.epi0.vtm.npc.CivilianNpc;
 import com.epi0.vtm.npc.Job;
 import com.epi0.vtm.npc.NpcSpawner;
+import com.epi0.vtm.npc.VampireNpc;
+import com.epi0.vtm.npc.VtmNpc;
+import com.epi0.vtm.nemesis.NemesisManager;
 import com.epi0.vtm.nemesis.Placement;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -75,6 +78,9 @@ public final class CityLife {
             }
             cool(city);
             populate(level, city);
+            if (VtmNpc.isNight(level)) {
+                patrol(level, city);
+            }
             for (ServerPlayer player : near) {
                 reinforce(level, city, player);
             }
@@ -147,6 +153,27 @@ public final class CityLife {
         CivilianNpc npc = NpcSpawner.civilian(level, Vec3.atBottomCenterOf(at.above()));
         npc.settle(city, bed, job, work);
         return npc;
+    }
+
+    /** Vampires of the ruling faction walk the streets after dark; the stronger the hold, the more of them. */
+    public static int patrol(ServerLevel level, City city) {
+        int wanted = 1 + city.strength / 40;
+        AABB area = new AABB(city.center).inflate(City.RADIUS + 8, 40, City.RADIUS + 8);
+        int present = level.getEntitiesOfClass(VampireNpc.class, area, v -> city.id.equals(v.patrol()) && v.isAlive()).size();
+        long dawn = level.getGameTime() + Math.max(200L, 23500L - level.getDayTime() % 24000L);
+        int spawned = 0;
+        while (present + spawned < wanted && city.plaza != null) {
+            Vec3 spot = Placement.spot(level, Vec3.atCenterOf(city.plaza), 4, 24, level.random);
+            if (spot == null) {
+                break;
+            }
+            VampireNpc patrol = NpcSpawner.vampire(level, spot, NemesisManager.clanFor(level.getServer(), city.owner, level.random));
+            patrol.setFaction(city.owner);
+            patrol.setPatrol(city.id);
+            patrol.setExpiry(dawn);
+            spawned++;
+        }
+        return spawned;
     }
 
     /** A wanted player brings the watch down on themselves. */

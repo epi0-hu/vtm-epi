@@ -48,6 +48,9 @@ public final class City {
     public BlockPos haven;
     /** Heat per player: how wanted they are here, 0 to 100. */
     public final Map<UUID, Integer> heat = new HashMap<>();
+    /** The named vampire who holds the city for its ruler, if anyone does. */
+    @Nullable
+    public UUID warden;
     public long lastReinforcement = -100000L;
     public long founded;
 
@@ -100,6 +103,9 @@ public final class City {
         CompoundTag heatTag = new CompoundTag();
         heat.forEach((player, value) -> heatTag.putInt(player.toString(), value));
         tag.put("Heat", heatTag);
+        if (warden != null) {
+            tag.putUUID("Warden", warden);
+        }
         tag.putLong("Reinforced", lastReinforcement);
         tag.putLong("Founded", founded);
         return tag;
@@ -129,6 +135,7 @@ public final class City {
                 // corrupt key
             }
         }
+        city.warden = tag.hasUUID("Warden") ? tag.getUUID("Warden") : null;
         city.lastReinforcement = tag.getLong("Reinforced");
         city.founded = tag.getLong("Founded");
         return city;

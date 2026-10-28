@@ -46,6 +46,7 @@ public final class NemesisSimulator {
         succession(server, data);
         challenges(server, data, random);
         raids(server, data, random);
+        com.epi0.vtm.city.Territory.step(server, data, random);
         grudges(server, data, now, random);
         if (data.steps % 20 == 0) {
             decay(data);
@@ -230,10 +231,10 @@ public final class NemesisSimulator {
         long now = server.overworld().getGameTime();
         if (loser.deaths >= loser.resilience() || random.nextDouble() < finality * (loser.deaths > 0 ? 1.5 : 1.0)) {
             NemesisManager.destroy(server, loser, null, null);
-            if (loser.boundTo == null) {
-                for (Relation relation : loser.relations) {
+            if (loser.boundTo == null && victor != null && victor != loser) {
+                for (Relation relation : java.util.List.copyOf(loser.relations)) {
                     NemesisRecord kin = NemesisManager.data(server).get(relation.other());
-                    if (kin != null && kin.alive() && relation.type() != Relation.Type.RIVAL && !kin.related(victor.id, Relation.Type.RIVAL)) {
+                    if (kin != null && kin != victor && kin.alive() && relation.type() != Relation.Type.RIVAL && !kin.related(victor.id, Relation.Type.RIVAL)) {
                         NemesisManager.link(kin, victor, Relation.Type.RIVAL);
                     }
                 }

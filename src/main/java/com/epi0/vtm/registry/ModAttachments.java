@@ -35,5 +35,12 @@ public final class ModAttachments {
                     .copyOnDeath()
                     .build());
 
+    /** The cities the player knows of. Server-side only. */
+    public static final Supplier<AttachmentType<com.epi0.vtm.city.CityKnowledge>> CITY_KNOWLEDGE = ATTACHMENTS.register("city_knowledge",
+            () -> AttachmentType.builder(() -> com.epi0.vtm.city.CityKnowledge.EMPTY)
+                    .serialize(com.epi0.vtm.city.CityKnowledge.CODEC)
+                    .copyOnDeath()
+                    .build());
+
     private ModAttachments() {}
 }

@@ -34,6 +34,12 @@ public final class CityData extends SavedData {
         return cities.get(id);
     }
 
+    /** Forgets every city (tests and tools only). */
+    public void clear() {
+        cities.clear();
+        setDirty();
+    }
+
     public void add(City city) {
         cities.put(city.id, city);
         setDirty();

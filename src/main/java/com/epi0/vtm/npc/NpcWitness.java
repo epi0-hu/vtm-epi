@@ -19,7 +19,11 @@ public final class NpcWitness {
             }
         }
         if (mortalSaw) {
-            com.epi0.vtm.city.CityLife.crime(player, event == NpcMemory.Event.WITNESSED_FRENZY ? 18 : 12);
+            com.epi0.vtm.city.City city = com.epi0.vtm.city.CityLife.at(player);
+            if (city != null) {
+                com.epi0.vtm.city.CityLife.crime(player, city, event == NpcMemory.Event.WITNESSED_FRENZY ? 18 : 12);
+                com.epi0.vtm.city.Territory.masqueradeBreach(player, city);
+            }
         }
         if (mortalSaw && event == NpcMemory.Event.WITNESSED_FEEDING) {
             com.epi0.vtm.sect.SectManager.masqueradeBreach(player);

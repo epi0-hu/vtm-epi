@@ -68,6 +68,8 @@ public class VampireNpc extends VtmNpc {
     private UUID yielder;
     private long yieldUntil;
     private long expireAt;
+    @Nullable
+    private UUID patrolCity;
     private final java.util.Map<String, Long> lastTaunt = new java.util.HashMap<>();
     private int rank;
     @Nullable
@@ -148,6 +150,16 @@ public class VampireNpc extends VtmNpc {
     /** Disappears at this game time (followers who come with an ambush do not linger forever). */
     public void setExpiry(long gameTime) {
         this.expireAt = gameTime;
+    }
+
+    /** Marks this vampire as one of the patrol that keeps a city for its ruler. */
+    public void setPatrol(@Nullable UUID city) {
+        this.patrolCity = city;
+    }
+
+    @Nullable
+    public UUID patrol() {
+        return patrolCity;
     }
 
     public boolean isYielding() {
@@ -348,6 +360,17 @@ public class VampireNpc extends VtmNpc {
         super.aiStep();
     }
 
+    /** In a city ruled by a faction that keeps the Masquerade, its vampires turn on a player the whole city is after. */
+    private boolean enforcesMasqueradeAgainst(Player player) {
+        net.minecraft.server.MinecraftServer server = level().getServer();
+        if (server == null) {
+            return false;
+        }
+        com.epi0.vtm.city.City city = com.epi0.vtm.city.CityData.get(server).at(level(), blockPosition());
+        return city != null && city.owner.equals(factionId()) && city.heatOf(player.getUUID()) >= CivilianNpc.HOT
+                && com.epi0.vtm.city.Territory.enforcesMasquerade(level().registryAccess(), city);
+    }
+
     // ---------------------------------------------------------------- attitudes
 
     @Override
@@ -356,6 +379,9 @@ public class VampireNpc extends VtmNpc {
             Attitude named = NemesisManager.attitude(this, player);
             if (named != null) {
                 return named;
+            }
+            if (enforcesMasqueradeAgainst(player)) {
+                return Attitude.HOSTILE;
             }
             int rapport = memory().rapport(player.getUUID());
             if (memory().isThreat(player.getUUID()) || rapport <= HOSTILE_RAPPORT) {
@@ -420,6 +446,9 @@ public class VampireNpc extends VtmNpc {
         tag.putFloat("Blood", blood);
         tag.putInt("Rank", rank);
         tag.putLong("ExpireAt", expireAt);
+        if (patrolCity != null) {
+            tag.putUUID("Patrol", patrolCity);
+        }
         tag.putString("Nemesis", entityData.get(DATA_NEMESIS));
         if (boundOwner != null) {
             tag.putUUID("BoundOwner", boundOwner);
@@ -432,6 +461,7 @@ public class VampireNpc extends VtmNpc {
         entityData.set(DATA_CLAN, tag.getString("Clan"));
         rank = tag.getInt("Rank");
         expireAt = tag.getLong("ExpireAt");
+        patrolCity = tag.hasUUID("Patrol") ? tag.getUUID("Patrol") : null;
         entityData.set(DATA_NEMESIS, tag.getString("Nemesis"));
         boundOwner = tag.hasUUID("BoundOwner") ? tag.getUUID("BoundOwner") : null;
         blood = tag.contains("Blood") ? tag.getFloat("Blood") : blood;

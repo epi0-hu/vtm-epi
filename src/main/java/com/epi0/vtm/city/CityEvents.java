@@ -51,6 +51,7 @@ public final class CityEvents {
             INSIDE.remove(player.getUUID());
         } else {
             INSIDE.put(player.getUUID(), now);
+            Territory.discover(player, city);
             player.displayClientMessage(Component.translatable("message.vtm.city.enter", city.name,
                     VtmRegistries.name("faction", city.owner)), true);
         }

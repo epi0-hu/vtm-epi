@@ -5,6 +5,7 @@ import com.epi0.vtm.city.City;
 import com.epi0.vtm.city.CityData;
 import com.epi0.vtm.city.CityLife;
 import com.epi0.vtm.city.CityRegistry;
+import com.epi0.vtm.city.Territory;
 import com.epi0.vtm.dialogue.Dialogues;
 import com.epi0.vtm.npc.Attitude;
 import com.epi0.vtm.npc.CivilianNpc;
@@ -43,6 +44,10 @@ public final class CityGameTests {
 
     private static MinecraftServer server(GameTestHelper helper) {
         return helper.getLevel().getServer();
+    }
+
+    private static void reset(GameTestHelper helper) {
+        CityData.get(server(helper)).clear();
     }
 
     /** A city with a few beds and workplaces around the arena, registered without any structure. */
@@ -101,6 +106,7 @@ public final class CityGameTests {
 
     @GameTest(template = "empty", batch = "city_people")
     public static void peopleMoveInAndKeepAnHourlyRound(GameTestHelper helper) {
+        reset(helper);
         City city = makeCity(helper, "Testford");
         var level = helper.getLevel();
         for (int i = 0; i < 4; i++) {
@@ -143,6 +149,7 @@ public final class CityGameTests {
 
     @GameTest(template = "empty", batch = "city_heat")
     public static void troubleMakesTheWatchHostileAndThePeopleAfraid(GameTestHelper helper) {
+        reset(helper);
         City city = makeCity(helper, "Hotbed");
         var level = helper.getLevel();
         helper.setDayTime(3000);
@@ -176,6 +183,7 @@ public final class CityGameTests {
 
     @GameTest(template = "empty", batch = "city_reinforce", timeoutTicks = 200)
     public static void wantedPlayersAreHuntedAndTroubleFades(GameTestHelper helper) {
+        reset(helper);
         City city = makeCity(helper, "Watchtown");
         var level = helper.getLevel();
         BlockPos centre = helper.absolutePos(new BlockPos(4, 1, 4));
@@ -202,6 +210,7 @@ public final class CityGameTests {
 
     @GameTest(template = "empty", batch = "city_talk")
     public static void tradesTalkLikeTheirTrades(GameTestHelper helper) {
+        reset(helper);
         City city = makeCity(helper, "Chatham");
         var level = helper.getLevel();
         helper.setDayTime(3000);
@@ -220,6 +229,7 @@ public final class CityGameTests {
 
     @GameTest(template = "empty", batch = "city_save")
     public static void citiesSurviveASaveAndReload(GameTestHelper helper) {
+        reset(helper);
         City city = makeCity(helper, "Saveford");
         city.strength = 71;
         city.owner = CAMARILLA;
@@ -230,6 +240,165 @@ public final class CityGameTests {
         helper.assertTrue(copy.homes.equals(city.homes) && copy.works.equals(city.works), "homes and workplaces");
         helper.assertTrue(copy.plaza.equals(city.plaza) && copy.club == null, "places");
         helper.assertTrue(copy.heatOf(java.util.UUID.nameUUIDFromBytes(new byte[]{1})) == 44, "and who is wanted");
+        helper.succeed();
+    }
+
+    // ---------------------------------------------------------------- territory
+
+    private static final ResourceLocation SABBAT = VtmMod.id("sabbat");
+
+    private static com.epi0.vtm.nemesis.NemesisData nemeses(GameTestHelper helper) {
+        var data = com.epi0.vtm.nemesis.NemesisManager.data(server(helper));
+        data.records().clear();
+        data.chronicle().clear();
+        return data;
+    }
+
+    private static City makeCity(GameTestHelper helper, String name, ResourceLocation owner) {
+        City city = makeCity(helper, name);
+        city.owner = owner;
+        city.warden = null;
+        city.strength = Territory.HELD_STRENGTH;
+        city.haven = helper.absolutePos(new BlockPos(6, 2, 6));
+        return city;
+    }
+
+    private static void platform(GameTestHelper helper, int radius) {
+        BlockPos centre = helper.absolutePos(new BlockPos(4, 1, 4));
+        for (int x = -radius; x <= radius; x++) {
+            for (int z = -radius; z <= radius; z++) {
+                helper.getLevel().setBlock(centre.offset(x, 0, z), Blocks.STONE.defaultBlockState(), 2);
+            }
+        }
+    }
+
+    @GameTest(template = "empty", batch = "terr_warden")
+    public static void wardensHoldCitiesAndTheirLossWeakensThem(GameTestHelper helper) {
+        var nem = nemeses(helper);
+        var random = net.minecraft.util.RandomSource.create(5L);
+        com.epi0.vtm.nemesis.NemesisSimulator.populate(server(helper), nem, random);
+        com.epi0.vtm.nemesis.NemesisSimulator.succession(server(helper), nem);
+        City city = makeCity(helper, "Wardenford", CAMARILLA);
+        Territory.seatWarden(server(helper), nem, city);
+        var warden = nem.get(city.warden);
+        helper.assertTrue(warden != null && warden.faction.equals(CAMARILLA), "a Camarilla vampire holds a Camarilla city");
+        helper.assertTrue(city.haven.equals(warden.lair) && warden.role != com.epi0.vtm.nemesis.Role.LEADER, "from the haven, and not the Prince");
+
+        city.strength = 40;
+        Territory.drift(nem, city);
+        helper.assertTrue(city.strength == 41, "a held city firms up: " + city.strength + " warden " + city.warden);
+
+        ServerPlayer player = player(helper);
+        com.epi0.vtm.nemesis.NemesisManager.destroy(server(helper), warden, player, null);
+        helper.assertTrue(city.warden == null && city.strength == 16, "killing the warden shakes the city: " + city.strength);
+        helper.assertTrue(nem.chronicle().stream().anyMatch(c -> c.key().equals("city_weakened")), "and is chronicled");
+        Territory.drift(nem, city);
+        helper.assertTrue(city.strength == 15, "and without a warden it slips further");
+        Territory.seatWarden(server(helper), nem, city);
+        helper.assertTrue(city.warden != null && !city.warden.equals(warden.id), "until a replacement is found");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "terr_war")
+    public static void factionsAtWarTakeCitiesFromEachOther(GameTestHelper helper) {
+        var nem = nemeses(helper);
+        var random = net.minecraft.util.RandomSource.create(9L);
+        com.epi0.vtm.nemesis.NemesisSimulator.populate(server(helper), nem, random);
+        com.epi0.vtm.nemesis.NemesisSimulator.succession(server(helper), nem);
+        City city = makeCity(helper, "Contested", CAMARILLA);
+        city.strength = 10;
+        nem.inFaction(SABBAT).forEach(r -> r.level = 18);
+        var band = nem.inFaction(SABBAT).stream().limit(3).toList();
+
+        boolean taken = false;
+        for (int i = 0; i < 60 && !taken; i++) {
+            nem.inFaction(SABBAT).forEach(r -> {
+                if (r.status != com.epi0.vtm.nemesis.Status.ACTIVE) {
+                    r.status = com.epi0.vtm.nemesis.Status.ACTIVE;
+                }
+            });
+            taken = Territory.resolveAssault(server(helper), nem, city, SABBAT, band, random);
+        }
+        helper.assertTrue(taken && city.owner.equals(SABBAT), "a strong enough assault takes the city");
+        helper.assertTrue(city.strength == Territory.CAPTURED_STRENGTH && city.warden == null, "which starts out weakly held");
+        helper.assertTrue(nem.chronicle().stream().anyMatch(c -> c.key().equals("city_taken") && c.publicNews()), "and everyone hears of it");
+
+        // Only enemies attack: the Anarch have no quarrel with a Camarilla city, so over many wars it only ever changes hands to the Sabbat.
+        City peaceful = makeCity(helper, "Peacetown", CAMARILLA);
+        peaceful.owner = CAMARILLA;
+        for (int i = 0; i < 400; i++) {
+            nem.inFaction(ANARCH).forEach(r -> r.status = com.epi0.vtm.nemesis.Status.ACTIVE);
+            Territory.war(server(helper), nem, CityData.get(server(helper)), random, 5.0);
+            if (!peaceful.owner.equals(CAMARILLA)) {
+                break;
+            }
+        }
+        helper.assertTrue(peaceful.owner.equals(CAMARILLA) || peaceful.owner.equals(SABBAT), "the Anarch do not march on the Camarilla: " + peaceful.owner);
+        helper.succeed();
+    }
+
+    private static final ResourceLocation ANARCH = VtmMod.id("anarch");
+
+    @GameTest(template = "empty", batch = "terr_patrol", timeoutTicks = 200)
+    public static void rulersPatrolTheirStreetsAtNightAndEnforceTheMasquerade(GameTestHelper helper) {
+        reset(helper);
+        nemeses(helper);
+        City city = makeCity(helper, "Patrolton", CAMARILLA);
+        platform(helper, 30);
+        var level = helper.getLevel();
+        helper.setDayTime(18000);
+        ServerPlayer player = player(helper);
+        int spawned = CityLife.patrol(level, city);
+        helper.assertTrue(spawned == 1 + city.strength / 40, "a patrol walks the streets: " + spawned);
+        helper.assertTrue(CityLife.patrol(level, city) == 0, "and is not topped up while it is there");
+        var patrol = level.getEntitiesOfClass(com.epi0.vtm.npc.VampireNpc.class, new net.minecraft.world.phys.AABB(city.center).inflate(60),
+                v -> city.id.equals(v.patrol())).get(0);
+        helper.assertTrue(patrol.factionId().equals(CAMARILLA), "of the ruling faction");
+        helper.assertTrue(patrol.attitudeTo(player) != Attitude.HOSTILE, "who leave a quiet player alone");
+        city.heat.put(player.getUUID(), 70);
+        helper.assertTrue(patrol.attitudeTo(player) == Attitude.HOSTILE, "but hunt one who has broken the Masquerade");
+
+        city.owner = SABBAT;
+        helper.assertTrue(!Territory.enforcesMasquerade(level.registryAccess(), city), "the Sabbat do not care");
+        city.owner = CAMARILLA;
+
+        com.epi0.vtm.sect.SectManager.set(player, com.epi0.vtm.sect.Membership.DEFAULT);
+        Territory.masqueradeBreach(player, city);
+        helper.assertTrue(com.epi0.vtm.sect.Membership.of(player).standingWith(CAMARILLA) == com.epi0.vtm.sect.SectManager.MASQUERADE_BREACH,
+                "even a stranger loses standing with a ruler who keeps the Masquerade");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "terr_know")
+    public static void playersLearnCitiesByVisitingAndAsking(GameTestHelper helper) {
+        var nem = nemeses(helper);
+        CityData cities = CityData.get(server(helper));
+        City here = makeCity(helper, "Hereford", CAMARILLA);
+        ServerPlayer player = player(helper);
+        helper.assertTrue(com.epi0.vtm.nemesis.NemesisViews.build(server(helper), player).domains().stream().noneMatch(d -> d.id().equals(here.id)),
+                "a city you have not been to is not on your map");
+        com.epi0.vtm.city.CityEvents.announce(player);
+        helper.assertTrue(com.epi0.vtm.city.CityKnowledge.of(player).knows(here.id), "walking in discovers it");
+        var domain = com.epi0.vtm.nemesis.NemesisViews.build(server(helper), player).domains().stream().filter(d -> d.id().equals(here.id)).findFirst().orElseThrow();
+        helper.assertTrue(domain.owner().equals(CAMARILLA) && domain.strength() == here.strength && domain.warden().isEmpty(), "with who rules it, and no warden named");
+
+        var random = net.minecraft.util.RandomSource.create(2L);
+        com.epi0.vtm.nemesis.NemesisSimulator.populate(server(helper), nem, random);
+        Territory.seatWarden(server(helper), nem, here);
+        var warden = nem.get(here.warden);
+        com.epi0.vtm.nemesis.Intel.reveal(player, warden, random);
+        domain = com.epi0.vtm.nemesis.NemesisViews.build(server(helper), player).domains().stream().filter(d -> d.id().equals(here.id)).findFirst().orElseThrow();
+        helper.assertTrue(domain.warden().isPresent(), "once you know the warden, the map names them");
+
+        long unknown = cities.all().stream().filter(c -> !com.epi0.vtm.city.CityKnowledge.of(player).knows(c.id)).count();
+        for (long i = 0; i < unknown; i++) {
+            helper.assertTrue(Territory.revealCity(player, random).isPresent(), "asking around turns up another city");
+        }
+        helper.assertTrue(Territory.revealCity(player, random).isEmpty(), "until there are none left");
+        var buf = new net.minecraft.network.RegistryFriendlyByteBuf(io.netty.buffer.Unpooled.buffer(), helper.getLevel().registryAccess());
+        var snap = com.epi0.vtm.nemesis.NemesisViews.build(server(helper), player);
+        com.epi0.vtm.network.NemesisViewsPayload.STREAM_CODEC.encode(buf, new com.epi0.vtm.network.NemesisViewsPayload(snap));
+        helper.assertTrue(com.epi0.vtm.network.NemesisViewsPayload.STREAM_CODEC.decode(buf).snapshot().domains().size() == snap.domains().size(), "the map survives the wire");
         helper.succeed();
     }
 }

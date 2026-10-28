@@ -31,7 +31,7 @@ import java.util.UUID;
  * has told it you know.
  */
 public class NemesisScreen extends Screen {
-    enum Tab { DOSSIERS, COURTS, CHRONICLE, COTERIE }
+    enum Tab { DOSSIERS, COURTS, DOMAINS, CHRONICLE, COTERIE }
 
     private static final int PANEL = 0xE0181015;
     private static final int BORDER = 0xFF7A1F1F;
@@ -48,6 +48,7 @@ public class NemesisScreen extends Screen {
     private static UUID huntTarget;
     private static int spyIndex;
     private static Tab lastTab = Tab.DOSSIERS;
+    private static UUID selectedDomain;
 
     private Tab tab = lastTab;
     private int left;
@@ -89,10 +90,10 @@ public class NemesisScreen extends Screen {
                 lastTab = t;
                 scroll = 0;
                 rebuildWidgets();
-            }).bounds(x, top + 8, 70, 18).build();
+            }).bounds(x, top + 8, 68, 18).build();
             button.active = t != tab;
             addRenderableWidget(button);
-            x += 73;
+            x += 71;
         }
         coterieButtons.clear();
         if (tab == Tab.DOSSIERS) {
@@ -183,8 +184,34 @@ public class NemesisScreen extends Screen {
         return true;
     }
 
+    private static final int MAP_HEIGHT = 96;
+
+    /** Screen position of a city on the map, or null if the map has nothing to scale. */
+    private int[] mapPoint(NemesisViews.Domain domain, double minX, double minZ, double scale) {
+        int x = left + 18 + (int) ((domain.place().pos().getX() - minX) * scale);
+        int y = top + 40 + (int) ((domain.place().pos().getZ() - minZ) * scale);
+        return new int[]{x, y};
+    }
+
     @Override
     public boolean mouseClicked(double mx, double my, int button) {
+        if (tab == Tab.DOMAINS && my >= top + 34 && my < top + 34 + MAP_HEIGHT) {
+            double[] frame = mapFrame();
+            NemesisViews.Domain best = null;
+            double bestDistance = 100;
+            for (NemesisViews.Domain d : snapshot.domains()) {
+                int[] p = mapPoint(d, frame[0], frame[1], frame[2]);
+                double dist = (p[0] - mx) * (p[0] - mx) + (p[1] - my) * (p[1] - my);
+                if (dist < bestDistance) {
+                    best = d;
+                    bestDistance = dist;
+                }
+            }
+            if (best != null) {
+                selectedDomain = best.id();
+                return true;
+            }
+        }
         if (tab == Tab.DOSSIERS && mx >= left + 8 && mx < left + 142 && my >= top + 34) {
             int index = (int) ((my - (top + 34)) / ROW) + scroll;
             List<NemesisViews.Entry> list = sorted();
@@ -210,6 +237,7 @@ public class NemesisScreen extends Screen {
         switch (tab) {
             case DOSSIERS -> renderDossiers(g);
             case COURTS -> renderCourts(g);
+            case DOMAINS -> renderDomains(g);
             case CHRONICLE -> renderChronicle(g);
             case COTERIE -> renderCoterie(g);
         }
@@ -376,6 +404,77 @@ public class NemesisScreen extends Screen {
         }
     }
 
+    /** minX, minZ, scale for fitting every known city and the player into the map. */
+    private double[] mapFrame() {
+        double minX = Double.MAX_VALUE;
+        double maxX = -Double.MAX_VALUE;
+        double minZ = Double.MAX_VALUE;
+        double maxZ = -Double.MAX_VALUE;
+        for (NemesisViews.Domain d : snapshot.domains()) {
+            minX = Math.min(minX, d.place().pos().getX());
+            maxX = Math.max(maxX, d.place().pos().getX());
+            minZ = Math.min(minZ, d.place().pos().getZ());
+            maxZ = Math.max(maxZ, d.place().pos().getZ());
+        }
+        if (minecraft != null && minecraft.player != null) {
+            minX = Math.min(minX, minecraft.player.getX());
+            maxX = Math.max(maxX, minecraft.player.getX());
+            minZ = Math.min(minZ, minecraft.player.getZ());
+            maxZ = Math.max(maxZ, minecraft.player.getZ());
+        }
+        double spanX = Math.max(64, maxX - minX);
+        double spanZ = Math.max(64, maxZ - minZ);
+        double scale = Math.min((width_ - 36) / spanX, (MAP_HEIGHT - 14) / spanZ);
+        return new double[]{minX, minZ, scale};
+    }
+
+    private void renderDomains(GuiGraphics g) {
+        List<NemesisViews.Domain> domains = snapshot.domains();
+        if (domains.isEmpty()) {
+            paragraph(g, Component.translatable("gui.vtm.nemesis.no_domains"), left + 10, top + 34, width_ - 20, MUTED);
+            return;
+        }
+        g.fill(left + 8, top + 34, left + width_ - 8, top + 34 + MAP_HEIGHT, 0xFF0C080A);
+        g.renderOutline(left + 8, top + 34, width_ - 16, MAP_HEIGHT, DIM);
+        double[] frame = mapFrame();
+        if (selectedDomain == null || domains.stream().noneMatch(d -> d.id().equals(selectedDomain))) {
+            selectedDomain = domains.get(0).id();
+        }
+        for (NemesisViews.Domain d : domains) {
+            int[] p = mapPoint(d, frame[0], frame[1], frame[2]);
+            boolean sel = d.id().equals(selectedDomain);
+            int color = factionColor(d.owner());
+            g.fill(p[0] - 3, p[1] - 3, p[0] + 4, p[1] + 4, color);
+            if (sel) {
+                g.renderOutline(p[0] - 5, p[1] - 5, 11, 11, 0xFFFFFFFF);
+            }
+            if (d.heat() >= 60) {
+                g.fill(p[0] - 1, p[1] - 1, p[0] + 2, p[1] + 2, BLOOD);
+            }
+            g.drawString(font, d.name(), p[0] + 7, p[1] - 4, sel ? TEXT : MUTED, false);
+        }
+        if (minecraft != null && minecraft.player != null) {
+            int px = left + 18 + (int) ((minecraft.player.getX() - frame[0]) * frame[2]);
+            int pz = top + 40 + (int) ((minecraft.player.getZ() - frame[1]) * frame[2]);
+            g.fill(px - 1, pz - 4, px + 1, pz + 5, 0xFFFFFFFF);
+            g.fill(px - 4, pz - 1, px + 5, pz + 1, 0xFFFFFFFF);
+        }
+        NemesisViews.Domain d = domains.stream().filter(x -> x.id().equals(selectedDomain)).findFirst().orElseThrow();
+        int x = left + 12;
+        int y = top + 38 + MAP_HEIGHT;
+        g.drawString(font, d.name(), x, y, factionColor(d.owner()), false);
+        g.drawString(font, Component.translatable("gui.vtm.nemesis.ruled_by", factionName(d.owner())), x + 110, y, TEXT, false);
+        y += 12;
+        meter(g, x, y, "gui.vtm.nemesis.strength", d.strength(), factionColor(d.owner()));
+        g.drawString(font, d.warden().map(w -> Component.translatable("gui.vtm.nemesis.warden", w))
+                .orElse(Component.translatable("gui.vtm.nemesis.warden_unknown")), x + 190, y, MUTED, false);
+        y += 11;
+        meter(g, x, y, "gui.vtm.nemesis.heat", d.heat(), d.heat() >= 60 ? BLOOD : WARN);
+        double dist = minecraft != null && minecraft.player != null
+                ? Math.sqrt(minecraft.player.distanceToSqr(d.place().pos().getX(), minecraft.player.getY(), d.place().pos().getZ())) : 0;
+        g.drawString(font, Component.translatable("gui.vtm.nemesis.city_at", d.place().pos().getX(), d.place().pos().getZ(), (int) dist), x + 190, y, MUTED, false);
+    }
+
     private void renderChronicle(GuiGraphics g) {
         List<ChronicleEntry> news = new ArrayList<>(snapshot.chronicle());
         java.util.Collections.reverse(news);
@@ -388,8 +487,9 @@ public class NemesisScreen extends Screen {
         scroll = Math.min(scroll, Math.max(0, news.size() - 1));
         for (int i = scroll; i < news.size() && y < top + height_ - 12; i++) {
             ChronicleEntry entry = news.get(i);
+            Object[] args = entry.args().stream().map(a -> a.startsWith("faction.") ? (Object) Component.translatable(a) : a).toArray();
             Component line = Component.translatable("gui.vtm.nemesis.news_line", entry.time() / 24000L + 1,
-                    Component.translatable("chronicle.vtm." + entry.key(), entry.args().toArray()));
+                    Component.translatable("chronicle.vtm." + entry.key(), args));
             int color = entry.faction().map(this::factionColor).orElse(TEXT);
             for (FormattedCharSequence part : font.split(line, width_ - 24)) {
                 if (y >= top + height_ - 12) {

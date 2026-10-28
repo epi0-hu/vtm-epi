@@ -69,6 +69,7 @@ public final class NemesisGameTests {
     }
 
     private static NemesisData fresh(GameTestHelper helper) {
+        com.epi0.vtm.city.CityData.get(server(helper)).clear(); // leftover cities from other tests would answer for the player's whereabouts
         NemesisData data = NemesisManager.data(server(helper));
         data.records().clear();
         data.chronicle().clear();

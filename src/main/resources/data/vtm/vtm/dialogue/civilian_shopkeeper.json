@@ -38,6 +38,21 @@
           "next": "rulers"
         },
         {
+          "text": "dialogue.vtm.opt.roads",
+          "show": {
+            "no_flag": "asked_roads"
+          },
+          "effects": [
+            {
+              "flag": "asked_roads",
+              "nemesis": {
+                "intel": "city"
+              }
+            }
+          ],
+          "next": "roads"
+        },
+        {
           "text": "dialogue.vtm.opt.leave"
         }
       ]
@@ -69,6 +84,21 @@
         {
           "text": "dialogue.vtm.opt.s_rulers",
           "next": "rulers"
+        },
+        {
+          "text": "dialogue.vtm.opt.roads",
+          "show": {
+            "no_flag": "asked_roads"
+          },
+          "effects": [
+            {
+              "flag": "asked_roads",
+              "nemesis": {
+                "intel": "city"
+              }
+            }
+          ],
+          "next": "roads"
         },
         {
           "text": "dialogue.vtm.opt.leave"
@@ -104,6 +134,69 @@
           "next": "rulers"
         },
         {
+          "text": "dialogue.vtm.opt.roads",
+          "show": {
+            "no_flag": "asked_roads"
+          },
+          "effects": [
+            {
+              "flag": "asked_roads",
+              "nemesis": {
+                "intel": "city"
+              }
+            }
+          ],
+          "next": "roads"
+        },
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
+    },
+    "roads": {
+      "text": "dialogue.vtm.shopkeeper.roads",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.s_browse",
+          "next": "browse"
+        },
+        {
+          "text": "dialogue.vtm.opt.s_gossip",
+          "show": {
+            "no_flag": "gossiped"
+          },
+          "effects": [
+            {
+              "flag": "gossiped",
+              "rapport": 1,
+              "nemesis": {
+                "intel": "any",
+                "count": 2
+              }
+            }
+          ],
+          "next": "gossip"
+        },
+        {
+          "text": "dialogue.vtm.opt.s_rulers",
+          "next": "rulers"
+        },
+        {
+          "text": "dialogue.vtm.opt.roads",
+          "show": {
+            "no_flag": "asked_roads"
+          },
+          "effects": [
+            {
+              "flag": "asked_roads",
+              "nemesis": {
+                "intel": "city"
+              }
+            }
+          ],
+          "next": "roads"
+        },
+        {
           "text": "dialogue.vtm.opt.leave"
         }
       ]
@@ -135,6 +228,21 @@
         {
           "text": "dialogue.vtm.opt.s_rulers",
           "next": "rulers"
+        },
+        {
+          "text": "dialogue.vtm.opt.roads",
+          "show": {
+            "no_flag": "asked_roads"
+          },
+          "effects": [
+            {
+              "flag": "asked_roads",
+              "nemesis": {
+                "intel": "city"
+              }
+            }
+          ],
+          "next": "roads"
         },
         {
           "text": "dialogue.vtm.opt.leave"

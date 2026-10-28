@@ -491,6 +491,7 @@ public final class NemesisManager {
             return;
         }
         boolean wasBound = r.status == Status.BOUND;
+        com.epi0.vtm.city.Territory.wardenLost(server, r, killer != null);
         r.status = Status.DESTROYED;
         r.entity = null;
         r.mission = null;
@@ -623,6 +624,7 @@ public final class NemesisManager {
         VampireData data = VampireData.of(player);
         VampireManager.set(player, data.withBlood(data.blood() - BIND_COST));
         NemesisData world = data(player.getServer());
+        com.epi0.vtm.city.Territory.wardenLost(player.getServer(), r, true);
         if (r.role != Role.AGENT) {
             log(player.getServer(), "seat_abandoned", r.faction, false, r);
             r.role = Role.AGENT;
