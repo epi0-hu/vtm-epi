@@ -17,21 +17,58 @@ public class LairStructure extends Structure {
     public static final MapCodec<LairStructure> CODEC = RecordCodecBuilder.mapCodec(i -> i.group(
             settingsCodec(i),
             Codec.STRING.fieldOf("theme").forGetter(s -> s.theme.name().toLowerCase(java.util.Locale.ROOT)),
-            ResourceLocation.CODEC.fieldOf("faction").forGetter(s -> s.faction)
-    ).apply(i, (settings, theme, faction) -> new LairStructure(settings,
-            LairPiece.Theme.valueOf(theme.toUpperCase(java.util.Locale.ROOT)), faction)));
+            ResourceLocation.CODEC.fieldOf("faction").forGetter(s -> s.faction),
+            ResourceLocation.CODEC.optionalFieldOf("clan").forGetter(s -> Optional.ofNullable(s.clan))
+    ).apply(i, (settings, theme, faction, clan) -> new LairStructure(settings,
+            LairPiece.Theme.valueOf(theme.toUpperCase(java.util.Locale.ROOT)), faction, clan.orElse(null))));
 
     private final LairPiece.Theme theme;
     private final ResourceLocation faction;
+    @org.jetbrains.annotations.Nullable
+    private final ResourceLocation clan;
 
-    public LairStructure(StructureSettings settings, LairPiece.Theme theme, ResourceLocation faction) {
+    public LairStructure(StructureSettings settings, LairPiece.Theme theme, ResourceLocation faction,
+                         @org.jetbrains.annotations.Nullable ResourceLocation clan) {
         super(settings);
         this.theme = theme;
         this.faction = faction;
+        this.clan = clan;
+    }
+
+    /**
+     * Underground lairs go where the caves are: the highest cave floor with room to stand, well below the surface.
+     * Where there is no cave (flat or shallow worlds) the lair is simply dug out at depth.
+     */
+    private Optional<GenerationStub> undergroundPoint(GenerationContext context) {
+        int x = context.chunkPos().getMinBlockX() + 1;
+        int z = context.chunkPos().getMinBlockZ() + 1;
+        var generator = context.chunkGenerator();
+        int surface = generator.getFirstFreeHeight(x + theme.width / 2, z + theme.depth / 2, Heightmap.Types.WORLD_SURFACE_WG,
+                context.heightAccessor(), context.randomState());
+        int minY = context.heightAccessor().getMinBuildHeight() + 8;
+        var column = generator.getBaseColumn(x + theme.width / 2, z + theme.depth / 2, context.heightAccessor(), context.randomState());
+        int floor = Integer.MIN_VALUE;
+        for (int y = surface - 14; y >= minY; y--) {
+            if (column.getBlock(y).isAir() && column.getBlock(y + 1).isAir() && column.getBlock(y + 2).isAir()
+                    && column.getBlock(y - 1).isSolid() && column.getBlock(y - 1).getFluidState().isEmpty()) {
+                floor = y;
+                break;
+            }
+        }
+        if (floor == Integer.MIN_VALUE) {
+            floor = Math.max(minY, surface - 24);
+        }
+        int fy = floor;
+        long seed = context.random().nextLong();
+        return Optional.of(new GenerationStub(new BlockPos(x, fy, z),
+                builder -> builder.addPiece(new LairPiece(theme, faction, clan, x, fy, z, seed, surface))));
     }
 
     @Override
     protected Optional<GenerationStub> findGenerationPoint(GenerationContext context) {
+        if (theme.underground) {
+            return undergroundPoint(context);
+        }
         int x = context.chunkPos().getMinBlockX() + 1;
         int z = context.chunkPos().getMinBlockZ() + 1;
         // Never so low that the cellar would fall out of the world (only matters in unusually shallow worlds).
@@ -53,7 +90,7 @@ public class LairStructure extends Structure {
         }
         long seed = context.random().nextLong();
         return Optional.of(new GenerationStub(new BlockPos(x, ground, z),
-                builder -> builder.addPiece(new LairPiece(theme, faction, x, ground, z, seed))));
+                builder -> builder.addPiece(new LairPiece(theme, faction, clan, x, ground, z, seed, ground))));
     }
 
     @Override

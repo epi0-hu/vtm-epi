@@ -68,6 +68,13 @@ public final class Harness {
                 domainsScript(mc);
             } else if (SCENARIO.equals("city")) {
                 cityScript(mc);
+            } else if (SCENARIO.equals("sewer")) {
+                structureScript(mc, "nosferatu_sewer", "nosferatu", new int[]{3, 1, 6}, new int[][]{
+                        {17, 1, 4, 9, 1, 6}, {12, 1, 6, 3, 1, 6}, {7, 2, 3, 3, 0, 7}, {14, 1, 8, 14, 1, 13}, {18, 1, 4, 18, 9, 3}}, 0, "sewer");
+            } else if (SCENARIO.equals("asylum")) {
+                structureScript(mc, "the_asylum", "malkavian", new int[]{10, -4, 13}, new int[][]{
+                        {10, 7, 33, 10, 2, 17}, {30, 9, 30, 10, 3, 14}, {10, 1, 15, 10, 1, 0}, {6, 7, 15, 12, 1, 3}, {16, 8, 14, 9, 1, 4},
+                        {10, -3, 8, 10, -3, 0}, {10, -3, 9, 10, -3, 16}}, 2, "asylum");
             } else if (SCENARIO.equals("lairs")) {
                 lairScript(mc);
             } else if (SCENARIO.equals("nemesis")) {
@@ -188,7 +195,7 @@ public final class Harness {
                 "gamerule doMobSpawning false", "weather clear", "gamemode creative", "vtm embrace @s ventrue"}) {
             cmd(mc, 3, c);
         }
-        String[] structures = {"city"};
+        String[] structures = {"nosferatu_sewer", "the_asylum"};
         for (String name : structures) {
             server(mc, 20, p -> {
                 var server = p.getServer();
@@ -384,6 +391,72 @@ public final class Harness {
     private static final List<net.minecraft.core.BlockPos> LAIRS = new ArrayList<>();
 
     /** Places each lair on a raised lawn (the harness world is flat and low) and photographs it from outside and in. */
+    private static int[] structureOrigin = new int[3];
+
+    /**
+     * Builds {@code structure} wherever the world lets it, finds its clan's coffin to learn where it stands, and
+     * photographs it from {@code views}: camera and target, each relative to the origin (x0, ground y, z0).
+     */
+    private static void structureScript(Minecraft mc, String structure, String clan, int[] coffinAt, int[][] views, int exterior, String prefix) {
+        mc.options.pauseOnLostFocus = false;
+        for (String c : new String[]{"gamerule sendCommandFeedback false", "time set 18000", "gamerule doDaylightCycle false",
+                "gamerule doMobSpawning false", "weather clear", "gamemode creative", "vtm embrace @s ventrue",
+                "effect give @s minecraft:night_vision infinite 0 true"}) {
+            cmd(mc, 3, c);
+        }
+        // `place structure` only works on loaded chunks, so load every candidate spot and let it generate.
+        for (int i = 0; i < 6; i++) {
+            int x = 300 + (i % 3) * 170;
+            int z = (i / 3) * 170;
+            cmd(mc, 5, "forceload add " + (x - 32) + " " + (z - 32) + " " + (x + 48) + " " + (z + 48));
+        }
+        then(500, () -> {});
+        server(mc, 10, p -> {
+            var level = p.serverLevel();
+            boolean found = false;
+            for (int i = 0; i < 6 && !found; i++) {
+                int x = 300 + (i % 3) * 170;
+                int z = (i / 3) * 170;
+                int surface = level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE_WG, x, z);
+                try {
+                    p.getServer().getCommands().getDispatcher().execute("place structure vtm:" + structure + " " + x + " " + surface + " " + z,
+                            p.createCommandSourceStack().withPermission(4).withPosition(net.minecraft.world.phys.Vec3.atCenterOf(new net.minecraft.core.BlockPos(x, surface, z))));
+                } catch (com.mojang.brigadier.exceptions.CommandSyntaxException e) {
+                    VtmMod.LOGGER.info("HARNESS place {} at {} {} failed: {}", structure, x, z, e.getMessage());
+                    continue;
+                }
+                for (int cx = (x >> 4) - 2; cx <= (x >> 4) + 2 && !found; cx++) {
+                    for (int cz = (z >> 4) - 2; cz <= (z >> 4) + 2 && !found; cz++) {
+                        for (var be : level.getChunk(cx, cz).getBlockEntities().values()) {
+                            if (be instanceof com.epi0.vtm.block.CoffinBlockEntity coffin && coffin.clan() != null && coffin.clan().getPath().equals(clan)) {
+                                structureOrigin = new int[]{be.getBlockPos().getX() - coffinAt[0], be.getBlockPos().getY() - coffinAt[1], be.getBlockPos().getZ() - coffinAt[2]};
+                                found = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            VtmMod.LOGGER.info("HARNESS {} origin {} found={}", structure, java.util.Arrays.toString(structureOrigin), found);
+        });
+        then(60, () -> {});
+        for (int n = 0; n < views.length; n++) {
+            int[] v = views[n];
+            int index = n;
+            if (n == 0 || n == exterior) {
+                cmd(mc, 3, n == 0 ? "gamemode spectator" : "gamemode creative"); // fly for the outside views
+            }
+            server(mc, 5, p -> p.getServer().getCommands().performPrefixedCommand(p.createCommandSourceStack().withPermission(4),
+                    "tp @s " + (structureOrigin[0] + v[0] + 0.5) + " " + (structureOrigin[1] + v[1]) + " " + (structureOrigin[2] + v[2] + 0.5)
+                            + " facing " + (structureOrigin[0] + v[3] + 0.5) + " " + (structureOrigin[1] + v[4] + 0.5) + " " + (structureOrigin[2] + v[5] + 0.5)));
+            shotAfter(mc, 50, prefix + "_" + index);
+        }
+        then(10, () -> {
+            VtmMod.LOGGER.info("HARNESS DONE");
+            mc.stop();
+        });
+    }
+
     private static void lairScript(Minecraft mc) {
         mc.options.pauseOnLostFocus = false;
         for (String c : new String[]{"gamerule sendCommandFeedback false", "time set 6000", "gamerule doDaylightCycle false",

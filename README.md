@@ -95,6 +95,15 @@ faction without a lair, or a newcomer if the faction has room); that vampire is 
 player comes near. The **Coffin** block lets a vampire sleep through the day and sets their haven. Structure
 sets, biomes and loot are datapack data.
 
+Two lairs belong to a **clan** (the structure json's optional `clan`; the coffin only takes a vampire of that clan, and
+a newcomer is made one): the **Nosferatu warren** (`world/SewerLair`), a brick sewer set into the cave system (it
+goes to the highest cave floor with room to stand, well below the surface; where there is no cave it is dug out at
+depth) with a channel of black water between two walkways, a nest with the coffin and loot, a side tunnel that ends in
+a cave-in, and a ladder shaft up to a manhole on the surface; and **The Asylum** (`world/AsylumClub`), a Malkavian-owned
+nightclub in a derelict sanatorium: a forecourt and marquee, a chequered dance floor with a bar and DJ stage, a VIP
+gallery railed over the floor, padded cells below and the owner's quarters behind them. Each is one entry of the
+`lairs` / `sewers` structure sets.
+
 **Cities** (`world/CityPiece`, `city/`): a 64x64 flat plateau of nine plots: a plaza with a fountain and the **Domain
 Stone**, four houses, a shop, a nightclub, a watch station and the ruler's haven, joined by lamplit streets. The Domain
 Stone registers the city (beds, workplaces, places) once live. People move in: residents take the beds, and the shop,
@@ -187,6 +196,6 @@ dilation for Celerity) remain options if NPC navigation or Celerity ever need th
 ## Tests and dev tools
 - `./gradlew runGameTestServer`: GameTests in `gametest/VtmGameTests` (data, embrace/learn, passives, feeding, every
   power, mob control, every bane, frenzy, forms, sense link, NPC behaviour, conversations, sects, the nemesis simulation and its combat rules, lairs, cities, territory, courts).
-- `./gradlew runClient -Pharness=player|npc|dialogue|sect|nemesis|lairs|city|domains|court`: scripted walkthrough of the real client that writes screenshots to
+- `./gradlew runClient -Pharness=player|npc|dialogue|sect|nemesis|lairs|sewer|asylum|city|domains|court`: scripted walkthrough of the real client that writes screenshots to
   `run/screenshots/` (player: every Codex page, HUD, city banner, forms, sense link, frenzy; npc: a lineup in every animation; dialogue: a conversation with a civilian and a vampire; sect: the Sect tab and a member's conversation; nemesis: the Nemesis tabs and a verdict conversation; lairs, city, domains, court: the world and the Court tab). Needs a
   world at `run/saves/harness` and, on a headless machine, `xvfb-run`. Inert without the property.

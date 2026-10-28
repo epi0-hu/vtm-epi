@@ -121,11 +121,38 @@ public final class Canvas {
     }
 
     public void coffin(int x, int y, int z, Direction facing, ResourceLocation faction) {
+        coffin(x, y, z, facing, faction, null);
+    }
+
+    /** A coffin that belongs to a lair of {@code faction}, and of {@code clan} if given. */
+    public void coffin(int x, int y, int z, Direction facing, ResourceLocation faction, ResourceLocation clan) {
         if (set(x, y, z, ModBlocks.COFFIN.get().defaultBlockState().setValue(CoffinBlock.FACING, facing))) {
             BlockEntity entity = level.getBlockEntity(new BlockPos(x, y, z));
             if (entity instanceof CoffinBlockEntity coffin && faction != null) {
                 coffin.setFaction(faction);
+                coffin.setClan(clan);
             }
+        }
+    }
+
+    /** A two-block door whose lower half is at {@code (x, y, z)}. */
+    public void door(int x, int y, int z, Direction facing, Block door) {
+        BlockState lower = door.defaultBlockState().setValue(net.minecraft.world.level.block.DoorBlock.FACING, facing);
+        set(x, y, z, lower);
+        set(x, y + 1, z, lower.setValue(net.minecraft.world.level.block.DoorBlock.HALF,
+                net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER));
+    }
+
+    /** A wall sign on the {@code facing} side of the block behind it, glowing red. */
+    public void sign(int x, int y, int z, Direction facing, String... lines) {
+        if (set(x, y, z, Blocks.DARK_OAK_WALL_SIGN.defaultBlockState()
+                .setValue(net.minecraft.world.level.block.WallSignBlock.FACING, facing))
+                && level.getBlockEntity(new BlockPos(x, y, z)) instanceof net.minecraft.world.level.block.entity.SignBlockEntity sign) {
+            var text = sign.getFrontText().setColor(net.minecraft.world.item.DyeColor.RED).setHasGlowingText(true);
+            for (int i = 0; i < Math.min(4, lines.length); i++) {
+                text = text.setMessage(i, net.minecraft.network.chat.Component.literal(lines[i]));
+            }
+            sign.setText(text, true);
         }
     }
 

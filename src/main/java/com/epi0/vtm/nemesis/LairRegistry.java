@@ -5,6 +5,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 
+import org.jetbrains.annotations.Nullable;
+
 import java.util.Comparator;
 import java.util.Optional;
 import java.util.UUID;
@@ -17,6 +19,11 @@ public final class LairRegistry {
 
     /** The coffin at {@code pos} becomes the lair of a vampire of {@code faction}. Returns who, if anyone. */
     public static Optional<UUID> claim(ServerLevel level, BlockPos pos, ResourceLocation faction) {
+        return claim(level, pos, faction, null);
+    }
+
+    /** As above, for a lair that belongs to one clan: only a vampire of that clan will take it. */
+    public static Optional<UUID> claim(ServerLevel level, BlockPos pos, ResourceLocation faction, @Nullable ResourceLocation clan) {
         NemesisData data = NemesisManager.data(level.getServer());
         BlockPos spot = pos.above();
         for (NemesisRecord r : data.all()) {
@@ -25,13 +32,13 @@ public final class LairRegistry {
             }
         }
         NemesisRecord tenant = data.inFaction(faction).stream()
-                .filter(r -> r.lair == null && r.status != Status.BOUND)
+                .filter(r -> r.lair == null && r.status != Status.BOUND && (clan == null || clan.equals(r.clan)))
                 .max(Comparator.comparingInt((NemesisRecord r) -> r.role.power() * 100 + r.level)).orElse(null);
         if (tenant == null) {
             if (data.inFaction(faction).size() >= VtmConfig.NEMESIS_POPULATION.get() + EXTRA_FOR_LAIRS) {
                 return Optional.empty();
             }
-            tenant = NemesisManager.create(level.getServer(), faction, Role.AGENT, level.random);
+            tenant = NemesisManager.create(level.getServer(), faction, clan, Role.AGENT, level.random);
         }
         tenant.lair = spot;
         tenant.lairDimension = level.dimension();

@@ -744,6 +744,10 @@ public final class NemesisGameTests {
     }
 
     private static void lairTest(GameTestHelper helper, String structure, ResourceLocation faction) {
+        lairTest(helper, structure, faction, null);
+    }
+
+    private static void lairTest(GameTestHelper helper, String structure, ResourceLocation faction, ResourceLocation clan) {
         NemesisData data = fresh(helper);
         var coffins = generate(helper, structure);
         // (Coffins left by other tests in nearby chunks have already been claimed; only the one just built is fresh.)
@@ -754,6 +758,7 @@ public final class NemesisGameTests {
             helper.assertTrue(coffin.claimed() != null, "the lair claims a vampire once it is live");
             NemesisRecord tenant = data.get(coffin.claimed());
             helper.assertTrue(tenant != null && tenant.faction.equals(faction), "of the lair's faction");
+            helper.assertTrue(clan == null || clan.equals(coffin.clan()) && clan.equals(tenant.clan), "and of the lair's clan");
             helper.assertTrue(tenant.lair != null && tenant.lair.equals(coffin.getBlockPos().above())
                     && tenant.lairDimension == helper.getLevel().dimension(), "whose lair is the coffin");
         });
@@ -772,6 +777,16 @@ public final class NemesisGameTests {
     @GameTest(template = "empty", batch = "lair_warehouse", timeoutTicks = 300)
     public static void warehousesHoldAnAnarch(GameTestHelper helper) {
         lairTest(helper, "warehouse_squat", ANARCH);
+    }
+
+    @GameTest(template = "empty", batch = "lair_sewer", timeoutTicks = 300)
+    public static void sewersHoldANosferatu(GameTestHelper helper) {
+        lairTest(helper, "nosferatu_sewer", CAMARILLA, VtmMod.id("nosferatu"));
+    }
+
+    @GameTest(template = "empty", batch = "lair_asylum", timeoutTicks = 300)
+    public static void theAsylumIsOwnedByAMalkavian(GameTestHelper helper) {
+        lairTest(helper, "the_asylum", CAMARILLA, VtmMod.id("malkavian"));
     }
 
     @GameTest(template = "empty", batch = "lair_rest")

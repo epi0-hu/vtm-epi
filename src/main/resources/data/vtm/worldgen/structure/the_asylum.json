@@ -1,0 +1,10 @@
+{
+  "type": "vtm:lair",
+  "biomes": "#vtm:has_lairs",
+  "step": "surface_structures",
+  "spawn_overrides": {},
+  "terrain_adaptation": "none",
+  "theme": "asylum",
+  "faction": "vtm:camarilla",
+  "clan": "vtm:malkavian"
+}

@@ -24,6 +24,8 @@ public class CoffinBlockEntity extends BlockEntity {
     @Nullable
     private ResourceLocation faction;
     @Nullable
+    private ResourceLocation clan;
+    @Nullable
     private UUID claimed;
 
     public CoffinBlockEntity(BlockPos pos, BlockState state) {
@@ -40,6 +42,17 @@ public class CoffinBlockEntity extends BlockEntity {
         return faction;
     }
 
+    /** The clan of whoever sleeps here, if the lair is a particular clan's. */
+    public void setClan(@Nullable ResourceLocation clan) {
+        this.clan = clan;
+        setChanged();
+    }
+
+    @Nullable
+    public ResourceLocation clan() {
+        return clan;
+    }
+
     @Nullable
     public UUID claimed() {
         return claimed;
@@ -50,7 +63,7 @@ public class CoffinBlockEntity extends BlockEntity {
                 || (level.getGameTime() + pos.asLong()) % CLAIM_INTERVAL != 0) {
             return;
         }
-        LairRegistry.claim(server, pos, coffin.faction).ifPresent(id -> {
+        LairRegistry.claim(server, pos, coffin.faction, coffin.clan).ifPresent(id -> {
             coffin.claimed = id;
             coffin.setChanged();
         });
@@ -62,6 +75,9 @@ public class CoffinBlockEntity extends BlockEntity {
         if (faction != null) {
             tag.putString("Faction", faction.toString());
         }
+        if (clan != null) {
+            tag.putString("Clan", clan.toString());
+        }
         if (claimed != null) {
             tag.putUUID("Claimed", claimed);
         }
@@ -71,6 +87,7 @@ public class CoffinBlockEntity extends BlockEntity {
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
         faction = tag.contains("Faction") ? ResourceLocation.tryParse(tag.getString("Faction")) : null;
+        clan = tag.contains("Clan") ? ResourceLocation.tryParse(tag.getString("Clan")) : null;
         claimed = tag.hasUUID("Claimed") ? tag.getUUID("Claimed") : null;
     }
 }

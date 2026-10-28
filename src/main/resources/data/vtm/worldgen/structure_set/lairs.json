@@ -11,6 +11,10 @@
     {
       "structure": "vtm:warehouse_squat",
       "weight": 2
+    },
+    {
+      "structure": "vtm:the_asylum",
+      "weight": 1
     }
   ],
   "placement": {

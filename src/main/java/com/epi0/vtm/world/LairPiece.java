@@ -26,30 +26,49 @@ public class LairPiece extends StructurePiece {
     public static final ResourceLocation LOOT = VtmMod.id("chests/lair");
 
     public enum Theme {
-        CRYPT(13, 13, 6), MANOR(15, 11, 9), WAREHOUSE(17, 11, 7);
+        CRYPT(13, 13, 6), MANOR(15, 11, 9), WAREHOUSE(17, 11, 7),
+        /** Set into the cave system, not on the surface. */
+        SEWER(SewerLair.WIDTH, SewerLair.DEPTH, 6, true),
+        ASYLUM(AsylumClub.WIDTH, AsylumClub.DEPTH + AsylumClub.FORECOURT + 1, 12);
 
         final int width;
         final int depth;
         final int height;
+        final boolean underground;
 
         Theme(int width, int depth, int height) {
+            this(width, depth, height, false);
+        }
+
+        Theme(int width, int depth, int height, boolean underground) {
             this.width = width;
             this.depth = depth;
             this.height = height;
+            this.underground = underground;
         }
     }
 
     private final Theme theme;
     private final ResourceLocation faction;
+    @org.jetbrains.annotations.Nullable
+    private final ResourceLocation clan;
     private final int groundY;
+    private final int surfaceY;
     private final long seed;
 
-    public LairPiece(Theme theme, ResourceLocation faction, int minX, int groundY, int minZ, long seed) {
-        super(ModStructures.LAIR_PIECE.get(), 0, new BoundingBox(minX, groundY - 8, minZ,
-                minX + theme.width - 1, groundY + theme.height + 2, minZ + theme.depth - 1));
+    /**
+     * {@code groundY} is the level of the lair's floor; {@code surfaceY} the surface above it (only underground lairs
+     * care, for their shaft up).
+     */
+    public LairPiece(Theme theme, ResourceLocation faction, @org.jetbrains.annotations.Nullable ResourceLocation clan,
+                     int minX, int groundY, int minZ, long seed, int surfaceY) {
+        super(ModStructures.LAIR_PIECE.get(), 0, new BoundingBox(minX, groundY - (theme.underground ? 4 : 8), minZ,
+                minX + theme.width - 1, Math.max(groundY + theme.height + 2, theme.underground ? surfaceY + 1 : 0), minZ + theme.depth - 1));
         this.theme = theme;
         this.faction = faction;
+        this.clan = clan;
         this.groundY = groundY;
+        this.surfaceY = surfaceY;
         this.seed = seed;
     }
 
@@ -58,6 +77,8 @@ public class LairPiece extends StructurePiece {
         this.theme = Theme.valueOf(tag.getString("Theme"));
         this.faction = ResourceLocation.parse(tag.getString("Faction"));
         this.groundY = tag.getInt("GroundY");
+        this.surfaceY = tag.getInt("SurfaceY");
+        this.clan = tag.contains("Clan") ? ResourceLocation.parse(tag.getString("Clan")) : null;
         this.seed = tag.getLong("Seed");
     }
 
@@ -66,6 +87,10 @@ public class LairPiece extends StructurePiece {
         tag.putString("Theme", theme.name());
         tag.putString("Faction", faction.toString());
         tag.putInt("GroundY", groundY);
+        tag.putInt("SurfaceY", surfaceY);
+        if (clan != null) {
+            tag.putString("Clan", clan.toString());
+        }
         tag.putLong("Seed", seed);
     }
 
@@ -79,6 +104,8 @@ public class LairPiece extends StructurePiece {
             case CRYPT -> crypt(c, x0, groundY, z0, random);
             case MANOR -> manor(c, x0, groundY, z0, faction, random);
             case WAREHOUSE -> warehouse(c, x0, groundY, z0, random);
+            case SEWER -> SewerLair.build(c, x0, groundY, z0, surfaceY, faction, clan, random);
+            case ASYLUM -> AsylumClub.build(c, x0, groundY, z0, faction, clan, random);
         }
     }
 

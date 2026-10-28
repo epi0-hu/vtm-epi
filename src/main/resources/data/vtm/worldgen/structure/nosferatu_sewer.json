@@ -1,0 +1,10 @@
+{
+  "type": "vtm:lair",
+  "biomes": "#minecraft:is_overworld",
+  "step": "underground_structures",
+  "spawn_overrides": {},
+  "terrain_adaptation": "none",
+  "theme": "sewer",
+  "faction": "vtm:camarilla",
+  "clan": "vtm:nosferatu"
+}

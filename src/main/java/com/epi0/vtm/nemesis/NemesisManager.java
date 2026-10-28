@@ -77,8 +77,14 @@ public final class NemesisManager {
 
     /** A new named vampire in {@code faction}, seated at {@code role}, with a name, a history and a temperament. */
     public static NemesisRecord create(MinecraftServer server, ResourceLocation faction, Role role, RandomSource random) {
+        return create(server, faction, null, role, random);
+    }
+
+    /** As above, of a particular clan ({@code null} to draw one of the faction's). */
+    public static NemesisRecord create(MinecraftServer server, ResourceLocation faction, @org.jetbrains.annotations.Nullable ResourceLocation wanted,
+                                       Role role, RandomSource random) {
         NemesisData data = data(server);
-        ResourceLocation clan = clanFor(server, faction, random);
+        ResourceLocation clan = wanted != null ? wanted : clanFor(server, faction, random);
         String name = NpcNames.random(random);
         for (int i = 0; i < 12 && nameTaken(data, name); i++) {
             name = NpcNames.random(random);
