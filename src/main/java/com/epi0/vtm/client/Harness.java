@@ -434,33 +434,24 @@ public final class Harness {
                     }
                 }
             }
-            // Cities only stand in certain biomes; the harness world's are not among them, so repaint the site as plains.
-            for (int bx = x - 16; bx < x + size + 16; bx += 32) {
-                for (int bz = z - 16; bz < z + size + 16; bz += 32) {
-                    try {
-                        p.getServer().getCommands().getDispatcher().execute("fillbiome " + bx + " " + (ground - 8) + " " + bz + " " + (bx + 31) + " " + (ground + 7) + " " + (bz + 31) + " minecraft:plains",
-                                p.createCommandSourceStack().withPermission(4));
-                    } catch (com.mojang.brigadier.exceptions.CommandSyntaxException e) {
-                        VtmMod.LOGGER.info("HARNESS fillbiome refused: {}", e.getMessage());
-                    }
+            // Placement judges the world's real terrain, not our levelled pad, so draw the piece ourselves, chunk by chunk.
+            var piece = new com.epi0.vtm.world.MetropolisPiece(x, ground, z, 1234567L, VtmMod.id("camarilla"), "Harnessburg");
+            var generator = level.getChunkSource().getGenerator();
+            for (int cx = x >> 4; cx <= (x + size - 1) >> 4; cx++) {
+                for (int cz = z >> 4; cz <= (z + size - 1) >> 4; cz++) {
+                    var chunk = new net.minecraft.world.level.ChunkPos(cx, cz);
+                    var box = new net.minecraft.world.level.levelgen.structure.BoundingBox(chunk.getMinBlockX(), level.getMinBuildHeight(), chunk.getMinBlockZ(),
+                            chunk.getMaxBlockX(), level.getMaxBuildHeight() - 1, chunk.getMaxBlockZ());
+                    piece.postProcess(level, level.structureManager(), generator, level.random, box, chunk, new net.minecraft.core.BlockPos(x, ground, z));
                 }
             }
-            try {
-                p.getServer().getCommands().getDispatcher().execute("place structure vtm:metropolis " + x + " " + ground + " " + z,
-                        p.createCommandSourceStack().withPermission(4).withPosition(net.minecraft.world.phys.Vec3.atCenterOf(new net.minecraft.core.BlockPos(x, ground, z))));
-                metroOrigin = new net.minecraft.core.BlockPos(x & ~15, ground, z & ~15);
-            } catch (com.mojang.brigadier.exceptions.CommandSyntaxException e) {
-                VtmMod.LOGGER.info("HARNESS metropolis refused: {}", e.getMessage());
-            }
+            metroOrigin = new net.minecraft.core.BlockPos(x, ground, z);
             VtmMod.LOGGER.info("HARNESS metropolis origin {} ground {}", metroOrigin, ground);
         });
         then(900, () -> {});
         server(mc, 5, p -> {
             var level = p.serverLevel();
-            var structure = level.registryAccess().registryOrThrow(net.minecraft.core.registries.Registries.STRUCTURE)
-                    .get(VtmMod.id("metropolis"));
-            var start = level.structureManager().getStructureAt(metroOrigin.offset(100, 0, 100), structure);
-            metroPlan = start.isValid() && start.getPieces().get(0) instanceof com.epi0.vtm.world.MetropolisPiece piece ? piece.plan() : null;
+            metroPlan = com.epi0.vtm.world.CityPlan.of(1234567L);
             var city = com.epi0.vtm.city.CityData.get(p.getServer()).all().stream()
                     .filter(c -> c.radius > 100).findFirst().orElse(null);
             metroY = city == null ? 64 : city.center.getY() - 2;
