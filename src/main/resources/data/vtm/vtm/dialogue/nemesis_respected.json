@@ -1,0 +1,172 @@
+{
+  "when": {
+    "npc": "vampire",
+    "nemesis": {
+      "present": true,
+      "min_respect": 30,
+      "max_enmity": 49
+    }
+  },
+  "priority": 20,
+  "start": "hub",
+  "nodes": {
+    "hub": {
+      "text": [
+        {
+          "when": {
+            "nemesis": {
+              "min_spared": 1
+            }
+          },
+          "key": "dialogue.vtm.nemesis_respected.greet.spared"
+        },
+        {
+          "when": {
+            "nemesis": {
+              "min_defeats": 1
+            }
+          },
+          "key": "dialogue.vtm.nemesis_respected.greet.beaten"
+        },
+        {
+          "key": "dialogue.vtm.nemesis_respected.greet"
+        }
+      ],
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.r_kin",
+          "show": {
+            "no_flag": "told_kin"
+          },
+          "effects": [
+            {
+              "flag": "told_kin",
+              "nemesis": {
+                "intel": "kin",
+                "count": 2
+              }
+            }
+          ],
+          "next": "kin"
+        },
+        {
+          "text": "dialogue.vtm.opt.r_court",
+          "show": {
+            "no_flag": "told_court"
+          },
+          "require": {
+            "nemesis": {
+              "min_respect": 45
+            }
+          },
+          "locked": "dialogue.vtm.locked.respect",
+          "effects": [
+            {
+              "flag": "told_court",
+              "nemesis": {
+                "intel": "faction",
+                "count": 2
+              }
+            }
+          ],
+          "next": "court"
+        },
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
+    },
+    "kin": {
+      "text": "dialogue.vtm.nemesis_respected.kin",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.r_kin",
+          "show": {
+            "no_flag": "told_kin"
+          },
+          "effects": [
+            {
+              "flag": "told_kin",
+              "nemesis": {
+                "intel": "kin",
+                "count": 2
+              }
+            }
+          ],
+          "next": "kin"
+        },
+        {
+          "text": "dialogue.vtm.opt.r_court",
+          "show": {
+            "no_flag": "told_court"
+          },
+          "require": {
+            "nemesis": {
+              "min_respect": 45
+            }
+          },
+          "locked": "dialogue.vtm.locked.respect",
+          "effects": [
+            {
+              "flag": "told_court",
+              "nemesis": {
+                "intel": "faction",
+                "count": 2
+              }
+            }
+          ],
+          "next": "court"
+        },
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
+    },
+    "court": {
+      "text": "dialogue.vtm.nemesis_respected.court",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.r_kin",
+          "show": {
+            "no_flag": "told_kin"
+          },
+          "effects": [
+            {
+              "flag": "told_kin",
+              "nemesis": {
+                "intel": "kin",
+                "count": 2
+              }
+            }
+          ],
+          "next": "kin"
+        },
+        {
+          "text": "dialogue.vtm.opt.r_court",
+          "show": {
+            "no_flag": "told_court"
+          },
+          "require": {
+            "nemesis": {
+              "min_respect": 45
+            }
+          },
+          "locked": "dialogue.vtm.locked.respect",
+          "effects": [
+            {
+              "flag": "told_court",
+              "nemesis": {
+                "intel": "faction",
+                "count": 2
+              }
+            }
+          ],
+          "next": "court"
+        },
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
+    }
+  }
+}

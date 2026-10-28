@@ -1,5 +1,8 @@
 package com.epi0.vtm.npc;
 
+import com.epi0.vtm.nemesis.NemesisManager;
+import com.epi0.vtm.npc.goal.AssistOwnerGoal;
+import com.epi0.vtm.npc.goal.FollowOwnerGoal;
 import com.epi0.vtm.npc.goal.FeedOnPreyGoal;
 import com.epi0.vtm.npc.goal.HomeStrollGoal;
 import com.epi0.vtm.power.PassiveEffects;
@@ -39,6 +42,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * A vampire of the world: a clan, a sect, a hunger, and a hatred of the sun. Sleeps through the day in whatever
@@ -53,9 +57,18 @@ public class VampireNpc extends VtmNpc {
     public static final int FRIENDLY_RAPPORT = 3;
     public static final int HOSTILE_RAPPORT = -5;
 
+    private static final EntityDataAccessor<String> DATA_NEMESIS = SynchedEntityData.defineId(VampireNpc.class, EntityDataSerializers.STRING);
     private static final EntityDataAccessor<String> DATA_CLAN = SynchedEntityData.defineId(VampireNpc.class, EntityDataSerializers.STRING);
 
     private float blood = 8F;
+    /** The player who has bound this vampire to them (server only). */
+    @Nullable
+    private UUID boundOwner;
+    @Nullable
+    private UUID yielder;
+    private long yieldUntil;
+    private long expireAt;
+    private final java.util.Map<String, Long> lastTaunt = new java.util.HashMap<>();
     private int rank;
     @Nullable
     private BlockPos shelter;
@@ -76,22 +89,89 @@ public class VampireNpc extends VtmNpc {
     protected void defineSynchedData(SynchedEntityData.Builder builder) {
         super.defineSynchedData(builder);
         builder.define(DATA_CLAN, "");
+        builder.define(DATA_NEMESIS, "");
     }
 
     @Override
     protected void registerGoals() {
         super.registerGoals();
         goalSelector.addGoal(0, new FloatGoal(this));
+        goalSelector.addGoal(2, new FollowOwnerGoal(this));
         goalSelector.addGoal(3, new FeedOnPreyGoal(this));
         goalSelector.addGoal(4, new MeleeAttackGoal(this, 1.15, true));
         goalSelector.addGoal(5, new HomeStrollGoal(this, 0.9));
         goalSelector.addGoal(6, new LookAtPlayerGoal(this, Player.class, 8F));
         goalSelector.addGoal(7, new RandomLookAroundGoal(this));
+        targetSelector.addGoal(0, new AssistOwnerGoal(this));
         targetSelector.addGoal(1, new HurtByTargetGoal(this));
         targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, 10, true, false,
                 player -> attitudeTo(player) == Attitude.HOSTILE));
         targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, VampireNpc.class, 10, true, false,
                 other -> attitudeTo(other) == Attitude.HOSTILE && !isResting()));
+    }
+
+    // ---------------------------------------------------------------- named vampires
+
+    /** The record in {@code NemesisData} this vampire is the body of, if it is a named vampire. */
+    @Nullable
+    public UUID nemesisId() {
+        String raw = entityData.get(DATA_NEMESIS);
+        try {
+            return raw.isEmpty() ? null : UUID.fromString(raw);
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+    }
+
+    public void setNemesisId(@Nullable UUID id) {
+        entityData.set(DATA_NEMESIS, id == null ? "" : id.toString());
+    }
+
+    @Nullable
+    public UUID boundOwner() {
+        return boundOwner;
+    }
+
+    public void setBoundOwner(@Nullable UUID owner) {
+        this.boundOwner = owner;
+    }
+
+    /** Kneels, beaten, for a while: the player may spare, bind, question or end them. */
+    public void yieldTo(Player victor, long until) {
+        yielder = victor.getUUID();
+        yieldUntil = until;
+        setTarget(null);
+        getNavigation().stop();
+        setState(State.YIELDING);
+    }
+
+    /** Disappears at this game time (followers who come with an ambush do not linger forever). */
+    public void setExpiry(long gameTime) {
+        this.expireAt = gameTime;
+    }
+
+    public boolean isYielding() {
+        return state() == State.YIELDING;
+    }
+
+    @Nullable
+    public UUID yielder() {
+        return yielder;
+    }
+
+    /** True at most once per {@code cooldown} ticks for each kind of remark. */
+    public boolean mayTaunt(String situation, long now, long cooldown) {
+        Long last = lastTaunt.get(situation);
+        if (last != null && now - last < cooldown) {
+            return false;
+        }
+        lastTaunt.put(situation, now);
+        return true;
+    }
+
+    @Override
+    public boolean isInvulnerableTo(net.minecraft.world.damagesource.DamageSource source) {
+        return isYielding() && !source.is(net.minecraft.tags.DamageTypeTags.BYPASSES_INVULNERABILITY) || super.isInvulnerableTo(source);
     }
 
     // ---------------------------------------------------------------- identity
@@ -229,6 +309,15 @@ public class VampireNpc extends VtmNpc {
     @Override
     protected void serverSecond() {
         super.serverSecond();
+        if (expireAt > 0 && level().getGameTime() > expireAt && getTarget() == null) {
+            discard();
+            return;
+        }
+        if (isYielding() && level().getGameTime() > yieldUntil) {
+            NemesisManager.escape(this, "yield_expired");
+            return;
+        }
+        NemesisManager.secondTick(this);
         if (!isNight(level()) && (shelter == null || level().canSeeSky(shelter.above()))) {
             shelter = findShelter();
         }
@@ -238,7 +327,12 @@ public class VampireNpc extends VtmNpc {
     }
 
     public float sunMultiplier() {
-        return clanDefinition().map(Clan::sunDamageMultiplier).orElse(1F);
+        float multiplier = clanDefinition().map(Clan::sunDamageMultiplier).orElse(1F);
+        com.epi0.vtm.nemesis.NemesisRecord record = NemesisManager.recordOf(this);
+        if (record != null) {
+            multiplier *= record.has(com.epi0.vtm.nemesis.Trait.SUN_SCARRED) ? 2F : record.has(com.epi0.vtm.nemesis.Trait.FIRE_HARDENED) ? 0.5F : 1F;
+        }
+        return multiplier;
     }
 
     @Override
@@ -246,6 +340,10 @@ public class VampireNpc extends VtmNpc {
         if (!level().isClientSide && isAlive() && level().isDay() && isSunBurnTick()
                 && getItemBySlot(EquipmentSlot.HEAD).isEmpty() && !hasEffect(MobEffects.FIRE_RESISTANCE)) {
             igniteForSeconds(Math.max(1, Math.round(4F * sunMultiplier())));
+            com.epi0.vtm.nemesis.NemesisRecord named = NemesisManager.recordOf(this);
+            if (named != null && named.has(com.epi0.vtm.nemesis.Trait.SUN_SCARRED)) {
+                NemesisManager.revealNearby(this, named, com.epi0.vtm.nemesis.Trait.SUN_SCARRED);
+            }
         }
         super.aiStep();
     }
@@ -255,6 +353,10 @@ public class VampireNpc extends VtmNpc {
     @Override
     public Attitude attitudeTo(LivingEntity other) {
         if (other instanceof Player player) {
+            Attitude named = NemesisManager.attitude(this, player);
+            if (named != null) {
+                return named;
+            }
             int rapport = memory().rapport(player.getUUID());
             if (memory().isThreat(player.getUUID()) || rapport <= HOSTILE_RAPPORT) {
                 return Attitude.HOSTILE;
@@ -305,6 +407,9 @@ public class VampireNpc extends VtmNpc {
         setBlood(5F + random.nextInt(5));
         int roll = random.nextInt(10);
         setRank(roll < 6 ? 0 : roll < 9 ? 1 : 2);
+        if (spawnType == MobSpawnType.NATURAL) {
+            NemesisManager.tryAdopt(this);
+        }
         return data;
     }
 
@@ -314,6 +419,11 @@ public class VampireNpc extends VtmNpc {
         tag.putString("Clan", entityData.get(DATA_CLAN));
         tag.putFloat("Blood", blood);
         tag.putInt("Rank", rank);
+        tag.putLong("ExpireAt", expireAt);
+        tag.putString("Nemesis", entityData.get(DATA_NEMESIS));
+        if (boundOwner != null) {
+            tag.putUUID("BoundOwner", boundOwner);
+        }
     }
 
     @Override
@@ -321,6 +431,9 @@ public class VampireNpc extends VtmNpc {
         super.readAdditionalSaveData(tag);
         entityData.set(DATA_CLAN, tag.getString("Clan"));
         rank = tag.getInt("Rank");
+        expireAt = tag.getLong("ExpireAt");
+        entityData.set(DATA_NEMESIS, tag.getString("Nemesis"));
+        boundOwner = tag.hasUUID("BoundOwner") ? tag.getUUID("BoundOwner") : null;
         blood = tag.contains("Blood") ? tag.getFloat("Blood") : blood;
     }
 

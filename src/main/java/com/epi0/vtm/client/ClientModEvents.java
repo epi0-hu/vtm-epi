@@ -20,6 +20,9 @@ public final class ClientModEvents {
     public static final KeyMapping OPEN_MENU = new KeyMapping(
             "key.vtm.open_menu", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_V, "key.categories.vtm");
 
+    public static final KeyMapping OPEN_NEMESES = new KeyMapping(
+            "key.vtm.open_nemeses", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_N, "key.categories.vtm");
+
     public static final KeyMapping USE_POWER = new KeyMapping(
             "key.vtm.use_power", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_G, "key.categories.vtm");
     public static final KeyMapping NEXT_POWER = new KeyMapping(
@@ -30,6 +33,7 @@ public final class ClientModEvents {
     @SubscribeEvent
     public static void registerKeys(RegisterKeyMappingsEvent event) {
         event.register(OPEN_MENU);
+        event.register(OPEN_NEMESES);
         event.register(USE_POWER);
         event.register(NEXT_POWER);
         event.register(PREVIOUS_POWER);

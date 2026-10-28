@@ -1,169 +1,104 @@
 package com.epi0.vtm.dialogue;
 
-import com.epi0.vtm.npc.Attitude;
-import com.epi0.vtm.npc.CivilianNpc;
-import com.epi0.vtm.npc.NpcMemory;
+import com.epi0.vtm.nemesis.Feud;
+import com.epi0.vtm.nemesis.NemesisManager;
+import com.epi0.vtm.nemesis.NemesisRecord;
+import com.epi0.vtm.nemesis.Status;
 import com.epi0.vtm.npc.VampireNpc;
 import com.epi0.vtm.npc.VtmNpc;
-import com.epi0.vtm.sect.Membership;
-import com.epi0.vtm.sect.SectManager;
-import com.epi0.vtm.vampire.VampireData;
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 
 import java.util.Optional;
 
 /**
- * A set of requirements on the conversation, all of which must hold; an absent field is not checked.
- * Used to pick a dialogue tree, to choose between alternative lines, and to show or enable an option.
- *
- * @param npc         {@code civilian} or {@code vampire}
- * @param clan        the NPC's clan
- * @param faction     the NPC's faction
- * @param attitude    how the NPC currently regards the player
- * @param night       whether it must be night (true) or day (false)
- * @param playerVampire whether the player must be a vampire (true) or a mortal (false)
- * @param playerClan  the player's clan
- * @param minHumanity the player's humanity
- * @param discipline  the player's level in a discipline
- * @param minSeen     times the NPC has noticed the player
- * @param minRapport  lower bound on rapport
- * @param maxRapport  upper bound on rapport
- * @param flag        a flag that must be set between the two
- * @param noFlag      a flag that must not be set
- * @param threat      whether the NPC considers the player a threat (has been harmed or has witnessed feeding/frenzy)
+ * A set of requirements on the conversation, all of which must hold; an absent field is not checked. Used to pick a
+ * dialogue tree, to choose between alternative lines, and to show or enable an option.
+ * <p>
+ * Fields about the NPC, the player, their sects and their shared memory are described on {@link CoreCondition}; those
+ * about a named vampire (a "nemesis") are in {@code nemesis}.
  */
-public record Condition(Optional<String> npc, Optional<ResourceLocation> clan, Optional<ResourceLocation> faction,
-                        Optional<Attitude> attitude, Optional<Boolean> night, Optional<Boolean> playerVampire,
-                        Optional<ResourceLocation> playerClan, Optional<Integer> minHumanity,
-                        Optional<Requirement> discipline, Optional<Integer> minSeen, Optional<Integer> minRapport,
-                        Optional<Integer> maxRapport, Optional<String> flag, Optional<String> noFlag,
-                        Optional<Boolean> threat, Optional<SectReq> sect) {
-
-    public record Requirement(ResourceLocation id, int level) {
-        public static final Codec<Requirement> CODEC = RecordCodecBuilder.create(i -> i.group(
-                ResourceLocation.CODEC.fieldOf("id").forGetter(Requirement::id),
-                Codec.INT.optionalFieldOf("level", 1).forGetter(Requirement::level)
-        ).apply(i, Requirement::new));
-    }
+public record Condition(CoreCondition core, Optional<NemesisReq> nemesis) {
 
     /**
-     * Membership requirements, all measured against the NPC's own faction.
+     * Requirements on the NPC as a named vampire and on its history with this player.
      *
-     * @param member     the player belongs to the NPC's faction
-     * @param unaligned  the player belongs to no faction at all
-     * @param minRank    the player is a member of at least this rank
-     * @param outranks   the NPC holds a higher rank than the player (who must be a member)
-     * @param canPromote the player has the standing for the next rank
-     * @param minStanding standing with the NPC's faction
-     * @param maxStanding standing with the NPC's faction
+     * @param present    the NPC is (or is not) a named vampire
+     * @param yielding   the NPC kneels, beaten, awaiting the player's verdict
+     * @param bound      the NPC is bound to this player
+     * @param minLevel   level of the named vampire
+     * @param role       seat in its court: leader, lieutenant, enforcer or agent
+     * @param minEnmity  bounds on how much it hates this player
+     * @param maxEnmity  see {@code minEnmity}
+     * @param minRespect how much it respects this player
+     * @param minDefeats times the player has beaten it
+     * @param minLosses  times it has killed the player
+     * @param minSpared  times the player has shown it mercy
+     * @param scarred    whether it carries scars
      */
-    public record SectReq(Optional<Boolean> member, Optional<Boolean> unaligned, Optional<Integer> minRank,
-                          Optional<Boolean> outranks, Optional<Boolean> canPromote, Optional<Integer> minStanding,
-                          Optional<Integer> maxStanding) {
-        public static final Codec<SectReq> CODEC = RecordCodecBuilder.create(i -> i.group(
-                Codec.BOOL.optionalFieldOf("member").forGetter(SectReq::member),
-                Codec.BOOL.optionalFieldOf("unaligned").forGetter(SectReq::unaligned),
-                Codec.INT.optionalFieldOf("min_rank").forGetter(SectReq::minRank),
-                Codec.BOOL.optionalFieldOf("outranks").forGetter(SectReq::outranks),
-                Codec.BOOL.optionalFieldOf("can_promote").forGetter(SectReq::canPromote),
-                Codec.INT.optionalFieldOf("min_standing").forGetter(SectReq::minStanding),
-                Codec.INT.optionalFieldOf("max_standing").forGetter(SectReq::maxStanding)
-        ).apply(i, SectReq::new));
+    public record NemesisReq(Optional<Boolean> present, Optional<Boolean> yielding, Optional<Boolean> bound,
+                             Optional<Integer> minLevel, Optional<String> role, Optional<Integer> minEnmity,
+                             Optional<Integer> maxEnmity, Optional<Integer> minRespect, Optional<Integer> minDefeats,
+                             Optional<Integer> minLosses, Optional<Integer> minSpared, Optional<Boolean> scarred) {
+        public static final Codec<NemesisReq> CODEC = RecordCodecBuilder.create(i -> i.group(
+                Codec.BOOL.optionalFieldOf("present").forGetter(NemesisReq::present),
+                Codec.BOOL.optionalFieldOf("yielding").forGetter(NemesisReq::yielding),
+                Codec.BOOL.optionalFieldOf("bound").forGetter(NemesisReq::bound),
+                Codec.INT.optionalFieldOf("min_level").forGetter(NemesisReq::minLevel),
+                Codec.STRING.optionalFieldOf("role").forGetter(NemesisReq::role),
+                Codec.INT.optionalFieldOf("min_enmity").forGetter(NemesisReq::minEnmity),
+                Codec.INT.optionalFieldOf("max_enmity").forGetter(NemesisReq::maxEnmity),
+                Codec.INT.optionalFieldOf("min_respect").forGetter(NemesisReq::minRespect),
+                Codec.INT.optionalFieldOf("min_defeats").forGetter(NemesisReq::minDefeats),
+                Codec.INT.optionalFieldOf("min_losses").forGetter(NemesisReq::minLosses),
+                Codec.INT.optionalFieldOf("min_spared").forGetter(NemesisReq::minSpared),
+                Codec.BOOL.optionalFieldOf("scarred").forGetter(NemesisReq::scarred)
+        ).apply(i, NemesisReq::new));
 
         boolean test(ServerPlayer player, VtmNpc npc) {
-            Membership m = Membership.of(player);
-            boolean isMember = m.isMemberOf(npc.factionId());
-            return member.map(v -> v == isMember).orElse(true)
-                    && unaligned.map(v -> v == m.faction().isEmpty()).orElse(true)
-                    && minRank.map(v -> isMember && m.rank() >= v).orElse(true)
-                    && outranks.map(v -> v == (isMember && npc.rank() > m.rank())).orElse(true)
-                    && canPromote.map(v -> v == (isMember && SectManager.canPromote(m, npc.level().registryAccess()))).orElse(true)
-                    && minStanding.map(v -> m.standingWith(npc.factionId()) >= v).orElse(true)
-                    && maxStanding.map(v -> m.standingWith(npc.factionId()) <= v).orElse(true);
+            NemesisRecord r = npc instanceof VampireNpc v ? NemesisManager.recordOf(v) : null;
+            if (present.isPresent() && present.get() != (r != null)) {
+                return false;
+            }
+            if (yielding.isPresent() && yielding.get() != (npc instanceof VampireNpc v && v.isYielding())) {
+                return false;
+            }
+            if (bound.isPresent() && bound.get() != (npc instanceof VampireNpc v && player.getUUID().equals(v.boundOwner()))) {
+                return false;
+            }
+            if (r == null) {
+                return minLevel.isEmpty() && role.isEmpty() && minEnmity.isEmpty() && maxEnmity.isEmpty()
+                        && minRespect.isEmpty() && minDefeats.isEmpty() && minLosses.isEmpty() && minSpared.isEmpty()
+                        && scarred.isEmpty();
+            }
+            Feud feud = r.feudOrNull(player.getUUID());
+            int enmity = feud == null ? 0 : feud.enmity;
+            return minLevel.map(v -> r.level >= v).orElse(true)
+                    && role.map(v -> r.role.id().equals(v)).orElse(true)
+                    && minEnmity.map(v -> enmity >= v).orElse(true)
+                    && maxEnmity.map(v -> enmity <= v).orElse(true)
+                    && minRespect.map(v -> feud != null && feud.respect >= v).orElse(true)
+                    && minDefeats.map(v -> feud != null && feud.defeats >= v).orElse(true)
+                    && minLosses.map(v -> feud != null && feud.losses >= v).orElse(true)
+                    && minSpared.map(v -> feud != null && feud.spared >= v).orElse(true)
+                    && scarred.map(v -> v == !r.scars.isEmpty()).orElse(true);
         }
     }
 
-    private static final Codec<Attitude> ATTITUDE = Codec.STRING.xmap(
-            s -> Attitude.valueOf(s.toUpperCase(java.util.Locale.ROOT)), a -> a.name().toLowerCase(java.util.Locale.ROOT));
-
-    public static final Codec<Condition> CODEC = RecordCodecBuilder.create(i -> i.group(
-            Codec.STRING.optionalFieldOf("npc").forGetter(Condition::npc),
-            ResourceLocation.CODEC.optionalFieldOf("clan").forGetter(Condition::clan),
-            ResourceLocation.CODEC.optionalFieldOf("faction").forGetter(Condition::faction),
-            ATTITUDE.optionalFieldOf("attitude").forGetter(Condition::attitude),
-            Codec.BOOL.optionalFieldOf("night").forGetter(Condition::night),
-            Codec.BOOL.optionalFieldOf("player_vampire").forGetter(Condition::playerVampire),
-            ResourceLocation.CODEC.optionalFieldOf("player_clan").forGetter(Condition::playerClan),
-            Codec.INT.optionalFieldOf("min_humanity").forGetter(Condition::minHumanity),
-            Requirement.CODEC.optionalFieldOf("discipline").forGetter(Condition::discipline),
-            Codec.INT.optionalFieldOf("min_seen").forGetter(Condition::minSeen),
-            Codec.INT.optionalFieldOf("min_rapport").forGetter(Condition::minRapport),
-            Codec.INT.optionalFieldOf("max_rapport").forGetter(Condition::maxRapport),
-            Codec.STRING.optionalFieldOf("flag").forGetter(Condition::flag),
-            Codec.STRING.optionalFieldOf("no_flag").forGetter(Condition::noFlag),
-            Codec.BOOL.optionalFieldOf("threat").forGetter(Condition::threat),
-            SectReq.CODEC.optionalFieldOf("sect").forGetter(Condition::sect)
+    public static final MapCodec<Condition> MAP = RecordCodecBuilder.mapCodec(i -> i.group(
+            CoreCondition.MAP.forGetter(Condition::core),
+            NemesisReq.CODEC.optionalFieldOf("nemesis").forGetter(Condition::nemesis)
     ).apply(i, Condition::new));
 
-    public static final Condition ANY = new Condition(Optional.empty(), Optional.empty(), Optional.empty(),
-            Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
-            Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
+    public static final Codec<Condition> CODEC = MAP.codec();
 
-    public static final com.mojang.serialization.MapCodec<Condition> WHEN = CODEC.optionalFieldOf("when", ANY);
+    public static final Condition ANY = new Condition(CoreCondition.NONE, Optional.empty());
+
+    public static final MapCodec<Condition> WHEN = CODEC.optionalFieldOf("when", ANY);
 
     public boolean test(ServerPlayer player, VtmNpc npc) {
-        VampireData data = VampireData.of(player);
-        NpcMemory memory = npc.memory();
-        var uuid = player.getUUID();
-
-        if (this.npc.isPresent() && !this.npc.get().equals(npc instanceof CivilianNpc ? "civilian" : "vampire")) {
-            return false;
-        }
-        if (clan.isPresent() && !(npc instanceof VampireNpc v && clan.get().equals(v.clanId()))) {
-            return false;
-        }
-        if (faction.isPresent() && !faction.get().equals(npc.factionId())) {
-            return false;
-        }
-        if (attitude.isPresent() && attitude.get() != npc.attitudeTo(player)) {
-            return false;
-        }
-        if (night.isPresent() && night.get() != VtmNpc.isNight(npc.level())) {
-            return false;
-        }
-        if (playerVampire.isPresent() && playerVampire.get() != data.isVampire()) {
-            return false;
-        }
-        if (playerClan.isPresent() && !data.clan().equals(playerClan)) {
-            return false;
-        }
-        if (minHumanity.isPresent() && data.humanity() < minHumanity.get()) {
-            return false;
-        }
-        if (discipline.isPresent() && data.disciplineLevel(discipline.get().id()) < discipline.get().level()) {
-            return false;
-        }
-        if (minSeen.isPresent() && memory.about(uuid).map(NpcMemory.Encounter::seen).orElse(0) < minSeen.get()) {
-            return false;
-        }
-        if (minRapport.isPresent() && memory.rapport(uuid) < minRapport.get()) {
-            return false;
-        }
-        if (maxRapport.isPresent() && memory.rapport(uuid) > maxRapport.get()) {
-            return false;
-        }
-        if (flag.isPresent() && !memory.hasFlag(uuid, flag.get())) {
-            return false;
-        }
-        if (noFlag.isPresent() && memory.hasFlag(uuid, noFlag.get())) {
-            return false;
-        }
-        if (threat.isPresent() && threat.get() != memory.isThreat(uuid)) {
-            return false;
-        }
-        return sect.isEmpty() || sect.get().test(player, npc);
+        return core.test(player, npc) && nemesis.map(n -> n.test(player, npc)).orElse(true);
     }
 }

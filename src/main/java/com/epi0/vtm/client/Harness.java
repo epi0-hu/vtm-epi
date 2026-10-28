@@ -49,7 +49,9 @@ public final class Harness {
             return;
         }
         if (STEPS.isEmpty()) {
-            if (SCENARIO.equals("sect")) {
+            if (SCENARIO.equals("nemesis")) {
+                nemesisScript(mc);
+            } else if (SCENARIO.equals("sect")) {
                 sectScript(mc);
             } else if (SCENARIO.equals("dialogue")) {
                 dialogueScript(mc);
@@ -121,6 +123,98 @@ public final class Harness {
                 }
             }
             VtmMod.LOGGER.info("HARNESS option {} not in {}", textKey, session.node());
+        });
+    }
+
+    /** The Nemesis screen after a stretch of simulated history, a named vampire in the world, and a verdict conversation. */
+    private static void nemesisScript(Minecraft mc) {
+        mc.options.pauseOnLostFocus = false;
+        for (String c : new String[]{"gamerule sendCommandFeedback false", "time set 18000", "gamerule doDaylightCycle false",
+                "gamerule doMobSpawning false", "weather clear", "effect give @s minecraft:night_vision infinite 0 true",
+                "execute at @s run fill ~-12 ~-1 ~-12 ~12 ~-1 ~12 minecraft:smooth_stone",
+                "execute at @s run fill ~-12 ~ ~-12 ~12 ~8 ~12 minecraft:air", "tp @s ~ ~ ~ 0 8",
+                "vtm embrace @s toreador", "vtm set @s blood 14", "vtm discipline @s dominate 3", "vtm discipline @s presence 2"}) {
+            cmd(mc, 3, c);
+        }
+        server(mc, 10, p -> {
+            var server = p.getServer();
+            var random = server.overworld().random;
+            var data = com.epi0.vtm.nemesis.NemesisManager.data(server);
+            data.records().clear();
+            data.chronicle().clear();
+            for (int i = 0; i < 40; i++) {
+                com.epi0.vtm.nemesis.NemesisSimulator.step(server, random);
+                server.overworld().setDayTime(server.overworld().getDayTime() + 1200);
+            }
+            server.overworld().setDayTime(18000);
+            // The player has met a few of them, and been told of others.
+            var all = new java.util.ArrayList<>(data.all());
+            java.util.Collections.shuffle(all, new java.util.Random(4));
+            int n = 0;
+            for (var r : all) {
+                if (!r.alive()) {
+                    continue;
+                }
+                if (n < 4) {
+                    com.epi0.vtm.nemesis.Intel.knowFully(p, r);
+                } else if (n < 11) {
+                    com.epi0.vtm.nemesis.Intel.reveal(p, r, random);
+                    com.epi0.vtm.nemesis.Intel.reveal(p, r, random);
+                    com.epi0.vtm.nemesis.Intel.reveal(p, r, random);
+                } else if (n < 16) {
+                    com.epi0.vtm.nemesis.Intel.reveal(p, r, random);
+                }
+                n++;
+            }
+            for (var r : data.all()) {
+                if (r.role == com.epi0.vtm.nemesis.Role.LEADER) {
+                    com.epi0.vtm.nemesis.Intel.reveal(p, r, random);
+                }
+            }
+            // One of them holds a grudge and has scars; two are bound to the player.
+            var foes = data.all().stream().filter(r -> r.alive() && r.status != com.epi0.vtm.nemesis.Status.BOUND).limit(6).toList();
+            var foe = foes.get(0);
+            foe.scars.add(com.epi0.vtm.nemesis.Scar.BURNED);
+            foe.deaths = 1;
+            foe.feud(p.getUUID()).enmity = 72;
+            foe.feud(p.getUUID()).defeats = 1;
+            foe.feud(p.getUUID()).respect = 22;
+            com.epi0.vtm.nemesis.Intel.knowFully(p, foe);
+            for (int i = 1; i <= 2; i++) {
+                var thrall = foes.get(i);
+                var body = com.epi0.vtm.nemesis.NemesisManager.manifest(p.serverLevel(), thrall, p.position().add(-4 + i * 4, 0, 5));
+                body.yieldTo(p, p.level().getGameTime() + 9000);
+                com.epi0.vtm.nemesis.NemesisManager.bind(p, body, thrall);
+                body.setNoAi(true);
+            }
+            com.epi0.vtm.nemesis.NemesisActions.send(p);
+        });
+        then(15, () -> mc.setScreen(new NemesisScreen(NemesisScreen.Tab.DOSSIERS)));
+        shot(mc, "nem_dossiers");
+        then(5, () -> mc.setScreen(new NemesisScreen(NemesisScreen.Tab.COURTS)));
+        shot(mc, "nem_courts");
+        then(5, () -> mc.setScreen(new NemesisScreen(NemesisScreen.Tab.CHRONICLE)));
+        shot(mc, "nem_chronicle");
+        then(5, () -> mc.setScreen(new NemesisScreen(NemesisScreen.Tab.COTERIE)));
+        shot(mc, "nem_coterie");
+        then(5, () -> mc.setScreen(null));
+        server(mc, 5, p -> {
+            var data = com.epi0.vtm.nemesis.NemesisManager.data(p.getServer());
+            var r = data.all().stream().filter(x -> x.status == com.epi0.vtm.nemesis.Status.ACTIVE).findFirst().orElseThrow();
+            r.traits.remove(com.epi0.vtm.nemesis.Trait.PROUD);
+            r.kills = 1;
+            var body = com.epi0.vtm.nemesis.NemesisManager.manifest(p.serverLevel(), r, p.position().add(0, 0, 3));
+            body.setNoAi(true);
+            body.setYRot(180F);
+            body.yHeadRot = 180F;
+            body.yBodyRot = 180F;
+            body.yieldTo(p, p.level().getGameTime() + 9000);
+            com.epi0.vtm.dialogue.DialogueManager.open(p, body);
+        });
+        shotAfter(mc, 80, "nem_verdict");
+        then(10, () -> {
+            VtmMod.LOGGER.info("HARNESS DONE");
+            mc.stop();
         });
     }
 

@@ -87,6 +87,41 @@ are joinable, with three ranks each.
 - **GUI**: the Sect tab shows your sect, rank, progress to the next rank, its allies and enemies, and your standing
   with every sect. `/vtm sect join|leave|rank|standing` for ops; `/vtm info` shows the sect.
 
+## The Nemesis System
+The world holds a population of **named vampires**. Each is a persistent record (`nemesis/NemesisRecord`, stored with
+the overworld in `NemesisData`) that exists whether or not anyone is looking; a `VampireNpc` is only the body it
+happens to be standing in. Records are advanced by `NemesisSimulator` while unobserved, bound to a body by
+`NemesisManager` when they appear, and hooked into combat by `NemesisEvents`.
+
+- **Who they are**: a name, clan and faction; a level (1 to 20) that grows; **traits** (19 of them: strengths such as Iron Will,
+  Deflector, Undying; weaknesses such as Flammable, Brittle, Coward, Hunger-Bound; quirks such as Vengeful, Proud, Grateful)
+  with real effects in combat; **kin** (sire/childe, allies, rivals, mirrored on both sides); an **ambition**; and a seat
+  in their faction's **court** (leader, 2 lieutenants, 3 enforcers, the rest agents) that sets their sect rank.
+- **A living hierarchy**: each step of the simulation (every 1200 ticks, `nemesis.stepTicks`) vampires train and
+  level, wake from torpor, fill empty seats from below (a fallen leader starts a chain of promotions), found new
+  blood when the dead are not replaced, and fight each other: ambitious lieutenants try coups, enemy sects raid,
+  rivals draw each other first. Losers go into torpor or die; kin of the dead turn rival to the victor. All of it is
+  written to the **chronicle**. A vampire standing in the world is never simulated offscreen.
+- **Defeat is not death**: a lethal blow on a named vampire is survived while they have deaths left (1, +1 for rank, +1 for
+  Undying). They then either **kneel** (60%, unless Proud or Coward) or escape into torpor. Fire and sunlight are
+  final unless Fire-Hardened, as is a defeat past their limit. Every defeat leaves a **scar** (and an epithet),
+  and makes them resist what beat them (up to 30%); full resistance to fire or arrows grows them a new trait.
+- **The victor's verdict** (in conversation with a kneeling vampire): execute, spare (respect, and a debt), humiliate
+  (hatred), interrogate (learn about them and their kin), or **bind them with your blood**.
+- **Feuds**: each pair has enmity, respect, and a tally of defeats, kills and mercies. Beating, humiliating or
+  killing their kin raises enmity; at 40 a vampire starts to **hunt you**, after dark, and at 100 they **ambush** you
+  with a retinue, out of the dark and with a taunt chosen from your shared history. Outcasts of a sect have a
+  **blood hunt** declared on them by its whole court. Killing a player makes a vampire stronger and earns it a name.
+- **Knowledge**: you only know what you have learned: a name (heard), who they are (met), traits (seen in combat or
+  told), kin (studied). Intel comes from meeting, watching, conversations (civilians and vampires of any sect will tell you
+  things) and interrogation. The server sends the Nemesis screen only what you know.
+- **Coterie**: up to 3 bound vampires follow you after dark, fight for you, and can be sent on **errands** (spy on a
+  faction, hunt a known vampire, gather tribute) that the simulation resolves. Their loyalty drains unless you feed
+  them; a vampire who no longer feels the bond turns on you, with a grudge.
+- **GUI** (`N`): Dossiers, Courts (who sits where, as far as you know), Chronicle and Coterie.
+  `/vtm nemesis list|step|spawn|ambush|feud|reveal|destroy` for ops. Config: `nemesis.enabled`, `stepTicks`,
+  `populationPerFaction`, `ambushes`.
+
 ## Conversations
 Right-click an NPC to talk. Dialogue is data (`data/<ns>/vtm/dialogue/*.json`, reloadable with `/reload`) and the server
 runs everything: it picks the tree, evaluates conditions and dice, applies effects, and sends the client only the lines
@@ -119,7 +154,7 @@ dilation for Celerity) remain options if NPC navigation or Celerity ever need th
 
 ## Tests and dev tools
 - `./gradlew runGameTestServer`: GameTests in `gametest/VtmGameTests` (data, embrace/learn, passives, feeding, every
-  power, mob control, every bane, frenzy, forms, sense link, NPC behaviour, conversations).
-- `./gradlew runClient -Pharness=player|npc|dialogue|sect`: scripted walkthrough of the real client that writes screenshots to
-  `run/screenshots/` (player: GUI tabs, HUD, forms, sense link, frenzy; npc: a lineup in every animation; dialogue: a conversation with a civilian and a vampire; sect: the Sect tab and a member's conversation). Needs a
+  power, mob control, every bane, frenzy, forms, sense link, NPC behaviour, conversations, sects, the nemesis simulation and its combat rules).
+- `./gradlew runClient -Pharness=player|npc|dialogue|sect|nemesis`: scripted walkthrough of the real client that writes screenshots to
+  `run/screenshots/` (player: GUI tabs, HUD, forms, sense link, frenzy; npc: a lineup in every animation; dialogue: a conversation with a civilian and a vampire; sect: the Sect tab and a member's conversation; nemesis: the four Nemesis tabs and a verdict conversation). Needs a
   world at `run/saves/harness` and, on a headless machine, `xvfb-run`. Inert without the property.

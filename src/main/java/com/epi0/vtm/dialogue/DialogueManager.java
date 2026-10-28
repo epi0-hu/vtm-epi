@@ -48,16 +48,17 @@ public final class DialogueManager {
         if (!npc.isAlive()) {
             return Optional.of(Refusal.NOTHING_TO_SAY);
         }
-        if (npc.state() == VtmNpc.State.TALKING && !player.getUUID().equals(npc.talker())) {
+        if (npc.talker() != null && !player.getUUID().equals(npc.talker())) {
             return Optional.of(Refusal.BUSY);
         }
+        boolean yielding = npc instanceof VampireNpc v && v.isYielding();
         if (npc.isResting()) {
             return Optional.of(Refusal.ASLEEP);
         }
         if (npc.state() == VtmNpc.State.COWERING || npc.state() == VtmNpc.State.FEEDING) {
             return Optional.of(Refusal.FRIGHTENED);
         }
-        if (npc.attitudeTo(player) == Attitude.HOSTILE || npc.getTarget() == player) {
+        if (!yielding && (npc.attitudeTo(player) == Attitude.HOSTILE || npc.getTarget() == player)) {
             return Optional.of(Refusal.HOSTILE);
         }
         return Dialogues.select(player, npc).isEmpty() ? Optional.of(Refusal.NOTHING_TO_SAY) : Optional.empty();
@@ -248,7 +249,7 @@ public final class DialogueManager {
             }
             VtmNpc npc = session == null ? null : npcOf(player, session);
             if (npc == null || !player.isAlive() || player.distanceToSqr(npc) > MAX_DISTANCE * MAX_DISTANCE
-                    || npc.attitudeTo(player) == Attitude.HOSTILE) {
+                    || npc.attitudeTo(player) == Attitude.HOSTILE && !(npc instanceof VampireNpc v && v.isYielding())) {
                 end(player);
             }
         }

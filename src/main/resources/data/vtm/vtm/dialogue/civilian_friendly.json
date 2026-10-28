@@ -32,6 +32,18 @@
         },
         {
           "text": "dialogue.vtm.opt.strange",
+          "show": {
+            "no_flag": "told_strange"
+          },
+          "effects": [
+            {
+              "flag": "told_strange",
+              "nemesis": {
+                "intel": "any",
+                "count": 2
+              }
+            }
+          ],
           "next": "friend_strange"
         },
         {
@@ -65,6 +77,18 @@
         },
         {
           "text": "dialogue.vtm.opt.strange",
+          "show": {
+            "no_flag": "told_strange"
+          },
+          "effects": [
+            {
+              "flag": "told_strange",
+              "nemesis": {
+                "intel": "any",
+                "count": 2
+              }
+            }
+          ],
           "next": "friend_strange"
         },
         {

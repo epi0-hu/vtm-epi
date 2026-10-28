@@ -49,7 +49,7 @@ import java.util.UUID;
  */
 public abstract class VtmNpc extends PathfinderMob implements GeoEntity {
     public enum State {
-        NORMAL, SLEEPING, COWERING, FEEDING, TALKING;
+        NORMAL, SLEEPING, COWERING, FEEDING, TALKING, YIELDING;
 
         static State of(int ordinal) {
             return values()[Math.floorMod(ordinal, values().length)];
@@ -161,7 +161,9 @@ public abstract class VtmNpc extends PathfinderMob implements GeoEntity {
     public void beginTalk(Player player) {
         talker = player.getUUID();
         getNavigation().stop();
-        setState(State.TALKING);
+        if (state() != State.YIELDING) {
+            setState(State.TALKING);
+        }
         memory.remember(player.getUUID(), NpcMemory.Event.SEEN, level().getGameTime());
     }
 
@@ -333,7 +335,7 @@ public abstract class VtmNpc extends PathfinderMob implements GeoEntity {
     private PlayState movement(AnimationState<VtmNpc> animationState) {
         return switch (state()) {
             case SLEEPING -> animationState.setAndContinue(SLEEP);
-            case COWERING -> animationState.setAndContinue(COWER);
+            case COWERING, YIELDING -> animationState.setAndContinue(COWER);
             case TALKING -> animationState.setAndContinue(TALK);
             default -> {
                 if (animationState.isMoving()) {

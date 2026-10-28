@@ -34,6 +34,22 @@ public final class VtmConfig {
             .comment("Ticks between bites.")
             .defineInRange("feedingCooldownTicks", 30, 0, 1200);
 
+    public static final ModConfigSpec.BooleanValue NEMESIS_ENABLED = BUILDER
+            .comment("Whether the named vampires live their own lives, hunt grudges and ambush players.")
+            .define("nemesis.enabled", true);
+
+    public static final ModConfigSpec.IntValue NEMESIS_STEP_TICKS = BUILDER
+            .comment("Ticks between steps of the offscreen simulation (power struggles, raids, hunts).")
+            .defineInRange("nemesis.stepTicks", 1200, 20, 72000);
+
+    public static final ModConfigSpec.IntValue NEMESIS_POPULATION = BUILDER
+            .comment("Named vampires each joinable faction tries to keep alive.")
+            .defineInRange("nemesis.populationPerFaction", 7, 3, 30);
+
+    public static final ModConfigSpec.BooleanValue NEMESIS_AMBUSHES = BUILDER
+            .comment("Whether named vampires with a grudge (or a blood hunt on you) ambush you at night.")
+            .define("nemesis.ambushes", true);
+
     public static final ModConfigSpec SPEC = BUILDER.build();
 
     private VtmConfig() {}

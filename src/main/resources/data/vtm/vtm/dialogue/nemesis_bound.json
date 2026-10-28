@@ -1,0 +1,157 @@
+{
+  "when": {
+    "npc": "vampire",
+    "nemesis": {
+      "bound": true
+    }
+  },
+  "priority": 55,
+  "start": "hub",
+  "nodes": {
+    "hub": {
+      "text": "dialogue.vtm.nemesis_bound.hub",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.b_tithe",
+          "show": {
+            "player_vampire": true
+          },
+          "effects": [
+            {
+              "nemesis": {
+                "tithe": true
+              }
+            }
+          ],
+          "next": "tithed"
+        },
+        {
+          "text": "dialogue.vtm.opt.b_listen",
+          "show": {
+            "no_flag": "listened"
+          },
+          "effects": [
+            {
+              "flag": "listened",
+              "nemesis": {
+                "intel": "faction",
+                "count": 2
+              }
+            }
+          ],
+          "next": "listened"
+        },
+        {
+          "text": "dialogue.vtm.opt.b_release",
+          "next": "release_confirm"
+        },
+        {
+          "text": "dialogue.vtm.opt.b_dismiss"
+        }
+      ]
+    },
+    "tithed": {
+      "text": "dialogue.vtm.nemesis_bound.tithed",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.b_tithe",
+          "show": {
+            "player_vampire": true
+          },
+          "effects": [
+            {
+              "nemesis": {
+                "tithe": true
+              }
+            }
+          ],
+          "next": "tithed"
+        },
+        {
+          "text": "dialogue.vtm.opt.b_listen",
+          "show": {
+            "no_flag": "listened"
+          },
+          "effects": [
+            {
+              "flag": "listened",
+              "nemesis": {
+                "intel": "faction",
+                "count": 2
+              }
+            }
+          ],
+          "next": "listened"
+        },
+        {
+          "text": "dialogue.vtm.opt.b_release",
+          "next": "release_confirm"
+        },
+        {
+          "text": "dialogue.vtm.opt.b_dismiss"
+        }
+      ]
+    },
+    "listened": {
+      "text": "dialogue.vtm.nemesis_bound.listened",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.b_tithe",
+          "show": {
+            "player_vampire": true
+          },
+          "effects": [
+            {
+              "nemesis": {
+                "tithe": true
+              }
+            }
+          ],
+          "next": "tithed"
+        },
+        {
+          "text": "dialogue.vtm.opt.b_listen",
+          "show": {
+            "no_flag": "listened"
+          },
+          "effects": [
+            {
+              "flag": "listened",
+              "nemesis": {
+                "intel": "faction",
+                "count": 2
+              }
+            }
+          ],
+          "next": "listened"
+        },
+        {
+          "text": "dialogue.vtm.opt.b_release",
+          "next": "release_confirm"
+        },
+        {
+          "text": "dialogue.vtm.opt.b_dismiss"
+        }
+      ]
+    },
+    "release_confirm": {
+      "text": "dialogue.vtm.nemesis_bound.release",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.b_release_yes",
+          "effects": [
+            {
+              "nemesis": {
+                "release": true
+              }
+            }
+          ]
+        },
+        {
+          "text": "dialogue.vtm.opt.b_release_no",
+          "next": "hub"
+        }
+      ]
+    }
+  }
+}

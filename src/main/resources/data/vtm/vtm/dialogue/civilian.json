@@ -40,9 +40,15 @@
         {
           "text": "dialogue.vtm.opt.rumors",
           "next": "rumors",
+          "show": {
+            "no_flag": "asked_rumors"
+          },
           "effects": [
             {
-              "flag": "asked_rumors"
+              "flag": "asked_rumors",
+              "nemesis": {
+                "intel": "any"
+              }
             }
           ]
         },
@@ -133,9 +139,15 @@
         {
           "text": "dialogue.vtm.opt.rumors",
           "next": "rumors",
+          "show": {
+            "no_flag": "asked_rumors"
+          },
           "effects": [
             {
-              "flag": "asked_rumors"
+              "flag": "asked_rumors",
+              "nemesis": {
+                "intel": "any"
+              }
             }
           ]
         },

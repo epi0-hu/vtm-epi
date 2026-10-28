@@ -54,6 +54,16 @@ public final class VtmNetwork {
                         com.epi0.vtm.dialogue.DialogueManager.choose(player, payload.option());
                     }
                 });
+
+        registrar.playToClient(NemesisViewsPayload.TYPE, NemesisViewsPayload.STREAM_CODEC,
+                (payload, ctx) -> com.epi0.vtm.client.NemesisScreen.receive(payload.snapshot()));
+
+        registrar.playToServer(NemesisActionPayload.TYPE, NemesisActionPayload.STREAM_CODEC,
+                (payload, ctx) -> {
+                    if (ctx.player() instanceof ServerPlayer player) {
+                        com.epi0.vtm.nemesis.NemesisActions.handle(player, payload);
+                    }
+                });
     }
 
     /** Sends only to connections that negotiated our channels (not e.g. test fakes). */

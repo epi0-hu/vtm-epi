@@ -104,6 +104,7 @@ public final class VtmCommand {
                                                 .suggests(CLANS)
                                                 .executes(ctx -> spawnVampire(ctx,
                                                         vtmId(ResourceLocationArgument.getId(ctx, "clan"))))))))
+                .then(NemesisCommands.node())
                 .then(Commands.literal("sect")
                         .then(Commands.literal("join")
                                 .then(Commands.argument("targets", EntityArgument.players())

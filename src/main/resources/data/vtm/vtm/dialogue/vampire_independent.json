@@ -41,7 +41,10 @@
           "effects": [
             {
               "rapport": 1,
-              "flag": "asked_clan"
+              "flag": "asked_clan",
+              "nemesis": {
+                "intel": "self"
+              }
             }
           ],
           "next": "clan"
@@ -54,7 +57,10 @@
           "effects": [
             {
               "rapport": 1,
-              "flag": "asked_sect"
+              "flag": "asked_sect",
+              "nemesis": {
+                "intel": "faction"
+              }
             }
           ],
           "next": "sect"
@@ -62,12 +68,22 @@
         {
           "text": "dialogue.vtm.opt.ask_city",
           "show": {
-            "min_rapport": 1
+            "min_rapport": 1,
+            "no_flag": "asked_city"
           },
           "require": {
             "flag": "introduced"
           },
           "locked": "dialogue.vtm.locked.introduce",
+          "effects": [
+            {
+              "flag": "asked_city",
+              "nemesis": {
+                "intel": "enemies",
+                "count": 2
+              }
+            }
+          ],
           "next": "rumor"
         },
         {
@@ -117,7 +133,10 @@
           "effects": [
             {
               "rapport": 1,
-              "flag": "asked_clan"
+              "flag": "asked_clan",
+              "nemesis": {
+                "intel": "self"
+              }
             }
           ],
           "next": "clan"
@@ -130,7 +149,10 @@
           "effects": [
             {
               "rapport": 1,
-              "flag": "asked_sect"
+              "flag": "asked_sect",
+              "nemesis": {
+                "intel": "faction"
+              }
             }
           ],
           "next": "sect"
@@ -138,12 +160,22 @@
         {
           "text": "dialogue.vtm.opt.ask_city",
           "show": {
-            "min_rapport": 1
+            "min_rapport": 1,
+            "no_flag": "asked_city"
           },
           "require": {
             "flag": "introduced"
           },
           "locked": "dialogue.vtm.locked.introduce",
+          "effects": [
+            {
+              "flag": "asked_city",
+              "nemesis": {
+                "intel": "enemies",
+                "count": 2
+              }
+            }
+          ],
           "next": "rumor"
         },
         {

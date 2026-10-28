@@ -70,7 +70,7 @@ public final class VtmGameTests {
     }
 
     /** The stock mock player is hard-wired to creative mode, which skips most of what we want to test. */
-    private static ServerPlayer survivalPlayer(GameTestHelper helper) {
+    static ServerPlayer survivalPlayer(GameTestHelper helper) {
         var server = helper.getLevel().getServer();
         CommonListenerCookie cookie = CommonListenerCookie.createInitial(
                 new GameProfile(UUID.randomUUID(), "test-mock-player"), false);
@@ -90,7 +90,7 @@ public final class VtmGameTests {
         return player;
     }
 
-    private static ServerPlayer vampire(GameTestHelper helper, String clan) {
+    static ServerPlayer vampire(GameTestHelper helper, String clan) {
         ServerPlayer player = survivalPlayer(helper);
         player.moveTo(helper.absoluteVec(new Vec3(4.5, 2, 4.5)).x, helper.absoluteVec(new Vec3(4.5, 2, 4.5)).y,
                 helper.absoluteVec(new Vec3(4.5, 2, 4.5)).z, 0F, 0F);
@@ -400,7 +400,7 @@ public final class VtmGameTests {
 
     // ------------------------------------------------------------------ NPCs
 
-    private static Vec3 at(GameTestHelper helper, double x, double y, double z) {
+    static Vec3 at(GameTestHelper helper, double x, double y, double z) {
         return helper.absoluteVec(new Vec3(x, y, z));
     }
 
@@ -527,7 +527,7 @@ public final class VtmGameTests {
     }
 
     /** Index of the option with this text key in the player's current node. */
-    private static int option(ServerPlayer player, String textKey) {
+    static int option(ServerPlayer player, String textKey) {
         var session = DialogueManager.session(player);
         var options = Dialogues.byId(session.tree()).orElseThrow().tree().nodes().get(session.node()).options();
         for (int i = 0; i < options.size(); i++) {

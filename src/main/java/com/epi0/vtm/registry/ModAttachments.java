@@ -1,6 +1,7 @@
 package com.epi0.vtm.registry;
 
 import com.epi0.vtm.VtmMod;
+import com.epi0.vtm.nemesis.NemesisKnowledge;
 import com.epi0.vtm.sect.Membership;
 import com.epi0.vtm.vampire.VampireData;
 import net.neoforged.neoforge.attachment.AttachmentType;
@@ -24,6 +25,13 @@ public final class ModAttachments {
     public static final Supplier<AttachmentType<Membership>> MEMBERSHIP = ATTACHMENTS.register("membership",
             () -> AttachmentType.builder(() -> Membership.DEFAULT)
                     .serialize(Membership.CODEC)
+                    .copyOnDeath()
+                    .build());
+
+    /** What the player knows of the named vampires. Server-side only: the screen is sent views of it on request. */
+    public static final Supplier<AttachmentType<NemesisKnowledge>> NEMESIS_KNOWLEDGE = ATTACHMENTS.register("nemesis_knowledge",
+            () -> AttachmentType.builder(() -> NemesisKnowledge.EMPTY)
+                    .serialize(NemesisKnowledge.CODEC)
                     .copyOnDeath()
                     .build());
 

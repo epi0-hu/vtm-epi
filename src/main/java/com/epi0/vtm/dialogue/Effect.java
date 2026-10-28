@@ -28,7 +28,7 @@ import java.util.Optional;
  */
 public record Effect(Optional<Integer> rapport, Optional<String> flag, Optional<String> clearFlag, Optional<Float> blood,
                      Optional<Integer> experience, Optional<Integer> humanity, boolean alarm, Optional<Integer> standing,
-                     boolean join, boolean leave, boolean promote) {
+                     boolean join, boolean leave, boolean promote, Optional<NemesisEffect> nemesis) {
     public static final Codec<Effect> CODEC = RecordCodecBuilder.create(i -> i.group(
             Codec.INT.optionalFieldOf("rapport").forGetter(Effect::rapport),
             Codec.STRING.optionalFieldOf("flag").forGetter(Effect::flag),
@@ -40,7 +40,8 @@ public record Effect(Optional<Integer> rapport, Optional<String> flag, Optional<
             Codec.INT.optionalFieldOf("standing").forGetter(Effect::standing),
             Codec.BOOL.optionalFieldOf("join", false).forGetter(Effect::join),
             Codec.BOOL.optionalFieldOf("leave", false).forGetter(Effect::leave),
-            Codec.BOOL.optionalFieldOf("promote", false).forGetter(Effect::promote)
+            Codec.BOOL.optionalFieldOf("promote", false).forGetter(Effect::promote),
+            NemesisEffect.CODEC.optionalFieldOf("nemesis").forGetter(Effect::nemesis)
     ).apply(i, Effect::new));
 
     public void apply(ServerPlayer player, VtmNpc npc) {
@@ -53,6 +54,7 @@ public record Effect(Optional<Integer> rapport, Optional<String> flag, Optional<
             npc.witness(player, NpcMemory.Event.WITNESSED_FRENZY);
         }
 
+        nemesis.ifPresent(n -> n.apply(player, npc));
         VampireData data = VampireData.of(player);
         if (!data.isVampire()) {
             return;

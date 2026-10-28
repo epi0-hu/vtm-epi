@@ -1,0 +1,144 @@
+{
+  "when": {
+    "npc": "vampire",
+    "nemesis": {
+      "yielding": true
+    }
+  },
+  "priority": 60,
+  "start": "hub",
+  "nodes": {
+    "hub": {
+      "text": "dialogue.vtm.nemesis_yield.hub",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.n_execute",
+          "effects": [
+            {
+              "humanity": -1,
+              "nemesis": {
+                "execute": true
+              }
+            }
+          ]
+        },
+        {
+          "text": "dialogue.vtm.opt.n_spare",
+          "effects": [
+            {
+              "nemesis": {
+                "spare": true
+              }
+            }
+          ]
+        },
+        {
+          "text": "dialogue.vtm.opt.n_bind",
+          "show": {
+            "player_vampire": true
+          },
+          "check": {
+            "pool": 4,
+            "discipline": "vtm:dominate",
+            "difficulty": 3,
+            "fail": "refused"
+          },
+          "effects": [
+            {
+              "nemesis": {
+                "bind": true
+              }
+            }
+          ],
+          "fail_effects": [
+            {
+              "nemesis": {
+                "enmity": 15
+              }
+            }
+          ],
+          "next": "bound"
+        },
+        {
+          "text": "dialogue.vtm.opt.n_interrogate",
+          "effects": [
+            {
+              "nemesis": {
+                "interrogate": true
+              }
+            }
+          ]
+        },
+        {
+          "text": "dialogue.vtm.opt.n_humiliate",
+          "effects": [
+            {
+              "nemesis": {
+                "humiliate": true
+              }
+            }
+          ]
+        },
+        {
+          "text": "dialogue.vtm.opt.n_walk"
+        }
+      ]
+    },
+    "refused": {
+      "text": "dialogue.vtm.nemesis_yield.refused",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.n_back",
+          "next": "hub"
+        },
+        {
+          "text": "dialogue.vtm.opt.n_execute",
+          "effects": [
+            {
+              "humanity": -1,
+              "nemesis": {
+                "execute": true
+              }
+            }
+          ]
+        },
+        {
+          "text": "dialogue.vtm.opt.n_spare",
+          "effects": [
+            {
+              "nemesis": {
+                "spare": true
+              }
+            }
+          ]
+        },
+        {
+          "text": "dialogue.vtm.opt.n_interrogate",
+          "effects": [
+            {
+              "nemesis": {
+                "interrogate": true
+              }
+            }
+          ]
+        },
+        {
+          "text": "dialogue.vtm.opt.n_humiliate",
+          "effects": [
+            {
+              "nemesis": {
+                "humiliate": true
+              }
+            }
+          ]
+        },
+        {
+          "text": "dialogue.vtm.opt.n_walk"
+        }
+      ]
+    },
+    "bound": {
+      "text": "dialogue.vtm.nemesis_yield.bound"
+    }
+  }
+}

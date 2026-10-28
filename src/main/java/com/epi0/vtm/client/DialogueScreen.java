@@ -161,16 +161,24 @@ public class DialogueScreen extends Screen {
         graphics.renderOutline(px, py, PORTRAIT, PORTRAIT, BORDER);
         LivingEntity speaker = minecraft.level != null && minecraft.level.getEntity(node.npcId()) instanceof LivingEntity living ? living : null;
         if (speaker != null) {
+            // The name is already written beside the portrait; a name tag inside it would only be clutter.
+            boolean tag = speaker.isCustomNameVisible();
+            Component name = speaker.getCustomName();
+            speaker.setCustomNameVisible(false);
+            speaker.setCustomName(null);
             InventoryScreen.renderEntityInInventoryFollowsMouse(graphics, px, py, px + PORTRAIT, py + PORTRAIT,
                     26, 0.1F, mouseX, mouseY, speaker);
+            speaker.setCustomName(name);
+            speaker.setCustomNameVisible(tag);
         }
 
         int tx = px + PORTRAIT + PAD;
-        graphics.drawString(font, node.speaker(), tx, py, 0xFF000000 | node.color());
         Attitude attitude = Attitude.values()[Math.floorMod(node.attitude(), Attitude.values().length)];
         Component mood = Component.translatable("gui.vtm.dialogue.mood", Component.translatable("attitude.vtm." + attitude.name().toLowerCase(java.util.Locale.ROOT)),
                 (node.rapport() > 0 ? "+" : "") + node.rapport());
         graphics.drawString(font, mood, left + WIDTH - PAD - font.width(mood), py, MUTED);
+        int room = WIDTH - PORTRAIT - PAD * 3 - font.width(mood) - 6;
+        graphics.drawString(font, font.plainSubstrByWidth(node.speaker().getString(), room), tx, py, 0xFF000000 | node.color());
 
         int remaining = revealed;
         int y = py + 14;

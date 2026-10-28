@@ -21,6 +21,11 @@ public final class ClientGameEvents {
                 mc.setScreen(new VampireScreen());
             }
         }
+        while (ClientModEvents.OPEN_NEMESES.consumeClick()) {
+            if (mc.player != null && mc.screen == null) {
+                NemesisScreen.open();
+            }
+        }
         while (ClientModEvents.NEXT_POWER.consumeClick()) {
             PowerSelection.cycle(1);
         }
