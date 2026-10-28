@@ -434,6 +434,17 @@ public final class Harness {
                     }
                 }
             }
+            // Cities only stand in certain biomes; the harness world's are not among them, so repaint the site as plains.
+            for (int bx = x - 16; bx < x + size + 16; bx += 32) {
+                for (int bz = z - 16; bz < z + size + 16; bz += 32) {
+                    try {
+                        p.getServer().getCommands().getDispatcher().execute("fillbiome " + bx + " " + (ground - 8) + " " + bz + " " + (bx + 31) + " " + (ground + 7) + " " + (bz + 31) + " minecraft:plains",
+                                p.createCommandSourceStack().withPermission(4));
+                    } catch (com.mojang.brigadier.exceptions.CommandSyntaxException e) {
+                        VtmMod.LOGGER.info("HARNESS fillbiome refused: {}", e.getMessage());
+                    }
+                }
+            }
             try {
                 p.getServer().getCommands().getDispatcher().execute("place structure vtm:metropolis " + x + " " + ground + " " + z,
                         p.createCommandSourceStack().withPermission(4).withPosition(net.minecraft.world.phys.Vec3.atCenterOf(new net.minecraft.core.BlockPos(x, ground, z))));
