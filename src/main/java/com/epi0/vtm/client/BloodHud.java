@@ -1,5 +1,6 @@
 package com.epi0.vtm.client;
 
+import com.epi0.vtm.power.Power;
 import com.epi0.vtm.vampire.VampireData;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
@@ -33,6 +34,12 @@ final class BloodHud {
         Component label = Component.translatable("gui.vtm.blood_short",
                 String.format("%.1f", data.blood()), Math.round(data.maxBlood()));
         graphics.drawCenteredString(mc.font, label, x + WIDTH / 2, y + 1, 0xFFFFFF);
+
+        Power power = PowerSelection.current(data);
+        if (power != null) {
+            Component armed = Component.translatable("gui.vtm.armed", power.name(), power.bloodCost());
+            graphics.drawString(mc.font, armed, x, y - 11, 0xFFE6C070, true);
+        }
     }
 
     private BloodHud() {}

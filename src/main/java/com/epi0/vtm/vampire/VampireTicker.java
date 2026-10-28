@@ -70,7 +70,7 @@ public final class VampireTicker {
     }
 
     private static void applySunlight(ServerPlayer player, VampireData data) {
-        if (!VtmConfig.SUNLIGHT_ENABLED.get() || !isSunExposed(player)) {
+        if (!VtmConfig.SUNLIGHT_ENABLED.get() || player.hasEffect(MobEffects.FIRE_RESISTANCE) || !isSunExposed(player)) {
             return;
         }
         float multiplier = data.clan()

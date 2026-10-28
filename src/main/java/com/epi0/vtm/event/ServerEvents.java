@@ -1,6 +1,8 @@
 package com.epi0.vtm.event;
 
 import com.epi0.vtm.VtmMod;
+import com.epi0.vtm.power.PassiveEffects;
+import com.epi0.vtm.power.PowerManager;
 import com.epi0.vtm.registry.ModAttachments;
 import com.epi0.vtm.vampire.Feeding;
 import com.epi0.vtm.vampire.VampireData;
@@ -32,6 +34,7 @@ public final class ServerEvents {
     @SubscribeEvent
     public static void onLogout(PlayerEvent.PlayerLoggedOutEvent event) {
         Feeding.forget(event.getEntity().getUUID());
+        PowerManager.forget(event.getEntity().getUUID());
     }
 
     @SubscribeEvent
@@ -51,6 +54,7 @@ public final class ServerEvents {
             data = data.withBlood(VampireRules.RESPAWN_BLOOD);
             player.setData(ModAttachments.VAMPIRE, data);
         }
+        PassiveEffects.apply(player, data);
         VampireManager.sync(player);
     }
 

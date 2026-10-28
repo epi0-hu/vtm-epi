@@ -21,6 +21,15 @@ public final class ClientGameEvents {
                 mc.setScreen(new VampireScreen());
             }
         }
+        while (ClientModEvents.NEXT_POWER.consumeClick()) {
+            PowerSelection.cycle(1);
+        }
+        while (ClientModEvents.PREVIOUS_POWER.consumeClick()) {
+            PowerSelection.cycle(-1);
+        }
+        while (ClientModEvents.USE_POWER.consumeClick()) {
+            PowerSelection.useSelected();
+        }
     }
 
     /** Vampires don't eat, so the blood bar replaces the food bar. */

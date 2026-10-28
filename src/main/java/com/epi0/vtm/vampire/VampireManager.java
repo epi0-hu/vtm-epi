@@ -2,6 +2,7 @@ package com.epi0.vtm.vampire;
 
 import com.epi0.vtm.VtmConfig;
 import com.epi0.vtm.network.SyncVampirePayload;
+import com.epi0.vtm.power.PassiveEffects;
 import com.epi0.vtm.registry.ModAttachments;
 import com.epi0.vtm.registry.Discipline;
 import com.epi0.vtm.registry.VtmRegistries;
@@ -16,10 +17,15 @@ public final class VampireManager {
 
     public static void set(ServerPlayer player, VampireData data) {
         player.setData(ModAttachments.VAMPIRE, data);
+        PassiveEffects.apply(player, data);
         sync(player);
     }
 
     public static void sync(ServerPlayer player) {
+        // Connections that never negotiated our channel (e.g. test fakes) would throw on send.
+        if (player.connection == null || !player.connection.hasChannel(SyncVampirePayload.TYPE)) {
+            return;
+        }
         PacketDistributor.sendToPlayer(player, new SyncVampirePayload(VampireData.of(player)));
     }
 

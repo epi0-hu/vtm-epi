@@ -2,6 +2,7 @@ package com.epi0.vtm.network;
 
 import com.epi0.vtm.VtmMod;
 import com.epi0.vtm.registry.ModAttachments;
+import com.epi0.vtm.power.PowerManager;
 import com.epi0.vtm.vampire.VampireManager;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -25,6 +26,13 @@ public final class VtmNetwork {
                 (payload, ctx) -> {
                     if (ctx.player() instanceof ServerPlayer player) {
                         VampireManager.tryLearnDiscipline(player, payload.discipline());
+                    }
+                });
+
+        registrar.playToServer(ActivatePowerPayload.TYPE, ActivatePowerPayload.STREAM_CODEC,
+                (payload, ctx) -> {
+                    if (ctx.player() instanceof ServerPlayer player) {
+                        PowerManager.activate(player, payload.power());
                     }
                 });
     }

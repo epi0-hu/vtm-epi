@@ -1,6 +1,9 @@
 package com.epi0.vtm.client;
 
 import com.epi0.vtm.network.LearnDisciplinePayload;
+import com.epi0.vtm.power.Power;
+import com.epi0.vtm.power.PowerKind;
+import com.epi0.vtm.power.Powers;
 import com.epi0.vtm.registry.Clan;
 import com.epi0.vtm.registry.Discipline;
 import com.epi0.vtm.registry.VtmRegistries;
@@ -9,6 +12,7 @@ import com.epi0.vtm.vampire.VampireRules;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.network.chat.Component;
@@ -25,9 +29,9 @@ import java.util.List;
  * All values are read from the synced {@link VampireData}; the only thing the client sends is a learn request.
  */
 public class VampireScreen extends Screen {
-    private enum Tab { OVERVIEW, DISCIPLINES, CLAN }
+    private enum Tab { OVERVIEW, DISCIPLINES, POWERS, CLAN }
 
-    private static final int WIDTH = 256;
+    private static final int WIDTH = 280;
     private static final int HEIGHT = 214;
     private static final int ROW_HEIGHT = 14;
     private static final int VISIBLE_ROWS = 11;
@@ -65,10 +69,10 @@ public class VampireScreen extends Screen {
                         tab = t;
                         scroll = 0;
                         rebuildWidgets();
-                    }).bounds(x, top + 8, 76, 18).build();
+                    }).bounds(x, top + 8, 64, 18).build();
             button.active = t != tab;
             addRenderableWidget(button);
-            x += 80;
+            x += 67;
         }
 
         if (tab == Tab.DISCIPLINES && data().isVampire()) {
@@ -80,8 +84,28 @@ public class VampireScreen extends Screen {
                 Button plus = Button.builder(Component.literal("+"),
                                 b -> PacketDistributor.sendToServer(new LearnDisciplinePayload(id)))
                         .bounds(left + WIDTH - 30, y - 2, 18, 12).build();
+                int next = data().disciplineLevel(id) + 1;
+                if (next <= VampireRules.MAX_DISCIPLINE_LEVEL) {
+                    Powers.at(id, next).ifPresent(p -> plus.setTooltip(Tooltip.create(
+                            Component.translatable("gui.vtm.unlocks", p.name()).append("\n").append(p.description()))));
+                }
                 learnButtons.add(new LearnButton(plus, id));
                 addRenderableWidget(plus);
+            }
+        }
+        if (tab == Tab.POWERS && data().isVampire()) {
+            List<Power> powers = Powers.unlocked(data());
+            int end = Math.min(powers.size(), scroll + VISIBLE_ROWS);
+            for (int i = scroll; i < end; i++) {
+                Power power = powers.get(i);
+                int y = top + LIST_TOP + (i - scroll) * ROW_HEIGHT;
+                if (power.kind() == PowerKind.ACTIVE) {
+                    Button select = Button.builder(Component.translatable("gui.vtm.select"),
+                                    b -> PowerSelection.select(power))
+                            .bounds(left + WIDTH - 52, y - 2, 40, 12).build();
+                    select.setTooltip(Tooltip.create(power.description()));
+                    addRenderableWidget(select);
+                }
             }
         }
         refreshLearnButtons();
@@ -114,8 +138,9 @@ public class VampireScreen extends Screen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
-        if (tab == Tab.DISCIPLINES) {
-            int max = Math.max(0, disciplineIds().size() - VISIBLE_ROWS);
+        if (tab == Tab.DISCIPLINES || tab == Tab.POWERS) {
+            int rows = tab == Tab.DISCIPLINES ? disciplineIds().size() : Powers.unlocked(data()).size();
+            int max = Math.max(0, rows - VISIBLE_ROWS);
             int next = Math.max(0, Math.min(max, scroll - (int) Math.signum(scrollY)));
             if (next != scroll) {
                 scroll = next;
@@ -160,6 +185,7 @@ public class VampireScreen extends Screen {
         switch (tab) {
             case OVERVIEW -> renderOverview(g, data);
             case DISCIPLINES -> renderDisciplines(g, data);
+            case POWERS -> renderPowers(g, data);
             case CLAN -> renderClan(g, data);
         }
     }
@@ -236,6 +262,32 @@ public class VampireScreen extends Screen {
             g.drawString(font, Component.translatable("gui.vtm.scroll"), left + 12, top + HEIGHT - 14, MUTED, false);
         } else {
             g.drawString(font, Component.translatable("gui.vtm.legend_clan"), left + 12, top + HEIGHT - 14, MUTED, false);
+        }
+    }
+
+    private void renderPowers(GuiGraphics g, VampireData data) {
+        List<Power> powers = Powers.unlocked(data);
+        if (powers.isEmpty()) {
+            g.drawString(font, Component.translatable("gui.vtm.no_powers"), left + 12, top + 38, MUTED, false);
+            return;
+        }
+        Power armed = PowerSelection.current(data);
+        g.drawString(font, Component.translatable("gui.vtm.power_keys",
+                ClientModEvents.PREVIOUS_POWER.getTranslatedKeyMessage(),
+                ClientModEvents.NEXT_POWER.getTranslatedKeyMessage(),
+                ClientModEvents.USE_POWER.getTranslatedKeyMessage()), left + 12, top + 34, MUTED, false);
+        RegistryAccess access = access();
+        int end = Math.min(powers.size(), scroll + VISIBLE_ROWS);
+        for (int i = scroll; i < end; i++) {
+            Power power = powers.get(i);
+            int y = top + LIST_TOP + (i - scroll) * ROW_HEIGHT;
+            int color = 0xFF000000 | VtmRegistries.discipline(access, power.discipline()).map(Discipline::color).orElse(0xAAAAAA);
+            boolean isArmed = armed != null && armed.id().equals(power.id());
+            g.drawString(font, Component.literal(isArmed ? "\u25B6 " : "").append(power.name()), left + 12, y, color, false);
+            g.drawString(font, power.kind() == PowerKind.PASSIVE
+                            ? Component.translatable("gui.vtm.passive")
+                            : Component.translatable("gui.vtm.blood_cost", power.bloodCost()),
+                    left + 160, y, MUTED, false);
         }
     }
 
