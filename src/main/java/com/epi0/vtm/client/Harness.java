@@ -26,7 +26,8 @@ import java.util.List;
 public final class Harness {
     private record Step(int delay, Runnable action) {}
 
-    private static final boolean ENABLED = Boolean.getBoolean("vtm.harness");
+    private static final String SCENARIO = System.getProperty("vtm.harness", "");
+    private static final boolean ENABLED = !SCENARIO.isEmpty();
     private static final List<Step> STEPS = new ArrayList<>();
     private static int joined = -1;
     private static int clock;
@@ -48,7 +49,11 @@ public final class Harness {
             return;
         }
         if (STEPS.isEmpty()) {
-            script(mc);
+            if (SCENARIO.equals("npc")) {
+                npcScript(mc);
+            } else {
+                script(mc);
+            }
         }
         if (index >= STEPS.size()) {
             return;
@@ -82,6 +87,82 @@ public final class Harness {
             Window window = mc.getWindow();
             VtmMod.LOGGER.info("HARNESS screenshot {} ({}x{})", name, window.getWidth(), window.getHeight());
             Screenshot.grab(mc.gameDirectory, name + ".png", mc.getMainRenderTarget(), msg -> {});
+        });
+    }
+
+    private static final List<com.epi0.vtm.npc.VtmNpc> LINEUP = new ArrayList<>();
+
+    private static void shotAfter(Minecraft mc, int delay, String name) {
+        then(delay, () -> {
+            mc.gui.getChat().clearMessages(true);
+            VtmMod.LOGGER.info("HARNESS screenshot {}", name);
+            Screenshot.grab(mc.gameDirectory, name + ".png", mc.getMainRenderTarget(), msg -> {});
+        });
+    }
+
+    /** NPCs in a row, each frozen in a different animation. */
+    private static void npcScript(Minecraft mc) {
+        mc.options.pauseOnLostFocus = false;
+        for (String c : new String[]{"gamerule sendCommandFeedback false", "time set 18000", "gamerule doDaylightCycle false",
+                "gamerule doMobSpawning false", "weather clear", "effect give @s minecraft:night_vision infinite 0 true",
+                "execute at @s run fill ~-12 ~-1 ~-12 ~12 ~-1 ~12 minecraft:smooth_stone",
+                "execute at @s run fill ~-12 ~ ~-12 ~12 ~8 ~12 minecraft:air", "tp @s ~ ~ ~ 0 8",
+                "vtm embrace @s ventrue"}) {
+            cmd(mc, 3, c);
+        }
+        server(mc, 10, p -> {
+            String[] clans = {"brujah", "ventrue", "nosferatu", "toreador", "malkavian", "tremere"};
+            net.minecraft.world.phys.Vec3 base = p.position();
+            for (int i = 0; i < 9; i++) {
+                net.minecraft.world.phys.Vec3 pos = new net.minecraft.world.phys.Vec3(base.x - 6 + i * 1.5, base.y, base.z + 4);
+                com.epi0.vtm.npc.VtmNpc npc = i % 3 == 0
+                        ? com.epi0.vtm.npc.NpcSpawner.civilian(p.serverLevel(), pos)
+                        : com.epi0.vtm.npc.NpcSpawner.vampire(p.serverLevel(), pos,
+                                VtmMod.id(clans[(i - 1 - i / 3) % clans.length]));
+                npc.setNoAi(true);
+                npc.setYRot(180F);
+                npc.yBodyRot = 180F;
+                npc.yHeadRot = 180F;
+                npc.setRemainingFireTicks(0);
+                LINEUP.add(npc);
+            }
+        });
+        shotAfter(mc, 40, "npc_lineup_idle");
+
+        String[] poses = {"walk", "run", "attack", "bite", "talk"};
+        for (String pose : poses) {
+            server(mc, 5, p -> LINEUP.forEach(n -> n.triggerAnim(com.epi0.vtm.npc.VtmNpc.CONTROLLER_ACTION, pose)));
+            then(2, () -> {
+                var first = mc.level.getEntity(LINEUP.get(0).getId());
+                if (first instanceof software.bernie.geckolib.animatable.GeoEntity g) {
+                    var ctrl = g.getAnimatableInstanceCache().getManagerForId(first.getId())
+                            .getAnimationControllers().get(com.epi0.vtm.npc.VtmNpc.CONTROLLER_ACTION);
+                    VtmMod.LOGGER.info("HARNESS {} after server trigger: current={} state={}", pose,
+                            ctrl.getCurrentRawAnimation() == null ? null : ctrl.getCurrentRawAnimation().getAnimationStages().size(),
+                            ctrl.getAnimationState());
+                }
+            });
+            then(1, () -> {
+                // Also trigger on the client copy directly, to tell a networking problem from a controller problem.
+                for (com.epi0.vtm.npc.VtmNpc n : LINEUP) {
+                    var e = mc.level.getEntity(n.getId());
+                    if (e instanceof software.bernie.geckolib.animatable.GeoEntity g) {
+                        g.triggerAnim(com.epi0.vtm.npc.VtmNpc.CONTROLLER_ACTION, pose);
+                    }
+                }
+            });
+            shotAfter(mc, 4, "npc_pose_" + pose);
+        }
+        server(mc, 5, p -> {
+            for (int i = 0; i < LINEUP.size(); i++) {
+                LINEUP.get(i).stopTriggeredAnim(com.epi0.vtm.npc.VtmNpc.CONTROLLER_ACTION, "talk");
+                LINEUP.get(i).setState(i % 2 == 0 ? com.epi0.vtm.npc.VtmNpc.State.SLEEPING : com.epi0.vtm.npc.VtmNpc.State.COWERING);
+            }
+        });
+        shotAfter(mc, 25, "npc_states");
+        then(10, () -> {
+            VtmMod.LOGGER.info("HARNESS DONE");
+            mc.stop();
         });
     }
 

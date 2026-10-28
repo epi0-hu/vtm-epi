@@ -52,9 +52,32 @@ optional `bane` object (`registry/Bane`) combining any of: `frenzy_hunger`, `rag
 `doomed_minutes`, `grounded_blocks`, `dark_fatigue`; plus `sun_damage_multiplier` on the clan. Where tabletop banes have
 no Minecraft equivalent they are mapped to a close analogue (see each clan's `.bane` lang text).
 
+## NPCs
+Two kinds of NPC share one base (`npc/VtmNpc`): a name, a look, a faction, a home, a daily rhythm, a bounded
+memory of players (`NpcMemory`, the foundation for the Nemesis System), and GeckoLib animations.
+
+- **Civilians** (`CivilianNpc`): stroll near home by day, walk home and sleep at night, flee monsters, hungry vampires
+  and players they have seen feeding, frenzying or fighting.
+- **Vampires** (`VampireNpc`): a clan (with its passive disciplines and sun vulnerability), a sect from the clan's
+  `faction`, and a hunger. They sleep in shelter by day, burn in sunlight, prowl at night, and feed on isolated
+  civilians (Sabbat don't bother hiding). Sects that are enemies fight on sight; players who harm an NPC are remembered.
+- **Factions** are a datapack registry (`data/<ns>/vtm/faction/*.json`): Camarilla, Anarch Movement, Sabbat,
+  Independents, Hunters, Mortals, with `allies`, `enemies` and `hunts_mortals`.
+- **Animations** (GeckoLib): idle, walk, run, attack, bite, cower, sleep, talk, on one shared humanoid rig that uses the
+  vanilla player skin layout. `tools/gen_npc_assets.py` regenerates the rig, animations and skins (8 civilian looks,
+  2 per clan).
+- Spawn with the creative tab eggs or `/vtm npc spawn civilian|vampire [clan]`. Civilians spawn at world generation and
+  vampires rarely at night (biome modifiers in `data/vtm/neoforge/biome_modifier/`).
+
+## Libraries
+GeckoLib 4.9.3 (local jar in `libs/`) is the only runtime library. Citadel and Bookshelf were evaluated and left out:
+Citadel overlaps GeckoLib for animation and brings about 17 core mixins and a 3 MB jar; Bookshelf mostly duplicates
+NeoForge APIs and needs NeoForge 21.1.209+. Citadel's advanced pathfinding and its tick-rate modifier (real time
+dilation for Celerity) remain options if NPC navigation or Celerity ever need them.
+
 ## Tests and dev tools
 - `./gradlew runGameTestServer`: GameTests in `gametest/VtmGameTests` (data, embrace/learn, passives, feeding, every
   power, mob control, every bane, frenzy, forms, sense link).
-- `./gradlew runClient -Pharness`: scripted walkthrough of the real client that writes screenshots to
-  `run/screenshots/` (GUI tabs, HUD, forms, sense link, frenzy). Needs a world at `run/saves/harness` and, on a
-  headless machine, `xvfb-run`. Inert without the property.
+- `./gradlew runClient -Pharness=player|npc`: scripted walkthrough of the real client that writes screenshots to
+  `run/screenshots/` (player: GUI tabs, HUD, forms, sense link, frenzy; npc: a lineup in every animation). Needs a
+  world at `run/saves/harness` and, on a headless machine, `xvfb-run`. Inert without the property.

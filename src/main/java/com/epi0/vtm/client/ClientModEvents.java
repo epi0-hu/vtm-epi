@@ -1,11 +1,14 @@
 package com.epi0.vtm.client;
 
 import com.epi0.vtm.VtmMod;
+import com.epi0.vtm.client.npc.NpcRenderer;
+import com.epi0.vtm.registry.ModEntities;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.KeyMapping;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
@@ -30,6 +33,12 @@ public final class ClientModEvents {
         event.register(USE_POWER);
         event.register(NEXT_POWER);
         event.register(PREVIOUS_POWER);
+    }
+
+    @SubscribeEvent
+    public static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
+        event.registerEntityRenderer(ModEntities.CIVILIAN.get(), NpcRenderer::new);
+        event.registerEntityRenderer(ModEntities.VAMPIRE.get(), NpcRenderer::new);
     }
 
     @SubscribeEvent

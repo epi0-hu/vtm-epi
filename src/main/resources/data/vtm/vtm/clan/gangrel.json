@@ -8,5 +8,6 @@
   ],
   "bane": {
     "bestial_features": true
-  }
+  },
+  "faction": "vtm:independent"
 }

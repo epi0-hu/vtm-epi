@@ -1,0 +1,9 @@
+{
+  "color": "#6C3483",
+  "enemies": [
+    "vtm:camarilla",
+    "vtm:anarch",
+    "vtm:hunters"
+  ],
+  "hunts_mortals": true
+}

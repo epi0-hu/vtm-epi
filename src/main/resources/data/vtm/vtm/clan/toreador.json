@@ -8,5 +8,6 @@
   ],
   "bane": {
     "dark_fatigue": true
-  }
+  },
+  "faction": "vtm:camarilla"
 }

@@ -1,6 +1,8 @@
 package com.epi0.vtm.vampire;
 
 import com.epi0.vtm.VtmConfig;
+import com.epi0.vtm.npc.NpcMemory;
+import com.epi0.vtm.npc.NpcWitness;
 import com.epi0.vtm.registry.Bane;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
@@ -71,6 +73,7 @@ public final class Feeding {
             player.displayClientMessage(Component.translatable("message.vtm.stain"), true);
         }
         VampireManager.set(player, next);
+        NpcWitness.broadcast(player, NpcMemory.Event.WITNESSED_FEEDING, 16);
 
         if (victimVampire != null && bane.vampireBloodFrenzy()) {
             Frenzy.start(player, 12);

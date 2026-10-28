@@ -8,5 +8,6 @@
   ],
   "bane": {
     "rage_frenzy": true
-  }
+  },
+  "faction": "vtm:anarch"
 }

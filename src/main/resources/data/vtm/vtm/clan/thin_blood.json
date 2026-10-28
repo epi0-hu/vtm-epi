@@ -3,5 +3,6 @@
   "sun_damage_multiplier": 0.5,
   "disciplines": [
     "vtm:thin_blood_alchemy"
-  ]
+  ],
+  "faction": "vtm:anarch"
 }

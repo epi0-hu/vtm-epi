@@ -9,5 +9,6 @@
   "bane": {
     "frenzy_hunger": 4,
     "vampire_blood_frenzy": true
-  }
+  },
+  "faction": "vtm:independent"
 }

@@ -8,5 +8,6 @@
   ],
   "bane": {
     "doomed_minutes": 30
-  }
+  },
+  "faction": "vtm:independent"
 }

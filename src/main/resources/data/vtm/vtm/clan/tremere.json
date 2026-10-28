@@ -8,5 +8,6 @@
   ],
   "bane": {
     "blood_gain_multiplier": 0.75
-  }
+  },
+  "faction": "vtm:camarilla"
 }

@@ -5,5 +5,6 @@
     "vtm:obfuscate",
     "vtm:presence",
     "vtm:protean"
-  ]
+  ],
+  "faction": "vtm:independent"
 }

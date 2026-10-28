@@ -8,5 +8,6 @@
   ],
   "bane": {
     "prey_tag": "vtm:human_blood"
-  }
+  },
+  "faction": "vtm:camarilla"
 }

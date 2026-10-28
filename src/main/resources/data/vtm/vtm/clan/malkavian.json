@@ -8,5 +8,6 @@
   ],
   "bane": {
     "derangement": true
-  }
+  },
+  "faction": "vtm:camarilla"
 }

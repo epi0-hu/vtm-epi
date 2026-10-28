@@ -8,5 +8,6 @@
   ],
   "bane": {
     "grounded_blocks": 512
-  }
+  },
+  "faction": "vtm:sabbat"
 }

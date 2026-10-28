@@ -258,5 +258,17 @@
   "message.vtm.squalor": "This lightless place dulls you.",
   "message.vtm.form_lost": "You have no blood left to hold your shape.",
   "message.vtm.sense_linked": "You see through %s",
-  "gui.vtm.scroll_powers": "Scroll for more powers"
+  "gui.vtm.scroll_powers": "Scroll for more powers",
+  "faction.vtm.camarilla": "Camarilla",
+  "faction.vtm.anarch": "Anarch Movement",
+  "faction.vtm.sabbat": "Sabbat",
+  "faction.vtm.independent": "Independents",
+  "faction.vtm.hunters": "Hunters",
+  "faction.vtm.mortals": "Mortals",
+  "entity.vtm.civilian": "Civilian",
+  "entity.vtm.vampire": "Vampire",
+  "item.vtm.civilian_spawn_egg": "Civilian Spawn Egg",
+  "item.vtm.vampire_spawn_egg": "Vampire Spawn Egg",
+  "itemGroup.vtm": "Vampire: The Masquerade",
+  "commands.vtm.npc_spawned": "Spawned %s"
 }

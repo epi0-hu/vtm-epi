@@ -1,0 +1,9 @@
+{
+  "color": "#2E86C1",
+  "enemies": [
+    "vtm:camarilla",
+    "vtm:anarch",
+    "vtm:sabbat",
+    "vtm:independent"
+  ]
+}

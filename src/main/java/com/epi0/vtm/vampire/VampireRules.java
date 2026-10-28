@@ -2,6 +2,8 @@ package com.epi0.vtm.vampire;
 
 import com.epi0.vtm.registry.Clan;
 import com.epi0.vtm.registry.VtmRegistries;
+import com.epi0.vtm.npc.CivilianNpc;
+import com.epi0.vtm.npc.VampireNpc;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.EntityTypeTags;
@@ -63,8 +65,11 @@ public final class VampireRules {
 
     /** Blood points gained from a full feed on this creature. */
     public static float bloodValue(LivingEntity target) {
-        if (target instanceof Player || target instanceof AbstractVillager) {
+        if (target instanceof Player || target instanceof AbstractVillager || target instanceof CivilianNpc) {
             return 3F;
+        }
+        if (target instanceof VampireNpc) {
+            return 0F;
         }
         if (target.getType().is(EntityTypeTags.UNDEAD)) {
             return 0F;
@@ -77,7 +82,7 @@ public final class VampireRules {
 
     /** Killing these costs humanity (tracked as stains). */
     public static boolean isInnocent(LivingEntity target) {
-        return target instanceof Player || target instanceof AbstractVillager;
+        return target instanceof Player || target instanceof AbstractVillager || target instanceof CivilianNpc;
     }
 
     private VampireRules() {}

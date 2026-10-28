@@ -8,5 +8,6 @@
   ],
   "bane": {
     "bite_self_damage": 1.0
-  }
+  },
+  "faction": "vtm:independent"
 }

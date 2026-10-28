@@ -17,16 +17,22 @@ import java.util.Optional;
 @EventBusSubscriber(modid = VtmMod.MOD_ID, bus = EventBusSubscriber.Bus.MOD)
 public final class VtmRegistries {
     public static final ResourceKey<Registry<Clan>> CLAN = ResourceKey.createRegistryKey(VtmMod.id("clan"));
+    public static final ResourceKey<Registry<Faction>> FACTION = ResourceKey.createRegistryKey(VtmMod.id("faction"));
     public static final ResourceKey<Registry<Discipline>> DISCIPLINE = ResourceKey.createRegistryKey(VtmMod.id("discipline"));
 
     @SubscribeEvent
     public static void onNewRegistry(DataPackRegistryEvent.NewRegistry event) {
         event.dataPackRegistry(CLAN, Clan.CODEC, Clan.CODEC);
         event.dataPackRegistry(DISCIPLINE, Discipline.CODEC, Discipline.CODEC);
+        event.dataPackRegistry(FACTION, Faction.CODEC, Faction.CODEC);
     }
 
     public static Optional<Clan> clan(RegistryAccess access, ResourceLocation id) {
         return access.registry(CLAN).map(r -> r.get(id));
+    }
+
+    public static Optional<Faction> faction(RegistryAccess access, ResourceLocation id) {
+        return access.registry(FACTION).map(r -> r.get(id));
     }
 
     public static Optional<Discipline> discipline(RegistryAccess access, ResourceLocation id) {

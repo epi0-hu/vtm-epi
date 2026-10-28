@@ -1,6 +1,8 @@
 package com.epi0.vtm.vampire;
 
 import com.epi0.vtm.VtmMod;
+import com.epi0.vtm.npc.NpcMemory;
+import com.epi0.vtm.npc.NpcWitness;
 import com.epi0.vtm.power.SenseLink;
 import com.epi0.vtm.registry.Bane;
 import com.epi0.vtm.registry.ModEffects;
@@ -49,6 +51,7 @@ public final class Frenzy {
         SenseLink.end(player);
         player.addEffect(new MobEffectInstance(ModEffects.FRENZY, seconds * 20, 0, false, true, true));
         player.displayClientMessage(Component.translatable("message.vtm.frenzy"), true);
+        NpcWitness.broadcast(player, NpcMemory.Event.WITNESSED_FRENZY, 16);
         return true;
     }
 

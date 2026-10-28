@@ -8,7 +8,11 @@ import com.epi0.vtm.power.PowerKind;
 import com.epi0.vtm.power.PowerManager;
 import com.epi0.vtm.power.Powers;
 import com.epi0.vtm.power.SenseLink;
+import com.epi0.vtm.npc.Attitude;
+import com.epi0.vtm.npc.NpcMemory;
+import com.epi0.vtm.npc.NpcSpawner;
 import com.epi0.vtm.registry.ModEffects;
+import com.epi0.vtm.registry.ModEntities;
 import com.epi0.vtm.registry.VtmRegistries;
 import com.epi0.vtm.vampire.Banes;
 import com.epi0.vtm.vampire.Feeding;
@@ -79,8 +83,8 @@ public final class VtmGameTests {
 
     private static ServerPlayer vampire(GameTestHelper helper, String clan) {
         ServerPlayer player = survivalPlayer(helper);
-        player.moveTo(helper.absoluteVec(new Vec3(4.5, 1, 4.5)).x, helper.absoluteVec(new Vec3(4.5, 1, 4.5)).y,
-                helper.absoluteVec(new Vec3(4.5, 1, 4.5)).z, 0F, 0F);
+        player.moveTo(helper.absoluteVec(new Vec3(4.5, 2, 4.5)).x, helper.absoluteVec(new Vec3(4.5, 2, 4.5)).y,
+                helper.absoluteVec(new Vec3(4.5, 2, 4.5)).z, 0F, 0F);
         VampireManager.embrace(player, VtmMod.id(clan));
         return player;
     }
@@ -124,7 +128,7 @@ public final class VtmGameTests {
     @GameTest(template = "empty")
     public static void feeding(GameTestHelper helper) {
         ServerPlayer player = vampire(helper, "ventrue");
-        Villager villager = helper.spawn(EntityType.VILLAGER, new BlockPos(4, 1, 6));
+        Villager villager = helper.spawn(EntityType.VILLAGER, new BlockPos(4, 2, 6));
         float before = VampireData.of(player).blood();
         Feeding.bite(player, villager);
         helper.assertTrue(VampireData.of(player).blood() > before, "feeding should add blood");
@@ -142,11 +146,11 @@ public final class VtmGameTests {
         VampireManager.set(player, base.withBloodPotency(5));
 
         // Player faces +Z (yaw 0); put targets 3 blocks ahead.
-        Mob zombie = helper.spawn(EntityType.ZOMBIE, new BlockPos(4, 1, 7));
-        helper.spawn(EntityType.VILLAGER, new BlockPos(5, 1, 7));
-        helper.spawn(EntityType.WOLF, new BlockPos(3, 1, 7));
-        helper.spawn(EntityType.COW, new BlockPos(2, 1, 6));
-        helper.spawnItem(net.minecraft.world.item.Items.STICK, 7, 1, 7);
+        Mob zombie = helper.spawn(EntityType.ZOMBIE, new BlockPos(4, 2, 7));
+        helper.spawn(EntityType.VILLAGER, new BlockPos(5, 2, 7));
+        helper.spawn(EntityType.WOLF, new BlockPos(3, 2, 7));
+        helper.spawn(EntityType.COW, new BlockPos(2, 2, 6));
+        helper.spawnItem(net.minecraft.world.item.Items.STICK, 7, 2, 7);
 
         List<String> fizzled = new ArrayList<>();
         for (Power power : Powers.all()) {
@@ -187,7 +191,7 @@ public final class VtmGameTests {
         ServerPlayer player = vampire(helper, "caitiff");
         VampireManager.set(player, VampireData.of(player)
                 .withDiscipline(VtmMod.id("dominate"), 1).withDiscipline(VtmMod.id("obfuscate"), 3).withBlood(12F));
-        Mob zombie = helper.spawn(EntityType.ZOMBIE, new BlockPos(4, 1, 7));
+        Mob zombie = helper.spawn(EntityType.ZOMBIE, new BlockPos(4, 2, 7));
         zombie.setTarget(player);
         helper.assertTrue(zombie.getTarget() == player, "precondition: zombie hunts the player");
 
@@ -196,7 +200,7 @@ public final class VtmGameTests {
         zombie.setTarget(player); // vanilla retargeting
         helper.assertTrue(zombie.getTarget() == null, "calmed zombie must refuse to retarget the player");
 
-        Mob other = helper.spawn(EntityType.SKELETON, new BlockPos(2, 1, 2));
+        Mob other = helper.spawn(EntityType.SKELETON, new BlockPos(2, 2, 2));
         helper.assertTrue(PowerManager.activate(player, VtmMod.id("ghost_walk")), "ghost_walk should work");
         other.setTarget(player);
         helper.assertTrue(other.getTarget() == null, "hidden player must not be targetable");
@@ -215,8 +219,8 @@ public final class VtmGameTests {
     @GameTest(template = "empty")
     public static void ventrueCanOnlyFeedOnHumans(GameTestHelper helper) {
         ServerPlayer player = vampire(helper, "ventrue");
-        var cow = helper.spawn(EntityType.COW, new BlockPos(4, 1, 6));
-        var villager = helper.spawn(EntityType.VILLAGER, new BlockPos(5, 1, 6));
+        var cow = helper.spawn(EntityType.COW, new BlockPos(4, 2, 6));
+        var villager = helper.spawn(EntityType.VILLAGER, new BlockPos(5, 2, 6));
         helper.assertFalse(Feeding.bite(player, cow), "ventrue must refuse animal blood");
         helper.assertTrue(Feeding.bite(player, cow, true), "...unless the Beast is in control");
         Feeding.forget(player.getUUID());
@@ -227,19 +231,19 @@ public final class VtmGameTests {
     @GameTest(template = "empty")
     public static void feedingBanesChangeTheBite(GameTestHelper helper) {
         ServerPlayer hecata = vampire(helper, "hecata");
-        var cow = helper.spawn(EntityType.COW, new BlockPos(4, 1, 6));
+        var cow = helper.spawn(EntityType.COW, new BlockPos(4, 2, 6));
         Feeding.bite(hecata, cow);
         helper.assertTrue(cow.getHealth() <= 5.5F, "hecata bite should hurt a lot, cow has " + cow.getHealth());
 
         ServerPlayer tremere = vampire(helper, "tremere");
         float before = VampireData.of(tremere).blood();
-        Feeding.bite(tremere, helper.spawn(EntityType.COW, new BlockPos(2, 1, 6)));
+        Feeding.bite(tremere, helper.spawn(EntityType.COW, new BlockPos(2, 2, 6)));
         float gained = VampireData.of(tremere).blood() - before;
         helper.assertTrue(Math.abs(gained - 0.75F) < 0.01F, "tremere keeps 75% of the blood, gained " + gained);
 
         ServerPlayer salubri = vampire(helper, "salubri");
         float health = salubri.getHealth();
-        Feeding.bite(salubri, helper.spawn(EntityType.COW, new BlockPos(6, 1, 6)));
+        Feeding.bite(salubri, helper.spawn(EntityType.COW, new BlockPos(6, 2, 6)));
         helper.assertTrue(salubri.getHealth() < health, "salubri should be hurt by biting");
         helper.succeed();
     }
@@ -248,7 +252,7 @@ public final class VtmGameTests {
     public static void hungerTriggersFrenzyAndTheBeastFeeds(GameTestHelper helper) {
         ServerPlayer player = vampire(helper, "banu_haqim");
         VampireManager.set(player, VampireData.of(player).withBlood(1F));
-        var cow = helper.spawn(EntityType.COW, new BlockPos(4, 1, 5));
+        var cow = helper.spawn(EntityType.COW, new BlockPos(4, 2, 5));
         helper.assertTrue(VampireData.of(player).hunger() >= 4, "setup: should be hungry");
         for (int i = 0; i < 100 && !Frenzy.isFrenzied(player); i++) {
             Frenzy.tick(player, VampireData.of(player), Banes.of(player));
@@ -280,7 +284,7 @@ public final class VtmGameTests {
     @GameTest(template = "empty")
     public static void brujahRageFrenzy(GameTestHelper helper) {
         ServerPlayer player = vampire(helper, "brujah");
-        var zombie = helper.spawn(EntityType.ZOMBIE, new BlockPos(4, 1, 6));
+        var zombie = helper.spawn(EntityType.ZOMBIE, new BlockPos(4, 2, 6));
         player.setHealth(10F);
         float before = player.getHealth();
         player.hurt(player.damageSources().mobAttack(zombie), 2F);
@@ -307,7 +311,7 @@ public final class VtmGameTests {
 
         // Nosferatu unsettle villagers.
         ServerPlayer nosferatu = vampire(helper, "nosferatu");
-        var villager = helper.spawn(EntityType.VILLAGER, new BlockPos(4, 1, 6));
+        var villager = helper.spawn(EntityType.VILLAGER, new BlockPos(4, 2, 6));
         nosferatu.tickCount = 200;
         Banes.tick(nosferatu, VampireData.of(nosferatu), Banes.of(nosferatu));
         int rep = villager.getGossips().getReputation(nosferatu.getUUID(), t -> true);
@@ -364,7 +368,7 @@ public final class VtmGameTests {
     public static void shareTheSensesLinksAndReleases(GameTestHelper helper) {
         ServerPlayer player = vampire(helper, "caitiff");
         giveDisciplines(player, 5, "auspex");
-        helper.spawn(EntityType.ZOMBIE, new BlockPos(4, 1, 7));
+        helper.spawn(EntityType.ZOMBIE, new BlockPos(4, 2, 7));
 
         helper.assertTrue(PowerManager.activate(player, VtmMod.id("share_the_senses")), "link failed");
         helper.assertTrue(SenseLink.isLinked(player), "should be linked");
@@ -381,6 +385,120 @@ public final class VtmGameTests {
         PowerManager.activate(player, VtmMod.id("share_the_senses"));
         player.hurt(player.damageSources().generic(), 1F);
         helper.assertFalse(SenseLink.isLinked(player), "being hurt should break the link");
+        helper.succeed();
+    }
+
+
+    // ------------------------------------------------------------------ NPCs
+
+    private static Vec3 at(GameTestHelper helper, double x, double y, double z) {
+        return helper.absoluteVec(new Vec3(x, y, z));
+    }
+
+    @GameTest(template = "empty")
+    public static void npcsSpawnWithIdentity(GameTestHelper helper) {
+        var civilian = NpcSpawner.civilian(helper.getLevel(), at(helper, 2.5, 2, 2.5));
+        helper.assertTrue(civilian.hasCustomName(), "civilians get a name");
+        helper.assertTrue(civilian.home() != null, "civilians get a home");
+        helper.assertTrue(civilian.factionId().equals(VtmMod.id("mortals")), "civilians are mortals");
+
+        var brujah = NpcSpawner.vampire(helper.getLevel(), at(helper, 5.5, 2, 2.5), VtmMod.id("brujah"));
+        helper.assertTrue(brujah.clanId().equals(VtmMod.id("brujah")), "clan set");
+        helper.assertTrue(brujah.factionId().equals(VtmMod.id("anarch")), "brujah are anarchs");
+        helper.assertTrue(brujah.getAttributeValue(Attributes.ATTACK_DAMAGE) > 4.5, "brujah hit harder (potence)");
+
+        var ventrue = NpcSpawner.vampire(helper.getLevel(), at(helper, 6.5, 2, 2.5), VtmMod.id("ventrue"));
+        helper.assertTrue(ventrue.getAttributeValue(Attributes.ARMOR) > 0, "ventrue are tougher (fortitude)");
+
+        var random = NpcSpawner.vampire(helper.getLevel(), at(helper, 3.5, 2, 2.5), null);
+        helper.assertTrue(random.clanId() != null && random.factionId() != null, "random vampires get a clan and sect");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "vtm_night")
+    public static void attitudesFollowMemoryAndSect(GameTestHelper helper) {
+        ServerPlayer player = vampire(helper, "caitiff");
+        var civilian = NpcSpawner.civilian(helper.getLevel(), at(helper, 2.5, 2, 2.5));
+        helper.assertTrue(civilian.attitudeTo(player) == Attitude.NEUTRAL, "strangers are fine");
+        civilian.memory().remember(player.getUUID(), NpcMemory.Event.WITNESSED_FEEDING, 0L);
+        helper.assertTrue(civilian.attitudeTo(player) == Attitude.WARY, "witnessed feeding makes civilians wary");
+
+        helper.setDayTime(18000);
+        ServerPlayer mortal = survivalPlayer(helper);
+        var sabbat = NpcSpawner.vampire(helper.getLevel(), at(helper, 5.5, 2, 2.5), VtmMod.id("tzimisce"));
+        var camarilla = NpcSpawner.vampire(helper.getLevel(), at(helper, 6.5, 2, 2.5), VtmMod.id("ventrue"));
+        sabbat.setBlood(1F);
+        camarilla.setBlood(1F);
+        helper.assertTrue(sabbat.attitudeTo(mortal) == Attitude.HOSTILE, "hungry sabbat hunt mortals at night");
+        helper.assertTrue(camarilla.attitudeTo(mortal) == Attitude.NEUTRAL, "camarilla keep the masquerade");
+        helper.assertTrue(sabbat.attitudeTo(camarilla) == Attitude.HOSTILE, "sabbat and camarilla are enemies");
+        camarilla.memory().remember(mortal.getUUID(), NpcMemory.Event.HARMED, 0L);
+        helper.assertTrue(camarilla.attitudeTo(mortal) == Attitude.HOSTILE, "anyone who hurts a vampire is an enemy");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void npcsSurviveSaveAndLoad(GameTestHelper helper) {
+        var original = NpcSpawner.vampire(helper.getLevel(), at(helper, 3.5, 2, 3.5), VtmMod.id("toreador"));
+        original.setBlood(2.5F);
+        var id = UUID.randomUUID();
+        original.memory().remember(id, NpcMemory.Event.HARMED, 100L);
+        var tag = new net.minecraft.nbt.CompoundTag();
+        original.saveWithoutId(tag);
+
+        var copy = ModEntities.VAMPIRE.get().create(helper.getLevel());
+        copy.load(tag);
+        helper.assertTrue(copy.clanId().equals(VtmMod.id("toreador")), "clan persists");
+        helper.assertTrue(copy.factionId().equals(original.factionId()), "faction persists");
+        helper.assertTrue(copy.variant() == original.variant(), "look persists");
+        helper.assertTrue(copy.blood() == 2.5F, "hunger persists");
+        helper.assertTrue(copy.home() != null && copy.home().equals(original.home()), "home persists");
+        helper.assertTrue(copy.memory().about(id).map(e -> e.harmed() == 1).orElse(false), "memory persists");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "vtm_day", timeoutTicks = 200)
+    public static void vampiresBurnInDaylight(GameTestHelper helper) {
+        helper.setDayTime(6000);
+        var vampire = NpcSpawner.vampire(helper.getLevel(), at(helper, 4.5, 2, 4.5), VtmMod.id("brujah"));
+        vampire.setNoAi(true);
+        helper.succeedWhen(() -> helper.assertTrue(vampire.isOnFire(), "a vampire in open sunlight should burn"));
+    }
+
+    @GameTest(template = "empty", batch = "vtm_night", timeoutTicks = 600)
+    public static void civiliansGoHomeAndSleepAtNight(GameTestHelper helper) {
+        helper.setDayTime(18000);
+        var civilian = NpcSpawner.civilian(helper.getLevel(), at(helper, 1.5, 2, 1.5));
+        civilian.setHome(BlockPos.containing(at(helper, 6.5, 2, 6.5)));
+        helper.succeedWhen(() -> {
+            helper.assertTrue(civilian.isResting(), "the civilian should have gone to bed");
+            helper.assertTrue(civilian.distanceToSqr(at(helper, 6.5, 2, 6.5)) < 25, "...at home, not where they started");
+        });
+    }
+
+    @GameTest(template = "empty", batch = "vtm_night", timeoutTicks = 800)
+    public static void hungryVampiresFeedOnIsolatedCivilians(GameTestHelper helper) {
+        helper.setDayTime(18000);
+        var vampire = NpcSpawner.vampire(helper.getLevel(), at(helper, 1.5, 2, 1.5), VtmMod.id("ventrue"));
+        var victim = NpcSpawner.civilian(helper.getLevel(), at(helper, 7.5, 2, 7.5));
+        vampire.setBlood(1F);
+        helper.succeedWhen(() -> {
+            helper.assertTrue(vampire.blood() > 3F, "the vampire should have fed");
+            helper.assertTrue(victim.getHealth() < victim.getMaxHealth() || !victim.isAlive(), "...from the civilian");
+        });
+    }
+
+    @GameTest(template = "empty")
+    public static void civiliansRememberWhatPlayersDo(GameTestHelper helper) {
+        ServerPlayer player = vampire(helper, "gangrel");
+        var victim = NpcSpawner.civilian(helper.getLevel(), at(helper, 4.5, 2, 6.5));
+        var bystander = NpcSpawner.civilian(helper.getLevel(), at(helper, 2.5, 2, 6.5));
+        player.moveTo(at(helper, 4.5, 2, 4.5));
+        helper.assertTrue(Feeding.bite(player, victim), "bite failed");
+        helper.assertTrue(victim.memory().isThreat(player.getUUID()), "the victim remembers who hurt them");
+        helper.assertTrue(bystander.memory().about(player.getUUID()).map(e -> e.witnessedFeeding() > 0).orElse(false),
+                "the bystander saw it");
+        helper.assertTrue(bystander.attitudeTo(player) == Attitude.WARY, "...and is now afraid");
         helper.succeed();
     }
 

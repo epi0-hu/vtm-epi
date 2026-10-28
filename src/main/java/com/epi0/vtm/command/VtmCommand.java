@@ -1,6 +1,9 @@
 package com.epi0.vtm.command;
 
 import com.epi0.vtm.VtmMod;
+import com.epi0.vtm.npc.CivilianNpc;
+import com.epi0.vtm.npc.NpcSpawner;
+import com.epi0.vtm.npc.VampireNpc;
 import com.epi0.vtm.registry.VtmRegistries;
 import com.epi0.vtm.vampire.VampireData;
 import com.epi0.vtm.vampire.VampireManager;
@@ -86,6 +89,14 @@ public final class VtmCommand {
                                         .then(Commands.argument("level",
                                                         IntegerArgumentType.integer(0, VampireRules.MAX_DISCIPLINE_LEVEL))
                                                 .executes(VtmCommand::discipline)))))
+                .then(Commands.literal("npc")
+                        .then(Commands.literal("spawn")
+                                .then(Commands.literal("civilian").executes(VtmCommand::spawnCivilian))
+                                .then(Commands.literal("vampire").executes(ctx -> spawnVampire(ctx, null))
+                                        .then(Commands.argument("clan", ResourceLocationArgument.id())
+                                                .suggests(CLANS)
+                                                .executes(ctx -> spawnVampire(ctx,
+                                                        vtmId(ResourceLocationArgument.getId(ctx, "clan"))))))))
                 .then(Commands.literal("info")
                         .then(Commands.argument("target", EntityArgument.player())
                                 .executes(VtmCommand::info))));
@@ -127,6 +138,21 @@ public final class VtmCommand {
         ctx.getSource().sendSuccess(() -> Component.translatable(
                 "commands.vtm.embrace", targets.size(), VtmRegistries.name("clan", clan)), true);
         return targets.size();
+    }
+
+    private static int spawnCivilian(CommandContext<CommandSourceStack> ctx) {
+        CivilianNpc npc = NpcSpawner.civilian(ctx.getSource().getLevel(), ctx.getSource().getPosition());
+        ctx.getSource().sendSuccess(() -> Component.translatable("commands.vtm.npc_spawned", npc.getDisplayName()), true);
+        return 1;
+    }
+
+    private static int spawnVampire(CommandContext<CommandSourceStack> ctx, ResourceLocation clan) throws CommandSyntaxException {
+        if (clan != null && VtmRegistries.clan(ctx.getSource().registryAccess(), clan).isEmpty()) {
+            throw new SimpleCommandExceptionType(Component.translatable("commands.vtm.unknown_clan", clan.toString())).create();
+        }
+        VampireNpc npc = NpcSpawner.vampire(ctx.getSource().getLevel(), ctx.getSource().getPosition(), clan);
+        ctx.getSource().sendSuccess(() -> Component.translatable("commands.vtm.npc_spawned", npc.getDisplayName()), true);
+        return 1;
     }
 
     private static int mortal(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {

@@ -5,6 +5,7 @@ import com.epi0.vtm.vampire.VampireData;
 import net.minecraft.core.Holder;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
@@ -36,12 +37,18 @@ public final class PassiveEffects {
 
     public static void apply(ServerPlayer player, VampireData data) {
         boolean vampire = data.isVampire();
-        apply(player, CELERITY_BONUSES, vampire ? data.disciplineLevel(CELERITY) : 0);
-        apply(player, POTENCE_BONUSES, vampire ? data.disciplineLevel(POTENCE) : 0);
-        apply(player, FORTITUDE_BONUSES, vampire ? data.disciplineLevel(FORTITUDE) : 0);
+        applyLevels(player, vampire ? data.disciplineLevel(CELERITY) : 0,
+                vampire ? data.disciplineLevel(POTENCE) : 0, vampire ? data.disciplineLevel(FORTITUDE) : 0);
     }
 
-    private static void apply(ServerPlayer player, Bonus[] bonuses, int level) {
+    /** For any creature, e.g. NPC vampires: the same bonuses, straight from discipline levels. */
+    public static void applyLevels(LivingEntity entity, int celerity, int potence, int fortitude) {
+        apply(entity, CELERITY_BONUSES, celerity);
+        apply(entity, POTENCE_BONUSES, potence);
+        apply(entity, FORTITUDE_BONUSES, fortitude);
+    }
+
+    private static void apply(LivingEntity player, Bonus[] bonuses, int level) {
         for (Bonus bonus : bonuses) {
             AttributeInstance instance = player.getAttribute(bonus.attribute);
             if (instance == null) {
