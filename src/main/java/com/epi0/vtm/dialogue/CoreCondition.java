@@ -62,7 +62,7 @@ public record CoreCondition(Optional<String> npc, Optional<ResourceLocation> cla
      */
     public record SectReq(Optional<Boolean> member, Optional<Boolean> unaligned, Optional<Integer> minRank,
                           Optional<Boolean> outranks, Optional<Boolean> canPromote, Optional<Integer> minStanding,
-                          Optional<Integer> maxStanding) {
+                          Optional<Integer> maxStanding, Optional<Boolean> ruler) {
         public static final Codec<SectReq> CODEC = RecordCodecBuilder.create(i -> i.group(
                 Codec.BOOL.optionalFieldOf("member").forGetter(SectReq::member),
                 Codec.BOOL.optionalFieldOf("unaligned").forGetter(SectReq::unaligned),
@@ -70,8 +70,14 @@ public record CoreCondition(Optional<String> npc, Optional<ResourceLocation> cla
                 Codec.BOOL.optionalFieldOf("outranks").forGetter(SectReq::outranks),
                 Codec.BOOL.optionalFieldOf("can_promote").forGetter(SectReq::canPromote),
                 Codec.INT.optionalFieldOf("min_standing").forGetter(SectReq::minStanding),
-                Codec.INT.optionalFieldOf("max_standing").forGetter(SectReq::maxStanding)
+                Codec.INT.optionalFieldOf("max_standing").forGetter(SectReq::maxStanding),
+                Codec.BOOL.optionalFieldOf("ruler").forGetter(SectReq::ruler)
         ).apply(i, SectReq::new));
+
+        private static boolean isRuler(ServerPlayer player, VtmNpc npc) {
+            var reign = com.epi0.vtm.court.CourtData.get(player.getServer()).reignOf(player.getUUID());
+            return reign != null && reign.faction.equals(npc.factionId());
+        }
 
         boolean test(ServerPlayer player, VtmNpc npc) {
             Membership m = Membership.of(player);
@@ -82,7 +88,8 @@ public record CoreCondition(Optional<String> npc, Optional<ResourceLocation> cla
                     && outranks.map(v -> v == (isMember && npc.rank() > m.rank())).orElse(true)
                     && canPromote.map(v -> v == (isMember && SectManager.canPromote(m, npc.level().registryAccess()))).orElse(true)
                     && minStanding.map(v -> m.standingWith(npc.factionId()) >= v).orElse(true)
-                    && maxStanding.map(v -> m.standingWith(npc.factionId()) <= v).orElse(true);
+                    && maxStanding.map(v -> m.standingWith(npc.factionId()) <= v).orElse(true)
+                    && ruler.map(v -> v == isRuler(player, npc)).orElse(true);
         }
     }
 

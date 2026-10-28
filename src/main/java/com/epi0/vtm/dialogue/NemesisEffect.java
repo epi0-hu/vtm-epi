@@ -34,10 +34,11 @@ import java.util.Optional;
  * @param count       how many things {@code intel} reveals
  * @param enmity      change to the NPC's hatred of the player
  * @param respect     change to the NPC's respect for the player
+ * @param loyalty     change to the NPC's loyalty to the player's court
  */
 public record NemesisEffect(boolean execute, boolean spare, boolean humiliate, boolean interrogate, boolean bind,
                             boolean tithe, boolean release, Optional<String> intel, int count, Optional<Integer> enmity,
-                            Optional<Integer> respect) {
+                            Optional<Integer> respect, Optional<Integer> loyalty) {
     public static final Codec<NemesisEffect> CODEC = RecordCodecBuilder.create(i -> i.group(
             Codec.BOOL.optionalFieldOf("execute", false).forGetter(NemesisEffect::execute),
             Codec.BOOL.optionalFieldOf("spare", false).forGetter(NemesisEffect::spare),
@@ -49,7 +50,8 @@ public record NemesisEffect(boolean execute, boolean spare, boolean humiliate, b
             Codec.STRING.optionalFieldOf("intel").forGetter(NemesisEffect::intel),
             Codec.INT.optionalFieldOf("count", 1).forGetter(NemesisEffect::count),
             Codec.INT.optionalFieldOf("enmity").forGetter(NemesisEffect::enmity),
-            Codec.INT.optionalFieldOf("respect").forGetter(NemesisEffect::respect)
+            Codec.INT.optionalFieldOf("respect").forGetter(NemesisEffect::respect),
+            Codec.INT.optionalFieldOf("loyalty").forGetter(NemesisEffect::loyalty)
     ).apply(i, NemesisEffect::new));
 
     void apply(ServerPlayer player, VtmNpc npc) {
@@ -87,6 +89,7 @@ public record NemesisEffect(boolean execute, boolean spare, boolean humiliate, b
                 r.feud(player.getUUID()).respect += d;
                 r.feud(player.getUUID()).clamp();
             });
+            loyalty.ifPresent(d -> r.courtLoyalty = Math.max(0, Math.min(100, r.courtLoyalty + d)));
             if (tithe && NemesisManager.tithe(player, r)) {
                 player.displayClientMessage(Component.translatable("message.vtm.nemesis.tithed", r.name), true);
             }

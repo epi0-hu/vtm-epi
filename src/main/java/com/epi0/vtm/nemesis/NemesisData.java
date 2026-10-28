@@ -22,6 +22,8 @@ public final class NemesisData extends SavedData {
 
     private final Map<UUID, NemesisRecord> records = new LinkedHashMap<>();
     private final List<ChronicleEntry> chronicle = new ArrayList<>();
+    /** Factions whose throne must stay empty until the given game time, so a player has the chance to claim it. */
+    private final Map<net.minecraft.resources.ResourceLocation, Long> vacancies = new LinkedHashMap<>();
     /** Simulation steps run so far; lets slow processes (loyalty, enmity decay) tick every few steps. */
     public long steps;
 
@@ -60,6 +62,29 @@ public final class NemesisData extends SavedData {
         return records.values().stream().filter(r -> r.status == Status.BOUND && player.equals(r.boundTo)).toList();
     }
 
+    /** Forgets everything (tests and tools only). */
+    public void reset() {
+        records.clear();
+        chronicle.clear();
+        vacancies.clear();
+        steps = 0;
+        setDirty();
+    }
+
+    public void holdThrone(net.minecraft.resources.ResourceLocation faction, long until) {
+        vacancies.put(faction, until);
+        setDirty();
+    }
+
+    public boolean throneHeld(net.minecraft.resources.ResourceLocation faction, long now) {
+        return vacancies.getOrDefault(faction, 0L) > now;
+    }
+
+    public void releaseThrone(net.minecraft.resources.ResourceLocation faction) {
+        vacancies.remove(faction);
+        setDirty();
+    }
+
     public List<ChronicleEntry> chronicle() {
         return chronicle;
     }
@@ -85,6 +110,9 @@ public final class NemesisData extends SavedData {
         }
         tag.put("Chronicle", history);
         tag.putLong("Steps", steps);
+        CompoundTag vacancyTag = new CompoundTag();
+        vacancies.forEach((faction, until) -> vacancyTag.putLong(faction.toString(), until));
+        tag.put("Vacancies", vacancyTag);
         return tag;
     }
 
@@ -98,6 +126,10 @@ public final class NemesisData extends SavedData {
             ChronicleEntry.CODEC.parse(NbtOps.INSTANCE, t).result().ifPresent(data.chronicle::add);
         }
         data.steps = tag.getLong("Steps");
+        CompoundTag vacancyTag = tag.getCompound("Vacancies");
+        for (String key : vacancyTag.getAllKeys()) {
+            data.vacancies.put(net.minecraft.resources.ResourceLocation.parse(key), vacancyTag.getLong(key));
+        }
         return data;
     }
 }

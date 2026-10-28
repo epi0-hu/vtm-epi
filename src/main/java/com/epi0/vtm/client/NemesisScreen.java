@@ -31,7 +31,7 @@ import java.util.UUID;
  * has told it you know.
  */
 public class NemesisScreen extends Screen {
-    enum Tab { DOSSIERS, COURTS, DOMAINS, CHRONICLE, COTERIE }
+    enum Tab { DOSSIERS, COURTS, DOMAINS, COURT, CHRONICLE, COTERIE }
 
     private static final int PANEL = 0xE0181015;
     private static final int BORDER = 0xFF7A1F1F;
@@ -49,6 +49,7 @@ public class NemesisScreen extends Screen {
     private static int spyIndex;
     private static Tab lastTab = Tab.DOSSIERS;
     private static UUID selectedDomain;
+    private static int appointIndex;
 
     private Tab tab = lastTab;
     private int left;
@@ -90,10 +91,10 @@ public class NemesisScreen extends Screen {
                 lastTab = t;
                 scroll = 0;
                 rebuildWidgets();
-            }).bounds(x, top + 8, 68, 18).build();
+            }).bounds(x, top + 8, 65, 18).build();
             button.active = t != tab;
             addRenderableWidget(button);
-            x += 71;
+            x += 67;
         }
         coterieButtons.clear();
         if (tab == Tab.DOSSIERS) {
@@ -110,6 +111,9 @@ public class NemesisScreen extends Screen {
         }
         if (tab == Tab.COTERIE) {
             buildCoterie();
+        }
+        if (tab == Tab.COURT) {
+            buildCourt();
         }
     }
 
@@ -238,6 +242,7 @@ public class NemesisScreen extends Screen {
             case DOSSIERS -> renderDossiers(g);
             case COURTS -> renderCourts(g);
             case DOMAINS -> renderDomains(g);
+            case COURT -> renderCourt(g);
             case CHRONICLE -> renderChronicle(g);
             case COTERIE -> renderCoterie(g);
         }
@@ -473,6 +478,141 @@ public class NemesisScreen extends Screen {
         double dist = minecraft != null && minecraft.player != null
                 ? Math.sqrt(minecraft.player.distanceToSqr(d.place().pos().getX(), minecraft.player.getY(), d.place().pos().getZ())) : 0;
         g.drawString(font, Component.translatable("gui.vtm.nemesis.city_at", d.place().pos().getX(), d.place().pos().getZ(), (int) dist), x + 190, y, MUTED, false);
+    }
+
+    // ---------------------------------------------------------------- the court
+
+    private static void court(String action, UUID target) {
+        PacketDistributor.sendToServer(new NemesisActionPayload("court:" + action, target == null ? NemesisActionPayload.NONE : target,
+                Optional.empty(), Optional.empty()));
+    }
+
+    private Optional<com.epi0.vtm.court.CourtView> courtView() {
+        return snapshot.court();
+    }
+
+    private void buildCourt() {
+        var view = courtView().orElse(null);
+        if (view == null) {
+            return;
+        }
+        if (!view.ruling()) {
+            Button claim = Button.builder(Component.translatable("gui.vtm.court.claim"), b -> court("claim", null))
+                    .bounds(left + 12, top + 118, 150, 18).build();
+            claim.active = view.block().isEmpty();
+            addRenderableWidget(claim);
+            return;
+        }
+        Button collect = Button.builder(Component.translatable("gui.vtm.court.collect", view.tribute()), b -> court("collect", null))
+                .bounds(left + width_ - 118, top + 29, 110, 16).build();
+        collect.active = view.tribute() > 0;
+        addRenderableWidget(collect);
+
+        com.epi0.vtm.court.Decree[] decrees = com.epi0.vtm.court.Decree.values();
+        for (int i = 0; i < decrees.length; i++) {
+            com.epi0.vtm.court.Decree decree = decrees[i];
+            boolean on = view.decrees().contains(decree.id());
+            Button button = Button.builder(Component.literal(on ? "[x] " : "[ ] ").append(Component.translatable("decree.vtm." + decree.id())),
+                    b -> court("decree:" + decree.id(), null)).bounds(left + 8 + (i % 2) * 106, top + 58 + (i / 2) * 17, 104, 15).build();
+            button.setTooltip(Tooltip.create(Component.translatable("decree.vtm." + decree.id() + ".desc")));
+            button.active = on || view.decrees().size() < view.maxDecrees() && view.influence() >= com.epi0.vtm.court.Decree.COST
+                    && view.decrees().stream().noneMatch(d -> com.epi0.vtm.court.Decree.byId(d).map(decree::conflictsWith).orElse(false));
+            addRenderableWidget(button);
+        }
+        int y = top + 128;
+        var candidates = view.candidates();
+        if (!candidates.isEmpty()) {
+            appointIndex = Math.floorMod(appointIndex, candidates.size());
+        }
+        for (var seat : view.seats()) {
+            if (seat.id().isPresent()) {
+                Button dismiss = Button.builder(Component.translatable("gui.vtm.court.dismiss"), b -> court("dismiss", seat.id().get()))
+                        .bounds(left + 154, y - 3, 58, 14).build();
+                addRenderableWidget(dismiss);
+            } else if (!candidates.isEmpty()) {
+                var who = candidates.get(appointIndex);
+                Button appoint = Button.builder(Component.translatable("gui.vtm.court.appoint", font.plainSubstrByWidth(who.name(), 96)),
+                        b -> court("appoint:" + seat.role(), who.id())).bounds(left + 66, y - 3, 124, 14).build();
+                appoint.active = view.influence() >= com.epi0.vtm.court.Court.APPOINT_COST;
+                addRenderableWidget(appoint);
+                addRenderableWidget(Button.builder(Component.literal(">"), b -> {
+                    appointIndex++;
+                    rebuildWidgets();
+                }).bounds(left + 200, y - 2, 16, 14).build());
+            }
+            y += 16;
+        }
+        int py = top + 58;
+        for (var petition : view.petitions()) {
+            for (int choice = 0; choice < 2; choice++) {
+                int c = choice;
+                int cost = choice == 0 ? petition.costA() : petition.costB();
+                Component label = Component.translatable("petition.vtm." + petition.type() + (choice == 0 ? ".a" : ".b"));
+                if (cost > 0) {
+                    label = Component.empty().append(label).append(Component.literal(" (" + cost + ")"));
+                }
+                Button answer = Button.builder(label, b -> court("petition:" + c, petition.id()))
+                        .bounds(left + 226 + choice * 94, py + 29, 90, 14).build();
+                answer.active = view.influence() >= cost;
+                addRenderableWidget(answer);
+            }
+            py += 46;
+        }
+    }
+
+    private void renderCourt(GuiGraphics g) {
+        var view = courtView().orElse(null);
+        int x = left + 10;
+        int y = top + 34;
+        if (view == null) {
+            return;
+        }
+        if (!view.ruling()) {
+            g.drawString(font, view.faction().map(f -> (Component) Component.translatable("gui.vtm.court.sect", factionName(f)))
+                    .orElse(Component.translatable("gui.vtm.court.no_sect")), x, y, MUTED, false);
+            y = paragraph(g, Component.translatable("gui.vtm.court.intro"), x, y + 12, width_ - 24, TEXT);
+            Component status = view.block().map(b -> (Component) Component.translatable("gui.vtm.court.block." + b))
+                    .orElse(Component.translatable("gui.vtm.court.can_claim"));
+            paragraph(g, status, x, y + 8, width_ - 24, view.block().isPresent() ? WARN : GOOD);
+            return;
+        }
+        int headerY = top + 31;
+        view.faction().ifPresent(f -> g.drawString(font, Component.translatable("gui.vtm.court.of", factionName(f)), x, headerY, factionColor(f), false));
+        g.drawString(font, Component.translatable("gui.vtm.court.influence", view.influence()), left + 160, headerY, TEXT, false);
+        g.drawString(font, Component.translatable("gui.vtm.court.decrees"), x, top + 47, MUTED, false);
+        int sy = top + 128;
+        g.drawString(font, Component.translatable("gui.vtm.court.seats"), x, top + 112, MUTED, false);
+        var faction = view.faction().orElse(null);
+        for (var seat : view.seats()) {
+            g.drawString(font, faction == null ? Component.literal(seat.role()) : roleTitle(faction, seat.role()), x, sy, MUTED, false);
+            if (seat.id().isPresent()) {
+                g.drawString(font, font.plainSubstrByWidth(seat.name(), 86), x + 58, sy - 2, seat.rebel() ? BLOOD : TEXT, false);
+                int bx = x + 58;
+                g.fill(bx, sy + 8, bx + 50, sy + 10, DIM);
+                g.fill(bx, sy + 8, bx + seat.loyalty() / 2, sy + 10, seat.loyalty() < 25 ? BLOOD : seat.loyalty() < 50 ? WARN : GOOD);
+            }
+            sy += 16;
+        }
+        // Petitions
+        int px = left + 224;
+        g.drawString(font, Component.translatable("gui.vtm.court.petitions"), px, top + 47, MUTED, false);
+        if (view.petitions().isEmpty()) {
+            paragraph(g, Component.translatable("gui.vtm.court.no_petitions"), px, top + 60, width_ - 232, DIM + 0x505050);
+        }
+        int py = top + 58;
+        for (var petition : view.petitions()) {
+            Object[] args = petition.args().stream().map(a -> a.startsWith("faction.") ? (Object) Component.translatable(a) : a).toArray();
+            int line = py;
+            for (FormattedCharSequence part : font.split(Component.translatable("petition.vtm." + petition.type(), args), width_ - 234)) {
+                if (line < py + 28) {
+                    g.drawString(font, part, px + 2, line, TEXT, false);
+                }
+                line += 9;
+            }
+            py += 46;
+        }
+        g.drawString(font, Component.translatable("gui.vtm.court.holds", view.cities().isEmpty() ? "-" : String.join(", ", view.cities())),
+                x, top + height_ - 14, MUTED, false);
     }
 
     private void renderChronicle(GuiGraphics g) {

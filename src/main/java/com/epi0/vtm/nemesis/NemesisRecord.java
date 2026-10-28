@@ -62,6 +62,11 @@ public final class NemesisRecord {
     public Mission mission;
     /** Tribute earned on a mission, waiting for the owner to come online. */
     public int pendingTribute;
+    /** How loyal they are to a player-run court they sit in (0 to 100). */
+    public int courtLoyalty = 50;
+    /** When they rose against the ruler (0 if they have not), and how many times the ruler had beaten or spared them then. */
+    public long revoltSince;
+    public int revoltBase;
     /** The entity currently standing in for this vampire (kept to stop duplicates). */
     @Nullable
     public UUID entity;
@@ -170,6 +175,9 @@ public final class NemesisRecord {
         if (mission != null) {
             tag.put("Mission", mission.save());
         }
+        tag.putInt("CourtLoyalty", courtLoyalty);
+        tag.putLong("RevoltSince", revoltSince);
+        tag.putInt("RevoltBase", revoltBase);
         if (entity != null) {
             tag.putUUID("Entity", entity);
         }
@@ -224,6 +232,9 @@ public final class NemesisRecord {
         r.loyalty = tag.getInt("Loyalty");
         r.pendingTribute = tag.getInt("Tribute");
         r.mission = tag.contains("Mission") ? Mission.load(tag.getCompound("Mission")) : null;
+        r.courtLoyalty = tag.contains("CourtLoyalty") ? tag.getInt("CourtLoyalty") : 50;
+        r.revoltSince = tag.getLong("RevoltSince");
+        r.revoltBase = tag.getInt("RevoltBase");
         r.entity = tag.hasUUID("Entity") ? tag.getUUID("Entity") : null;
         return r;
     }

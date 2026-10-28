@@ -368,7 +368,7 @@ public class VampireNpc extends VtmNpc {
         }
         com.epi0.vtm.city.City city = com.epi0.vtm.city.CityData.get(server).at(level(), blockPosition());
         return city != null && city.owner.equals(factionId()) && city.heatOf(player.getUUID()) >= CivilianNpc.HOT
-                && com.epi0.vtm.city.Territory.enforcesMasquerade(level().registryAccess(), city);
+                && com.epi0.vtm.city.Territory.enforcesMasquerade(server, level().registryAccess(), city);
     }
 
     // ---------------------------------------------------------------- attitudes

@@ -87,6 +87,38 @@ are joinable, with three ranks each.
 - **GUI**: the Sect tab shows your sect, rank, progress to the next rank, its allies and enemies, and your standing
   with every sect. `/vtm sect join|leave|rank|standing` for ops; `/vtm info` shows the sect.
 
+## The world: lairs, cities, territory and courts
+**Lairs** (`world/LairPiece`): three procedural structures, a Sabbat *crypt*, a Camarilla *manor haven* and an Anarch
+*warehouse squat*, each with weathering, loot (`data/vtm/loot_table/chests/lair.json`) and a hidden **coffin**
+that belongs to the lair's faction. A lair's coffin claims a named vampire when its chunk is live (a tenant of that
+faction without a lair, or a newcomer if the faction has room); that vampire is then home there, asleep by day, whenever a
+player comes near. The **Coffin** block lets a vampire sleep through the day and sets their haven. Structure
+sets, biomes and loot are datapack data.
+
+**Cities** (`world/CityPiece`, `city/`): a 64x64 flat plateau of nine plots: a plaza with a fountain and the **Domain
+Stone**, four houses, a shop, a nightclub, a watch station and the ruler's haven, joined by lamplit streets. The Domain
+Stone registers the city (beds, workplaces, places) once live. People move in: residents take the beds, and the shop,
+bar and watch are staffed (shopkeeper, bartender, two armed watchmen). Civilians keep an hourly round (work, the square, the
+club for night owls, bed). Trouble raises per-player **heat** (assault +8, feeding in front of citizens +12, frenzy +18,
+murder +30; it fades over time): at 30 the watch is suspicious, at 40 ordinary people take fright, at 60 the watch
+attacks on sight, at 90 reinforcements come. Shopkeepers, bartenders and watchmen have their own conversations.
+
+**Territory** (`city/Territory`): every city has a ruling faction, a strength (how firmly it is held) and a **warden**, a
+named vampire who keeps the haven. After dark the ruler's vampires patrol. A ruler that keeps the Masquerade makes anyone
+who feeds in front of the city's people lose standing with it, and its vampires hunt a player the whole city is after.
+In the simulation, factions at war take cities from their enemies by weighing a war band against the warden, the city's
+strength and the ruler's best fighters; killing or binding a warden shakes a city. Players discover cities by entering them
+or by asking around; the Domains tab maps the ones they know.
+
+**Player-run courts** (`court/`): a vampire who is in a sect at its second rank or above, with 40 standing, may claim a
+throne that stands empty. Destroying or binding a sect's leader leaves it empty for two nights, during which the
+simulation will not fill it. A ruler: appoints and dismisses the court (lieutenants and enforcers) for influence; issues up to
+two **decrees** (Masquerade, Open hunting, Tithes, War footing, Peace, Patronage) that change how the faction and its cities
+behave; earns **influence** and experience **tribute** from the cities the faction holds; answers **petitions** (a quarrel,
+an envoy offering a truce, a refugee, a city under pressure, a tribunal); and must keep the court loyal. A seat-holder with
+low loyalty and high ambition may **rebel**, hunting the ruler; beat or spare them to end it, or lose the throne after two
+nights. Courts are frozen while their ruler is away. `/vtm court claim|crown|abdicate|influence|petition`.
+
 ## The Nemesis System
 The world holds a population of **named vampires**. Each is a persistent record (`nemesis/NemesisRecord`, stored with
 the overworld in `NemesisData`) that exists whether or not anyone is looking; a `VampireNpc` is only the body it
@@ -118,7 +150,7 @@ happens to be standing in. Records are advanced by `NemesisSimulator` while unob
 - **Coterie**: up to 3 bound vampires follow you after dark, fight for you, and can be sent on **errands** (spy on a
   faction, hunt a known vampire, gather tribute) that the simulation resolves. Their loyalty drains unless you feed
   them; a vampire who no longer feels the bond turns on you, with a grudge.
-- **GUI** (`N`): Dossiers, Courts (who sits where, as far as you know), Chronicle and Coterie.
+- **GUI** (`N`): Dossiers, Courts (who sits where, as far as you know), Domains (a map of the cities you know), Court (your own, or the way to one), Chronicle and Coterie.
   `/vtm nemesis list|step|spawn|ambush|feud|reveal|destroy` for ops. Config: `nemesis.enabled`, `stepTicks`,
   `populationPerFaction`, `ambushes`.
 
@@ -154,7 +186,7 @@ dilation for Celerity) remain options if NPC navigation or Celerity ever need th
 
 ## Tests and dev tools
 - `./gradlew runGameTestServer`: GameTests in `gametest/VtmGameTests` (data, embrace/learn, passives, feeding, every
-  power, mob control, every bane, frenzy, forms, sense link, NPC behaviour, conversations, sects, the nemesis simulation and its combat rules).
-- `./gradlew runClient -Pharness=player|npc|dialogue|sect|nemesis`: scripted walkthrough of the real client that writes screenshots to
-  `run/screenshots/` (player: GUI tabs, HUD, forms, sense link, frenzy; npc: a lineup in every animation; dialogue: a conversation with a civilian and a vampire; sect: the Sect tab and a member's conversation; nemesis: the four Nemesis tabs and a verdict conversation). Needs a
+  power, mob control, every bane, frenzy, forms, sense link, NPC behaviour, conversations, sects, the nemesis simulation and its combat rules, lairs, cities, territory, courts).
+- `./gradlew runClient -Pharness=player|npc|dialogue|sect|nemesis|lairs|city|domains|court`: scripted walkthrough of the real client that writes screenshots to
+  `run/screenshots/` (player: GUI tabs, HUD, forms, sense link, frenzy; npc: a lineup in every animation; dialogue: a conversation with a civilian and a vampire; sect: the Sect tab and a member's conversation; nemesis: the Nemesis tabs and a verdict conversation; lairs, city, domains, court: the world and the Court tab). Needs a
   world at `run/saves/harness` and, on a headless machine, `xvfb-run`. Inert without the property.

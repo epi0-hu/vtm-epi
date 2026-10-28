@@ -1,0 +1,233 @@
+{
+  "when": {
+    "npc": "vampire",
+    "player_vampire": true,
+    "sect": {
+      "ruler": true
+    }
+  },
+  "priority": 30,
+  "start": "hub",
+  "nodes": {
+    "hub": {
+      "text": "dialogue.vtm.court_subject.greet",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.c_report",
+          "show": {
+            "no_flag": "reported"
+          },
+          "effects": [
+            {
+              "flag": "reported",
+              "nemesis": {
+                "intel": "faction",
+                "count": 2,
+                "loyalty": 2
+              }
+            }
+          ],
+          "next": "report"
+        },
+        {
+          "text": "dialogue.vtm.opt.c_city",
+          "show": {
+            "no_flag": "reported_cities"
+          },
+          "effects": [
+            {
+              "flag": "reported_cities",
+              "nemesis": {
+                "intel": "city"
+              }
+            }
+          ],
+          "next": "cities"
+        },
+        {
+          "text": "dialogue.vtm.opt.c_oath",
+          "show": {
+            "no_flag": "reminded"
+          },
+          "effects": [
+            {
+              "flag": "reminded",
+              "nemesis": {
+                "loyalty": 8
+              }
+            }
+          ],
+          "next": "oath"
+        },
+        {
+          "text": "dialogue.vtm.opt.c_dismiss"
+        }
+      ]
+    },
+    "report": {
+      "text": "dialogue.vtm.court_subject.report",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.c_report",
+          "show": {
+            "no_flag": "reported"
+          },
+          "effects": [
+            {
+              "flag": "reported",
+              "nemesis": {
+                "intel": "faction",
+                "count": 2,
+                "loyalty": 2
+              }
+            }
+          ],
+          "next": "report"
+        },
+        {
+          "text": "dialogue.vtm.opt.c_city",
+          "show": {
+            "no_flag": "reported_cities"
+          },
+          "effects": [
+            {
+              "flag": "reported_cities",
+              "nemesis": {
+                "intel": "city"
+              }
+            }
+          ],
+          "next": "cities"
+        },
+        {
+          "text": "dialogue.vtm.opt.c_oath",
+          "show": {
+            "no_flag": "reminded"
+          },
+          "effects": [
+            {
+              "flag": "reminded",
+              "nemesis": {
+                "loyalty": 8
+              }
+            }
+          ],
+          "next": "oath"
+        },
+        {
+          "text": "dialogue.vtm.opt.c_dismiss"
+        }
+      ]
+    },
+    "cities": {
+      "text": "dialogue.vtm.court_subject.cities",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.c_report",
+          "show": {
+            "no_flag": "reported"
+          },
+          "effects": [
+            {
+              "flag": "reported",
+              "nemesis": {
+                "intel": "faction",
+                "count": 2,
+                "loyalty": 2
+              }
+            }
+          ],
+          "next": "report"
+        },
+        {
+          "text": "dialogue.vtm.opt.c_city",
+          "show": {
+            "no_flag": "reported_cities"
+          },
+          "effects": [
+            {
+              "flag": "reported_cities",
+              "nemesis": {
+                "intel": "city"
+              }
+            }
+          ],
+          "next": "cities"
+        },
+        {
+          "text": "dialogue.vtm.opt.c_oath",
+          "show": {
+            "no_flag": "reminded"
+          },
+          "effects": [
+            {
+              "flag": "reminded",
+              "nemesis": {
+                "loyalty": 8
+              }
+            }
+          ],
+          "next": "oath"
+        },
+        {
+          "text": "dialogue.vtm.opt.c_dismiss"
+        }
+      ]
+    },
+    "oath": {
+      "text": "dialogue.vtm.court_subject.oath",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.c_report",
+          "show": {
+            "no_flag": "reported"
+          },
+          "effects": [
+            {
+              "flag": "reported",
+              "nemesis": {
+                "intel": "faction",
+                "count": 2,
+                "loyalty": 2
+              }
+            }
+          ],
+          "next": "report"
+        },
+        {
+          "text": "dialogue.vtm.opt.c_city",
+          "show": {
+            "no_flag": "reported_cities"
+          },
+          "effects": [
+            {
+              "flag": "reported_cities",
+              "nemesis": {
+                "intel": "city"
+              }
+            }
+          ],
+          "next": "cities"
+        },
+        {
+          "text": "dialogue.vtm.opt.c_oath",
+          "show": {
+            "no_flag": "reminded"
+          },
+          "effects": [
+            {
+              "flag": "reminded",
+              "nemesis": {
+                "loyalty": 8
+              }
+            }
+          ],
+          "next": "oath"
+        },
+        {
+          "text": "dialogue.vtm.opt.c_dismiss"
+        }
+      ]
+    }
+  }
+}

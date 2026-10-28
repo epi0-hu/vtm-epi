@@ -106,6 +106,7 @@ public final class VtmCommand {
                                                         vtmId(ResourceLocationArgument.getId(ctx, "clan"))))))))
                 .then(NemesisCommands.node())
                 .then(CityCommands.node())
+                .then(CourtCommands.node())
                 .then(Commands.literal("sect")
                         .then(Commands.literal("join")
                                 .then(Commands.argument("targets", EntityArgument.players())

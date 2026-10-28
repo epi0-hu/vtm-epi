@@ -248,9 +248,9 @@ public final class CityGameTests {
     private static final ResourceLocation SABBAT = VtmMod.id("sabbat");
 
     private static com.epi0.vtm.nemesis.NemesisData nemeses(GameTestHelper helper) {
+        com.epi0.vtm.court.CourtData.get(server(helper)).clear();
         var data = com.epi0.vtm.nemesis.NemesisManager.data(server(helper));
-        data.records().clear();
-        data.chronicle().clear();
+        data.reset();
         return data;
     }
 

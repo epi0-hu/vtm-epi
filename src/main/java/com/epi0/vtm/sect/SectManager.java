@@ -150,7 +150,7 @@ public final class SectManager {
     /** Mortals saw a vampire feed: a Masquerade faction does not forgive carelessness. */
     public static void masqueradeBreach(ServerPlayer player) {
         Membership m = Membership.of(player);
-        m.faction().filter(id -> faction(player.level().registryAccess(), id).map(Faction::masquerade).orElse(false))
+        m.faction().filter(id -> com.epi0.vtm.court.Court.masquerade(player.getServer(), player.level().registryAccess(), id))
                 .ifPresent(id -> adjustStanding(player, id, MASQUERADE_BREACH));
     }
 

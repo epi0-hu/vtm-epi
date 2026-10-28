@@ -47,6 +47,7 @@ public final class NemesisSimulator {
         challenges(server, data, random);
         raids(server, data, random);
         com.epi0.vtm.city.Territory.step(server, data, random);
+        com.epi0.vtm.court.Court.step(server, random);
         grudges(server, data, now, random);
         if (data.steps % 20 == 0) {
             decay(data);
@@ -66,6 +67,9 @@ public final class NemesisSimulator {
             for (int i = 0; i < missing; i++) {
                 Role role = Role.AGENT;
                 for (Role candidate : new Role[]{Role.LEADER, Role.LIEUTENANT, Role.ENFORCER}) {
+                    if (candidate == Role.LEADER && throneReserved(server, data, id)) {
+                        continue;
+                    }
                     if (data.inRole(id, candidate).size() < candidate.seats() && members.size() + i < 1 + 2 + 3) {
                         role = candidate;
                         break;
@@ -127,6 +131,13 @@ public final class NemesisSimulator {
     public static void succession(MinecraftServer server, NemesisData data) {
         for (ResourceLocation faction : joinable(server)) {
             for (Role role : new Role[]{Role.LEADER, Role.LIEUTENANT, Role.ENFORCER}) {
+                if (role == Role.LEADER && throneReserved(server, data, faction)) {
+                    continue; // a player rules it, or has just toppled its ruler and may take the seat
+                }
+                if (role != Role.LEADER && com.epi0.vtm.court.CourtData.get(server).reign(faction) != null
+                        && !com.epi0.vtm.court.CourtData.get(server).reign(faction).autoAppoint) {
+                    continue;
+                }
                 while (data.inRole(faction, role).size() < role.seats()) {
                     Optional<NemesisRecord> heir = heir(data, faction, role);
                     if (heir.isEmpty()) {
@@ -145,6 +156,12 @@ public final class NemesisSimulator {
         }
     }
 
+    /** The leader's seat is not filled by the simulation while a player holds it, or while one has a chance to take it. */
+    public static boolean throneReserved(MinecraftServer server, NemesisData data, ResourceLocation faction) {
+        return com.epi0.vtm.court.CourtData.get(server).reign(faction) != null
+                || data.throneHeld(faction, server.overworld().getGameTime());
+    }
+
     private static Optional<NemesisRecord> heir(NemesisData data, ResourceLocation faction, Role seat) {
         return data.inFaction(faction).stream()
                 .filter(r -> r.status == Status.ACTIVE && r.role.ordinal() > seat.ordinal())
@@ -155,7 +172,7 @@ public final class NemesisSimulator {
     public static void challenges(MinecraftServer server, NemesisData data, RandomSource random) {
         for (ResourceLocation faction : joinable(server)) {
             List<NemesisRecord> leaders = data.inRole(faction, Role.LEADER);
-            if (leaders.isEmpty()) {
+            if (leaders.isEmpty() || com.epi0.vtm.court.CourtData.get(server).reign(faction) != null) {
                 continue;
             }
             NemesisRecord leader = leaders.get(0);
@@ -187,13 +204,15 @@ public final class NemesisSimulator {
     public static void raids(MinecraftServer server, NemesisData data, RandomSource random) {
         for (ResourceLocation id : joinable(server)) {
             Optional<Faction> faction = VtmRegistries.faction(server.registryAccess(), id);
-            if (faction.isEmpty() || random.nextDouble() > RAID_CHANCE) {
+            if (faction.isEmpty() || random.nextDouble() > RAID_CHANCE * com.epi0.vtm.court.Court.raidMultiplier(server, id)) {
                 continue;
             }
             List<NemesisRecord> mine = fighters(server, data, id);
             List<NemesisRecord> theirs = new ArrayList<>();
             for (ResourceLocation enemy : faction.get().enemies()) {
-                theirs.addAll(fighters(server, data, enemy));
+                if (!com.epi0.vtm.court.Court.truce(server, id, enemy)) {
+                    theirs.addAll(fighters(server, data, enemy));
+                }
             }
             if (mine.isEmpty() || theirs.isEmpty()) {
                 continue;

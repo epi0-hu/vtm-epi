@@ -95,11 +95,12 @@ public final class NemesisViews {
     }
 
     /** A seat in a faction's court: whether anyone holds it, and who, if the player knows them. */
-    public record Seat(String role, boolean filled, Optional<UUID> known) {
+    public record Seat(String role, boolean filled, Optional<UUID> known, Optional<String> ruler) {
         static final Codec<Seat> CODEC = RecordCodecBuilder.create(i -> i.group(
                 Codec.STRING.fieldOf("role").forGetter(Seat::role),
                 Codec.BOOL.fieldOf("filled").forGetter(Seat::filled),
-                UUIDUtil.CODEC.optionalFieldOf("known").forGetter(Seat::known)
+                UUIDUtil.CODEC.optionalFieldOf("known").forGetter(Seat::known),
+                Codec.STRING.optionalFieldOf("ruler").forGetter(Seat::ruler)
         ).apply(i, Seat::new));
     }
 
@@ -124,16 +125,18 @@ public final class NemesisViews {
         ).apply(i, Domain::new));
     }
 
-    public record Snapshot(List<Entry> entries, List<Court> courts, List<ChronicleEntry> chronicle, List<Domain> domains, long now) {
+    public record Snapshot(List<Entry> entries, List<Court> courts, List<ChronicleEntry> chronicle, List<Domain> domains,
+                           Optional<com.epi0.vtm.court.CourtView> court, long now) {
         public static final Codec<Snapshot> CODEC = RecordCodecBuilder.create(i -> i.group(
                 Entry.CODEC.listOf().fieldOf("entries").forGetter(Snapshot::entries),
                 Court.CODEC.listOf().fieldOf("courts").forGetter(Snapshot::courts),
                 ChronicleEntry.CODEC.listOf().fieldOf("chronicle").forGetter(Snapshot::chronicle),
                 Domain.CODEC.listOf().fieldOf("domains").forGetter(Snapshot::domains),
+                com.epi0.vtm.court.CourtView.CODEC.optionalFieldOf("court").forGetter(Snapshot::court),
                 Codec.LONG.fieldOf("now").forGetter(Snapshot::now)
         ).apply(i, Snapshot::new));
 
-        public static final Snapshot EMPTY = new Snapshot(List.of(), List.of(), List.of(), List.of(), 0L);
+        public static final Snapshot EMPTY = new Snapshot(List.of(), List.of(), List.of(), List.of(), Optional.empty(), 0L);
     }
 
     public static Snapshot build(MinecraftServer server, ServerPlayer player) {
@@ -152,10 +155,12 @@ public final class NemesisViews {
             List<Seat> seats = new ArrayList<>();
             for (Role role : new Role[]{Role.LEADER, Role.LIEUTENANT, Role.ENFORCER}) {
                 List<NemesisRecord> holders = data.inRole(faction, role);
+                var reign = role == Role.LEADER ? com.epi0.vtm.court.CourtData.get(server).reign(faction) : null;
                 for (int i = 0; i < role.seats(); i++) {
                     NemesisRecord holder = i < holders.size() ? holders.get(i) : null;
-                    seats.add(new Seat(role.id(), holder != null,
-                            holder != null && knowledge.about(holder.id).isPresent() ? Optional.of(holder.id) : Optional.empty()));
+                    seats.add(new Seat(role.id(), holder != null || reign != null,
+                            holder != null && knowledge.about(holder.id).isPresent() ? Optional.of(holder.id) : Optional.empty(),
+                            reign == null ? Optional.empty() : Optional.of(reign.rulerName)));
                 }
             }
             courts.add(new Court(faction, seats));
@@ -176,7 +181,7 @@ public final class NemesisViews {
                         com.epi0.vtm.city.Territory.where(city), city.heatOf(player.getUUID())));
             }
         }
-        return new Snapshot(entries, courts, news, domains, server.overworld().getGameTime());
+        return new Snapshot(entries, courts, news, domains, Optional.of(com.epi0.vtm.court.Court.view(server, player)), server.overworld().getGameTime());
     }
 
     private static Entry entry(NemesisData data, ServerPlayer player, NemesisRecord r, NemesisKnowledge.Known known, NemesisKnowledge knowledge) {

@@ -102,10 +102,11 @@ public final class Territory {
     public static void war(MinecraftServer server, NemesisData nemeses, CityData cities, RandomSource random, double intensity) {
         for (ResourceLocation attacker : NemesisSimulator.joinable(server)) {
             Optional<Faction> faction = VtmRegistries.faction(server.registryAccess(), attacker);
-            if (faction.isEmpty() || random.nextDouble() > WAR_CHANCE * intensity) {
+            if (faction.isEmpty() || random.nextDouble() > WAR_CHANCE * intensity * com.epi0.vtm.court.Court.warMultiplier(server, attacker)) {
                 continue;
             }
-            List<City> targets = cities.all().stream().filter(c -> faction.get().enemies().contains(c.owner)).toList();
+            List<City> targets = cities.all().stream().filter(c -> faction.get().enemies().contains(c.owner)
+                    && !com.epi0.vtm.court.Court.truce(server, attacker, c.owner)).toList();
             if (targets.isEmpty()) {
                 continue;
             }
@@ -168,7 +169,7 @@ public final class Territory {
 
     /** Mortals saw a vampire feed in a city whose ruler keeps the Masquerade: the ruler will not forget it. */
     public static void masqueradeBreach(ServerPlayer player, City city) {
-        boolean strict = VtmRegistries.faction(player.level().registryAccess(), city.owner).map(Faction::masquerade).orElse(false);
+        boolean strict = com.epi0.vtm.court.Court.masquerade(player.getServer(), player.level().registryAccess(), city.owner);
         if (strict && VampireData.of(player).isVampire()) {
             SectManager.adjustStanding(player, city.owner, SectManager.MASQUERADE_BREACH);
         }
@@ -176,7 +177,11 @@ public final class Territory {
 
     /** Whether the ruler of {@code city} treats the player's trouble as a breach of the Masquerade. */
     public static boolean enforcesMasquerade(net.minecraft.core.RegistryAccess access, City city) {
-        return VtmRegistries.faction(access, city.owner).map(Faction::masquerade).orElse(false);
+        return enforcesMasquerade(null, access, city);
+    }
+
+    public static boolean enforcesMasquerade(@org.jetbrains.annotations.Nullable MinecraftServer server, net.minecraft.core.RegistryAccess access, City city) {
+        return com.epi0.vtm.court.Court.masquerade(server, access, city.owner);
     }
 
     // ---------------------------------------------------------------- knowledge

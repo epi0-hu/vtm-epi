@@ -491,6 +491,9 @@ public final class NemesisManager {
             return;
         }
         boolean wasBound = r.status == Status.BOUND;
+        if (killer != null && r.role == Role.LEADER) {
+            data(server).holdThrone(r.faction, server.overworld().getGameTime() + com.epi0.vtm.court.Court.VACANCY_TICKS);
+        }
         com.epi0.vtm.city.Territory.wardenLost(server, r, killer != null);
         r.status = Status.DESTROYED;
         r.entity = null;
@@ -625,6 +628,9 @@ public final class NemesisManager {
         VampireManager.set(player, data.withBlood(data.blood() - BIND_COST));
         NemesisData world = data(player.getServer());
         com.epi0.vtm.city.Territory.wardenLost(player.getServer(), r, true);
+        if (r.role == Role.LEADER) {
+            data(player.getServer()).holdThrone(r.faction, player.getServer().overworld().getGameTime() + com.epi0.vtm.court.Court.VACANCY_TICKS);
+        }
         if (r.role != Role.AGENT) {
             log(player.getServer(), "seat_abandoned", r.faction, false, r);
             r.role = Role.AGENT;
