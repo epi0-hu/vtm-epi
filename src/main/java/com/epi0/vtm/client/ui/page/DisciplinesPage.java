@@ -90,7 +90,7 @@ public final class DisciplinesPage implements Page {
         boolean maxed = level >= VampireRules.MAX_DISCIPLINE_LEVEL;
         List<Power> unlocks = maxed ? List.of() : Powers.at(id, next);
         int textX = r.x() + 98;
-        int textW = r.w() - 98 - 74;
+        int textW = r.w() - 98 - 84;
         if (maxed) {
             ui.text(Component.translatable("gui.vtm.mastered"), textX, r.y() + 10, Theme.GOOD);
         } else if (!unlocks.isEmpty()) {
@@ -118,7 +118,7 @@ public final class DisciplinesPage implements Page {
             int cost = VampireRules.learnCost(next, inClan);
             boolean afford = learnable && data.experience() >= cost;
             Component label = learnable ? Component.translatable("gui.vtm.learn", cost) : Component.translatable("gui.vtm.clan_only");
-            ui.button(new Rect(r.right() - 70, r.y() + 7, 66, 14), label, afford ? Ui.Style.PRIMARY : Ui.Style.NORMAL, afford,
+            ui.button(new Rect(r.right() - 78, r.y() + 7, 74, 14), label, afford ? Ui.Style.PRIMARY : Ui.Style.NORMAL, afford,
                     () -> PacketDistributor.sendToServer(new LearnDisciplinePayload(id)),
                     learnable ? (afford ? Component.translatable("gui.vtm.learn.tip", cost) : Component.translatable("gui.vtm.learn.cannot", cost))
                             : Component.translatable("gui.vtm.clan_only.tip"));

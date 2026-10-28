@@ -42,8 +42,17 @@ public final class Harness {
         if (mc.player == null || mc.level == null || mc.getSingleplayerServer() == null) {
             return;
         }
+        // The harness world remembers where it was last left, which can be somewhere that kills; start alive and safe.
+        if (mc.player.isDeadOrDying()) {
+            mc.player.respawn();
+            mc.setScreen(null);
+            joined = -1;
+            return;
+        }
         if (joined < 0) {
             joined = mc.player.tickCount;
+            var server = mc.getSingleplayerServer();
+            server.execute(() -> server.getPlayerList().getPlayers().forEach(p -> p.setGameMode(net.minecraft.world.level.GameType.CREATIVE)));
         }
         if (mc.player.tickCount - joined < 120) {
             return;
@@ -308,6 +317,11 @@ public final class Harness {
     private static void look(Minecraft mc, int delay, java.util.function.Function<com.epi0.vtm.city.City, double[]> view) {
         server(mc, delay, p -> {
             double[] v = view.apply(harnessCity);
+            // City coordinates are relative to the plaza; lift them onto the ground this world actually has.
+            double dy = p.serverLevel().getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+                    harnessCity.center.getX(), harnessCity.center.getZ()) - harnessCity.center.getY();
+            v[1] += dy;
+            v[4] += dy;
             p.getServer().getCommands().performPrefixedCommand(p.createCommandSourceStack().withPermission(4),
                     "tp @s " + v[0] + " " + v[1] + " " + v[2] + " facing " + v[3] + " " + v[4] + " " + v[5]);
         });
@@ -315,31 +329,43 @@ public final class Harness {
 
     /** Generates a city, lets its people move in, and photographs it by day and by night. */
     private static void cityScript(Minecraft mc) {
+        harnessCity = null;
         mc.options.pauseOnLostFocus = false;
         for (String c : new String[]{"gamerule sendCommandFeedback false", "time set 3000", "gamerule doDaylightCycle false",
                 "gamerule doMobSpawning false", "weather clear", "gamemode creative", "vtm embrace @s toreador",
                 "effect give @s minecraft:night_vision infinite 0 true"}) {
             cmd(mc, 3, c);
         }
-        server(mc, 10, p -> p.teleportTo(p.serverLevel(), 400, -52, 0, 0F, 0F));
-        then(80, () -> {});
+        // `place structure` refuses biomes outside #vtm:has_cities, so visit the natural city this seed has and let it generate.
+        cmd(mc, 10, "forceload add -4016 128 -3920 256");
+        server(mc, 20, p -> {
+            int y = p.serverLevel().getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE, -3936, 208);
+            p.teleportTo(p.serverLevel(), -3936, y + 40, 208, 0F, 0F);
+        });
+        then(400, () -> {});
         server(mc, 5, p -> {
-            net.minecraft.core.BlockPos at = new net.minecraft.core.BlockPos(400, -55, 0);
-            p.getServer().getCommands().performPrefixedCommand(p.createCommandSourceStack().withPermission(4)
-                    .withPosition(net.minecraft.world.phys.Vec3.atCenterOf(at)), "place structure vtm:city 400 -55 0");
+            harnessCity = com.epi0.vtm.city.CityData.get(p.getServer()).all().stream()
+                    .min(java.util.Comparator.comparingDouble(c -> c.center.distSqr(new net.minecraft.core.BlockPos(-3936, c.center.getY(), 208)))).orElse(null);
+            VtmMod.LOGGER.info("HARNESS city {}", harnessCity == null ? null : harnessCity.name + " at " + harnessCity.center);
         });
         then(120, () -> {});
         server(mc, 5, p -> {
             var data = com.epi0.vtm.city.CityData.get(p.getServer());
-            harnessCity = data.all().stream().filter(c -> c.center.distSqr(new net.minecraft.core.BlockPos(432, -53, 32)) < 2500).findFirst().orElse(null);
             VtmMod.LOGGER.info("HARNESS city {}", harnessCity == null ? null : harnessCity.name + " homes=" + harnessCity.homes.size());
             for (int i = 0; i < 6 && harnessCity != null; i++) {
                 com.epi0.vtm.city.CityLife.populate(p.serverLevel(), harnessCity);
             }
+            if (harnessCity != null) {
+                harnessCity.addHeat(p.getUUID(), 70);
+            }
         });
         then(40, () -> {});
+        // Walk out of the city and back in, so the arrival banner can be photographed.
+        look(mc, 5, c -> new double[]{c.center.getX() + 130, c.center.getY() + 10, c.center.getZ(), c.center.getX(), c.center.getY(), c.center.getZ()});
+        then(80, () -> {});
         look(mc, 5, c -> new double[]{c.center.getX() - 2, c.center.getY() + 34, c.center.getZ() - 40, c.center.getX(), c.center.getY(), c.center.getZ()});
-        shotAfter(mc, 50, "city_aerial");
+        shotAfter(mc, 45, "city_banner");
+        shotAfter(mc, 60, "city_aerial");
         look(mc, 5, c -> new double[]{c.center.getX() + 0.5, c.center.getY() + 0, c.center.getZ() - 28.5, c.center.getX(), c.center.getY() + 2, c.center.getZ()});
         shotAfter(mc, 40, "city_street");
         look(mc, 5, c -> new double[]{c.center.getX() + 7.5, c.center.getY() - 1, c.center.getZ() - 8.5, c.center.getX(), c.center.getY(), c.center.getZ()});
@@ -574,6 +600,15 @@ public final class Harness {
     /** Opens real conversations with a civilian and a vampire and walks through a few branches. */
     private static void dialogueScript(Minecraft mc) {
         mc.options.pauseOnLostFocus = false;
+        // Leave any city (and its grudges) the harness world was last saved in.
+        server(mc, 3, p -> {
+            com.epi0.vtm.city.CityData.get(p.getServer()).all().forEach(c -> c.heat.clear());
+        });
+        cmd(mc, 3, "forceload add 0 0");
+        then(40, () -> {});
+        cmd(mc, 3, "fill -14 199 -14 14 199 14 minecraft:smooth_stone");
+        cmd(mc, 3, "tp @s 0.5 200 0.5");
+        then(20, () -> {});
         for (String c : new String[]{"gamerule sendCommandFeedback false", "time set 18000", "gamerule doDaylightCycle false",
                 "gamerule doMobSpawning false", "weather clear", "effect give @s minecraft:night_vision infinite 0 true",
                 "execute at @s run fill ~-12 ~-1 ~-12 ~12 ~-1 ~12 minecraft:smooth_stone",

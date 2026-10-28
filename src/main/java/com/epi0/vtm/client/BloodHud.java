@@ -55,8 +55,8 @@ final class BloodHud {
 
         Power power = PowerSelection.current(data);
         if (power != null) {
-            Component armed = Component.translatable("gui.vtm.armed", power.name(), power.bloodCost());
-            Draw.chip(g, mc.font, Component.literal(mc.font.plainSubstrByWidth(armed.getString(), WIDTH - 50)), x, y - 13, Theme.GOLD);
+            Component armed = Component.literal("\u25B6 ").append(power.name()).append(" " + power.bloodCost());
+            Draw.chip(g, mc.font, Component.literal(mc.font.plainSubstrByWidth(armed.getString(), WIDTH - 8)), x, y - 24, Theme.GOLD);
         }
     }
 
