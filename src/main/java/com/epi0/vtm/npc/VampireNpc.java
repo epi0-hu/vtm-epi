@@ -46,6 +46,9 @@ public class VampireNpc extends VtmNpc {
     private static final float MAX_BLOOD = 10F;
     private static final float HUNGRY_BELOW = 4F;
     private static final int NPC_DISCIPLINE_LEVEL = 2;
+    /** Rapport at which a vampire stops being a stranger, or becomes an enemy. */
+    public static final int FRIENDLY_RAPPORT = 3;
+    public static final int HOSTILE_RAPPORT = -5;
 
     private static final EntityDataAccessor<String> DATA_CLAN = SynchedEntityData.defineId(VampireNpc.class, EntityDataSerializers.STRING);
 
@@ -238,8 +241,12 @@ public class VampireNpc extends VtmNpc {
     @Override
     public Attitude attitudeTo(LivingEntity other) {
         if (other instanceof Player player) {
-            if (memory().isThreat(player.getUUID())) {
+            int rapport = memory().rapport(player.getUUID());
+            if (memory().isThreat(player.getUUID()) || rapport <= HOSTILE_RAPPORT) {
                 return Attitude.HOSTILE;
+            }
+            if (rapport >= FRIENDLY_RAPPORT) {
+                return Attitude.FRIENDLY;
             }
             boolean mortal = !VampireData.of(player).isVampire();
             boolean predatory = faction().map(f -> f.huntsMortals()).orElse(false);

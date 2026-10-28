@@ -1,0 +1,266 @@
+{
+  "when": {
+    "npc": "civilian"
+  },
+  "priority": 0,
+  "start": "hub",
+  "nodes": {
+    "hub": {
+      "text": [
+        {
+          "when": {
+            "min_seen": 4
+          },
+          "key": "dialogue.vtm.civilian.greet.familiar"
+        },
+        {
+          "when": {
+            "night": true
+          },
+          "key": "dialogue.vtm.civilian.greet.night"
+        },
+        {
+          "key": "dialogue.vtm.civilian.greet.day"
+        }
+      ],
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.smalltalk",
+          "show": {
+            "no_flag": "smalltalk"
+          },
+          "effects": [
+            {
+              "rapport": 1,
+              "flag": "smalltalk"
+            }
+          ],
+          "next": "smalltalk"
+        },
+        {
+          "text": "dialogue.vtm.opt.rumors",
+          "next": "rumors",
+          "effects": [
+            {
+              "flag": "asked_rumors"
+            }
+          ]
+        },
+        {
+          "text": "dialogue.vtm.opt.charm",
+          "show": {
+            "player_vampire": true
+          },
+          "require": {
+            "no_flag": "fed"
+          },
+          "locked": "dialogue.vtm.locked.fed",
+          "check": {
+            "pool": 4,
+            "discipline": "vtm:presence",
+            "difficulty": 2,
+            "fail": "refuse"
+          },
+          "effects": [
+            {
+              "blood": 3.0,
+              "flag": "fed",
+              "rapport": 1
+            }
+          ],
+          "fail_effects": [
+            {
+              "rapport": -2
+            }
+          ],
+          "next": "give"
+        },
+        {
+          "text": "dialogue.vtm.opt.compel",
+          "show": {
+            "player_vampire": true
+          },
+          "require": {
+            "discipline": {
+              "id": "vtm:dominate",
+              "level": 1
+            },
+            "no_flag": "fed"
+          },
+          "locked": "dialogue.vtm.locked.dominate",
+          "check": {
+            "pool": 5,
+            "discipline": "vtm:dominate",
+            "difficulty": 2,
+            "fail": "slip"
+          },
+          "effects": [
+            {
+              "blood": 3.0,
+              "flag": "fed",
+              "rapport": -1
+            }
+          ],
+          "fail_effects": [
+            {
+              "alarm": true,
+              "rapport": -2
+            }
+          ],
+          "next": "compelled"
+        },
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
+    },
+    "more": {
+      "text": "dialogue.vtm.more",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.smalltalk",
+          "show": {
+            "no_flag": "smalltalk"
+          },
+          "effects": [
+            {
+              "rapport": 1,
+              "flag": "smalltalk"
+            }
+          ],
+          "next": "smalltalk"
+        },
+        {
+          "text": "dialogue.vtm.opt.rumors",
+          "next": "rumors",
+          "effects": [
+            {
+              "flag": "asked_rumors"
+            }
+          ]
+        },
+        {
+          "text": "dialogue.vtm.opt.charm",
+          "show": {
+            "player_vampire": true
+          },
+          "require": {
+            "no_flag": "fed"
+          },
+          "locked": "dialogue.vtm.locked.fed",
+          "check": {
+            "pool": 4,
+            "discipline": "vtm:presence",
+            "difficulty": 2,
+            "fail": "refuse"
+          },
+          "effects": [
+            {
+              "blood": 3.0,
+              "flag": "fed",
+              "rapport": 1
+            }
+          ],
+          "fail_effects": [
+            {
+              "rapport": -2
+            }
+          ],
+          "next": "give"
+        },
+        {
+          "text": "dialogue.vtm.opt.compel",
+          "show": {
+            "player_vampire": true
+          },
+          "require": {
+            "discipline": {
+              "id": "vtm:dominate",
+              "level": 1
+            },
+            "no_flag": "fed"
+          },
+          "locked": "dialogue.vtm.locked.dominate",
+          "check": {
+            "pool": 5,
+            "discipline": "vtm:dominate",
+            "difficulty": 2,
+            "fail": "slip"
+          },
+          "effects": [
+            {
+              "blood": 3.0,
+              "flag": "fed",
+              "rapport": -1
+            }
+          ],
+          "fail_effects": [
+            {
+              "alarm": true,
+              "rapport": -2
+            }
+          ],
+          "next": "compelled"
+        },
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
+    },
+    "smalltalk": {
+      "text": "dialogue.vtm.civilian.smalltalk",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.else",
+          "next": "more"
+        },
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
+    },
+    "rumors": {
+      "text": [
+        {
+          "when": {
+            "night": true
+          },
+          "key": "dialogue.vtm.civilian.rumors.night"
+        },
+        {
+          "key": "dialogue.vtm.civilian.rumors.day"
+        }
+      ],
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.else",
+          "next": "more"
+        },
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
+    },
+    "give": {
+      "text": "dialogue.vtm.civilian.give",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.else",
+          "next": "more"
+        },
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
+    },
+    "refuse": {
+      "text": "dialogue.vtm.civilian.refuse"
+    },
+    "compelled": {
+      "text": "dialogue.vtm.civilian.compelled"
+    },
+    "slip": {
+      "text": "dialogue.vtm.civilian.slip"
+    }
+  }
+}

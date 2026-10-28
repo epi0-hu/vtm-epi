@@ -41,6 +41,16 @@ public final class VtmNetwork {
                         PowerManager.activate(player, payload.power());
                     }
                 });
+
+        registrar.playToClient(DialogueNodePayload.TYPE, DialogueNodePayload.STREAM_CODEC,
+                (payload, ctx) -> com.epi0.vtm.client.DialogueScreen.receive(payload));
+
+        registrar.playToServer(DialogueChoicePayload.TYPE, DialogueChoicePayload.STREAM_CODEC,
+                (payload, ctx) -> {
+                    if (ctx.player() instanceof ServerPlayer player) {
+                        com.epi0.vtm.dialogue.DialogueManager.choose(player, payload.option());
+                    }
+                });
     }
 
     /** Sends only to connections that negotiated our channels (not e.g. test fakes). */

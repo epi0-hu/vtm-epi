@@ -49,7 +49,9 @@ public final class Harness {
             return;
         }
         if (STEPS.isEmpty()) {
-            if (SCENARIO.equals("npc")) {
+            if (SCENARIO.equals("dialogue")) {
+                dialogueScript(mc);
+            } else if (SCENARIO.equals("npc")) {
                 npcScript(mc);
             } else {
                 script(mc);
@@ -97,6 +99,77 @@ public final class Harness {
             mc.gui.getChat().clearMessages(true);
             VtmMod.LOGGER.info("HARNESS screenshot {}", name);
             Screenshot.grab(mc.gameDirectory, name + ".png", mc.getMainRenderTarget(), msg -> {});
+        });
+    }
+
+    private static com.epi0.vtm.npc.VtmNpc talker;
+
+    private static void choose(Minecraft mc, String textKey) {
+        server(mc, 4, p -> {
+            var session = com.epi0.vtm.dialogue.DialogueManager.session(p);
+            if (session == null) {
+                VtmMod.LOGGER.info("HARNESS no session when choosing {}", textKey);
+                return;
+            }
+            var options = com.epi0.vtm.dialogue.Dialogues.byId(session.tree()).orElseThrow().tree().nodes().get(session.node()).options();
+            for (int i = 0; i < options.size(); i++) {
+                if (options.get(i).text().equals(textKey)) {
+                    com.epi0.vtm.dialogue.DialogueManager.choose(p, i);
+                    return;
+                }
+            }
+            VtmMod.LOGGER.info("HARNESS option {} not in {}", textKey, session.node());
+        });
+    }
+
+    /** Opens real conversations with a civilian and a vampire and walks through a few branches. */
+    private static void dialogueScript(Minecraft mc) {
+        mc.options.pauseOnLostFocus = false;
+        for (String c : new String[]{"gamerule sendCommandFeedback false", "time set 18000", "gamerule doDaylightCycle false",
+                "gamerule doMobSpawning false", "weather clear", "effect give @s minecraft:night_vision infinite 0 true",
+                "execute at @s run fill ~-12 ~-1 ~-12 ~12 ~-1 ~12 minecraft:smooth_stone",
+                "execute at @s run fill ~-12 ~ ~-12 ~12 ~8 ~12 minecraft:air", "tp @s ~ ~ ~ 0 8",
+                "vtm embrace @s gangrel", "vtm discipline @s presence 2", "vtm set @s blood 6"}) {
+            cmd(mc, 3, c);
+        }
+        server(mc, 10, p -> {
+            talker = com.epi0.vtm.npc.NpcSpawner.civilian(p.serverLevel(), p.position().add(0, 0, 2.5));
+            talker.setNoAi(true);
+            talker.setYRot(180F);
+            talker.yHeadRot = 180F;
+            talker.yBodyRot = 180F;
+            talker.setCustomName(net.minecraft.network.chat.Component.literal("Mara Quinn"));
+            com.epi0.vtm.dialogue.DialogueManager.open(p, talker);
+        });
+        shotAfter(mc, 70, "dlg_civilian");
+        choose(mc, "dialogue.vtm.opt.charm");
+        shotAfter(mc, 70, "dlg_civilian_charm");
+        choose(mc, "dialogue.vtm.opt.else");
+        choose(mc, "dialogue.vtm.opt.rumors");
+        shotAfter(mc, 70, "dlg_civilian_rumors");
+        server(mc, 5, p -> {
+            com.epi0.vtm.dialogue.DialogueManager.end(p);
+            talker.discard();
+            talker = com.epi0.vtm.npc.NpcSpawner.vampire(p.serverLevel(), p.position().add(0, 0, 2.5), VtmMod.id("ventrue"));
+            talker.setNoAi(true);
+            talker.setYRot(180F);
+            talker.yHeadRot = 180F;
+            talker.yBodyRot = 180F;
+            talker.setCustomName(net.minecraft.network.chat.Component.literal("Lucian Ashworth"));
+            com.epi0.vtm.dialogue.DialogueManager.open(p, talker);
+        });
+        shotAfter(mc, 70, "dlg_vampire");
+        choose(mc, "dialogue.vtm.opt.introduce");
+        choose(mc, "dialogue.vtm.opt.else");
+        choose(mc, "dialogue.vtm.opt.ask_clan");
+        shotAfter(mc, 90, "dlg_vampire_clan");
+        choose(mc, "dialogue.vtm.opt.else");
+        choose(mc, "dialogue.vtm.opt.ask_sect");
+        choose(mc, "dialogue.vtm.opt.else");
+        shotAfter(mc, 50, "dlg_vampire_trust");
+        then(10, () -> {
+            VtmMod.LOGGER.info("HARNESS DONE");
+            mc.stop();
         });
     }
 

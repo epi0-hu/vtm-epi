@@ -24,6 +24,10 @@ import net.minecraft.world.level.Level;
 public class CivilianNpc extends VtmNpc {
     public static final ResourceLocation MORTALS = VtmMod.id("mortals");
     public static final int SKIN_COUNT = 8;
+    /** Rapport at which a civilian counts a player as a friend. */
+    public static final int FRIENDLY_RAPPORT = 3;
+    /** Rapport at which a civilian forgives a player who has hurt or frightened them. */
+    public static final int FORGIVEN_RAPPORT = 5;
 
     public CivilianNpc(EntityType<? extends CivilianNpc> type, Level level) {
         super(type, level);
@@ -63,7 +67,13 @@ public class CivilianNpc extends VtmNpc {
     @Override
     public Attitude attitudeTo(LivingEntity other) {
         if (other instanceof Player player) {
-            return memory().isThreat(player.getUUID()) || Frenzy.isFrenzied(player) ? Attitude.WARY : Attitude.NEUTRAL;
+            int rapport = memory().rapport(player.getUUID());
+            // Fear is forgotten only once the player has genuinely made amends.
+            boolean afraid = Frenzy.isFrenzied(player) || memory().isThreat(player.getUUID()) && rapport < FORGIVEN_RAPPORT;
+            if (afraid) {
+                return Attitude.WARY;
+            }
+            return rapport >= FRIENDLY_RAPPORT ? Attitude.FRIENDLY : Attitude.NEUTRAL;
         }
         if (other instanceof VampireNpc vampire) {
             return vampire.isHunting() ? Attitude.WARY : Attitude.NEUTRAL;

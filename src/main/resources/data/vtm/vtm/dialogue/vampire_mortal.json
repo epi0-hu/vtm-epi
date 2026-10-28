@@ -1,0 +1,52 @@
+{
+  "when": {
+    "npc": "vampire",
+    "player_vampire": false
+  },
+  "priority": 8,
+  "start": "hub",
+  "nodes": {
+    "hub": {
+      "text": [
+        {
+          "when": {
+            "min_seen": 4
+          },
+          "key": "dialogue.vtm.vampire_mortal.greet.familiar"
+        },
+        {
+          "key": "dialogue.vtm.vampire_mortal.greet"
+        }
+      ],
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.mortal_who",
+          "next": "deflect"
+        },
+        {
+          "text": "dialogue.vtm.opt.mortal_know",
+          "effects": [
+            {
+              "rapport": -3
+            }
+          ],
+          "next": "warned"
+        },
+        {
+          "text": "dialogue.vtm.opt.mortal_leave"
+        }
+      ]
+    },
+    "deflect": {
+      "text": "dialogue.vtm.vampire_mortal.deflect",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.mortal_leave"
+        }
+      ]
+    },
+    "warned": {
+      "text": "dialogue.vtm.vampire_mortal.warned"
+    }
+  }
+}

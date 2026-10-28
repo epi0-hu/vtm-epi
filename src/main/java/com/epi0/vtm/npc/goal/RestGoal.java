@@ -23,7 +23,8 @@ public class RestGoal extends Goal {
 
     @Override
     public boolean canUse() {
-        return npc.shouldRestNow() && npc.state() != VtmNpc.State.FEEDING && npc.getTarget() == null;
+        return npc.shouldRestNow() && npc.state() != VtmNpc.State.FEEDING
+                && npc.state() != VtmNpc.State.TALKING && npc.getTarget() == null;
     }
 
     @Override

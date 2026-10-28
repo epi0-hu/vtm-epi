@@ -1,0 +1,93 @@
+{
+  "when": {
+    "npc": "civilian",
+    "attitude": "wary"
+  },
+  "priority": 10,
+  "start": "hub",
+  "nodes": {
+    "hub": {
+      "text": [
+        {
+          "when": {
+            "threat": true
+          },
+          "key": "dialogue.vtm.civilian_wary.greet.threat"
+        },
+        {
+          "key": "dialogue.vtm.civilian_wary.greet"
+        }
+      ],
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.apologise",
+          "show": {
+            "threat": true,
+            "no_flag": "apologised"
+          },
+          "effects": [
+            {
+              "rapport": 2,
+              "flag": "apologised"
+            }
+          ],
+          "next": "apologised"
+        },
+        {
+          "text": "dialogue.vtm.opt.reassure",
+          "show": {
+            "no_flag": "reassured"
+          },
+          "check": {
+            "pool": 3,
+            "discipline": "vtm:presence",
+            "difficulty": 2,
+            "fail": "spooked"
+          },
+          "effects": [
+            {
+              "rapport": 3,
+              "flag": "reassured"
+            }
+          ],
+          "fail_effects": [
+            {
+              "rapport": -1
+            }
+          ],
+          "next": "reassured"
+        },
+        {
+          "text": "dialogue.vtm.opt.leave_alone"
+        }
+      ]
+    },
+    "apologised": {
+      "text": "dialogue.vtm.civilian_wary.apologised",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.say_more",
+          "next": "hub"
+        },
+        {
+          "text": "dialogue.vtm.opt.leave_alone"
+        }
+      ]
+    },
+    "reassured": {
+      "text": "dialogue.vtm.civilian_wary.reassured",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.say_more",
+          "next": "hub"
+        },
+        {
+          "text": "dialogue.vtm.opt.leave_alone"
+        }
+      ]
+    },
+    "spooked": {
+      "text": "dialogue.vtm.civilian_wary.spooked"
+    }
+  }
+}

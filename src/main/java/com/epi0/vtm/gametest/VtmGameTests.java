@@ -1,6 +1,12 @@
 package com.epi0.vtm.gametest;
 
 import com.epi0.vtm.VtmMod;
+import com.epi0.vtm.dialogue.DialogueManager;
+import com.epi0.vtm.dialogue.DialogueTree;
+import com.epi0.vtm.dialogue.Dialogues;
+import com.epi0.vtm.dialogue.Roll;
+import com.epi0.vtm.network.DialogueNodePayload;
+import com.epi0.vtm.npc.VtmNpc;
 import com.epi0.vtm.power.Form;
 import com.epi0.vtm.power.Forms;
 import com.epi0.vtm.power.Power;
@@ -508,6 +514,227 @@ public final class VtmGameTests {
         helper.assertTrue(VampireRules.learnCost(3, true) == 15 && VampireRules.learnCost(3, false) == 21, "costs");
         helper.assertTrue(VampireRules.hunger(VampireData.DEFAULT.withSpecies(com.epi0.vtm.vampire.Species.VAMPIRE)
                 .withBloodPotency(1).withBlood(0F)) == 5, "empty pool is max hunger");
+        helper.succeed();
+    }
+
+    // ---------------------------------------------------------------- dialogue
+
+    private static ResourceLocation tree(String name) {
+        return VtmMod.id(name);
+    }
+
+    /** Index of the option with this text key in the player's current node. */
+    private static int option(ServerPlayer player, String textKey) {
+        var session = DialogueManager.session(player);
+        var options = Dialogues.byId(session.tree()).orElseThrow().tree().nodes().get(session.node()).options();
+        for (int i = 0; i < options.size(); i++) {
+            if (options.get(i).text().equals(textKey)) {
+                return i;
+            }
+        }
+        throw new IllegalStateException("no option " + textKey + " in " + session.node());
+    }
+
+    @GameTest(template = "empty", batch = "vtm_night")
+    public static void dialogueSelectsTheMostSpecificTree(GameTestHelper helper) {
+        helper.setDayTime(18000);
+        helper.assertTrue(Dialogues.count() >= 9, "dialogue trees load from the datapack, got " + Dialogues.count());
+        ServerPlayer vampire = vampire(helper, "gangrel");
+        ServerPlayer mortal = survivalPlayer(helper);
+        var civilian = NpcSpawner.civilian(helper.getLevel(), at(helper, 3.5, 2, 3.5));
+        var camarilla = NpcSpawner.vampire(helper.getLevel(), at(helper, 5.5, 2, 3.5), VtmMod.id("ventrue"));
+        var anarch = NpcSpawner.vampire(helper.getLevel(), at(helper, 6.5, 2, 3.5), VtmMod.id("brujah"));
+
+        helper.assertTrue(Dialogues.select(vampire, civilian).get().id().equals(tree("civilian")), "civilians get the default tree");
+        helper.assertTrue(Dialogues.select(vampire, camarilla).get().id().equals(tree("vampire_camarilla")), "camarilla talk like the camarilla");
+        helper.assertTrue(Dialogues.select(vampire, anarch).get().id().equals(tree("vampire_anarch")), "anarchs talk like anarchs");
+        helper.assertTrue(Dialogues.select(mortal, camarilla).get().id().equals(tree("vampire_mortal")), "vampires are curt with mortals");
+
+        civilian.memory().remember(vampire.getUUID(), NpcMemory.Event.WITNESSED_FEEDING, 0L);
+        helper.assertTrue(Dialogues.select(vampire, civilian).get().id().equals(tree("civilian_wary")), "frightened civilians are wary");
+        civilian.memory().adjustRapport(vampire.getUUID(), 5, 0L);
+        helper.assertTrue(civilian.attitudeTo(vampire) == Attitude.FRIENDLY, "made amends, rapport 5, and they are forgiving");
+        helper.assertTrue(Dialogues.select(vampire, civilian).get().id().equals(tree("civilian_friendly")), "...and friendly");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "vtm_night")
+    public static void conversationsApplyEffectsAndEnd(GameTestHelper helper) {
+        helper.setDayTime(18000);
+        ServerPlayer player = vampire(helper, "gangrel");
+        var civilian = NpcSpawner.civilian(helper.getLevel(), at(helper, 4.5, 2, 6.5));
+
+        helper.assertTrue(DialogueManager.open(player, civilian), "the civilian will talk");
+        helper.assertTrue(civilian.state() == VtmNpc.State.TALKING && player.getUUID().equals(civilian.talker()),
+                "the civilian stops for the conversation");
+        DialogueManager.choose(player, option(player, "dialogue.vtm.opt.smalltalk"));
+        helper.assertTrue(civilian.memory().rapport(player.getUUID()) == 1, "small talk builds rapport");
+        helper.assertTrue(civilian.memory().hasFlag(player.getUUID(), "smalltalk"), "...once");
+        helper.assertTrue(DialogueManager.session(player).node().equals("smalltalk"), "the conversation moved on");
+
+        DialogueManager.choose(player, option(player, "dialogue.vtm.opt.leave"));
+        helper.assertTrue(DialogueManager.session(player) == null, "leaving ends it");
+        helper.assertTrue(civilian.state() == VtmNpc.State.NORMAL && civilian.talker() == null, "the civilian goes back to their evening");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "vtm_night")
+    public static void clientsCannotForgeChoices(GameTestHelper helper) {
+        helper.setDayTime(18000);
+        ServerPlayer mortal = survivalPlayer(helper);
+        mortal.moveTo(at(helper, 4.5, 2, 4.5));
+        var civilian = NpcSpawner.civilian(helper.getLevel(), at(helper, 4.5, 2, 6.5));
+        DialogueManager.open(mortal, civilian);
+        var hub = DialogueManager.session(mortal);
+        helper.assertTrue(hub != null, "the civilian talks to mortals too");
+
+        int charm = option(mortal, "dialogue.vtm.opt.charm");
+        DialogueManager.choose(mortal, charm); // hidden from mortals: must do nothing
+        helper.assertTrue(DialogueManager.session(mortal).equals(hub), "a hidden option cannot be picked");
+        helper.assertTrue(civilian.memory().about(mortal.getUUID()).map(e -> e.rapport() == 0).orElse(true), "...and has no effect");
+
+        DialogueManager.choose(mortal, 99); // out of range ends the conversation instead of throwing
+        helper.assertTrue(DialogueManager.session(mortal) == null, "garbage ends the conversation");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "vtm_night")
+    public static void diceChecksBranchAndHonourEffects(GameTestHelper helper) {
+        helper.setDayTime(18000);
+        ServerPlayer player = vampire(helper, "toreador");
+        var civilian = NpcSpawner.civilian(helper.getLevel(), at(helper, 4.5, 2, 6.5));
+        // A tree whose single option always passes (difficulty 0) and one that always fails (difficulty 99).
+        com.google.gson.JsonElement json = com.google.gson.JsonParser.parseString("""
+                {"start": "a", "nodes": {
+                  "a": {"text": "t", "options": [
+                    {"text": "win",  "check": {"difficulty": 0, "fail": "lost"}, "effects": [{"blood": 1.0, "flag": "won"}], "fail_effects": [{"flag": "bad"}], "next": "ok"},
+                    {"text": "lose", "check": {"difficulty": 99, "fail": "lost"}, "effects": [{"flag": "good"}], "fail_effects": [{"rapport": -2}], "next": "ok"}]},
+                  "ok": {"text": "ok"}, "lost": {"text": "lost"}}}""");
+        Dialogues.install(VtmMod.id("test_dice"), DialogueTree.CODEC.parse(com.mojang.serialization.JsonOps.INSTANCE, json).getOrThrow());
+        player.setData(com.epi0.vtm.registry.ModAttachments.VAMPIRE, VampireData.of(player).withBlood(2F));
+
+        DialogueManager.open(player, civilian, VtmMod.id("test_dice"));
+        DialogueManager.choose(player, 0);
+        helper.assertTrue(DialogueManager.session(player).node().equals("ok"), "a passed check goes to next");
+        helper.assertTrue(civilian.memory().hasFlag(player.getUUID(), "won") && !civilian.memory().hasFlag(player.getUUID(), "bad"),
+                "success effects apply, failure ones do not");
+        helper.assertTrue(VampireData.of(player).blood() == 3F, "the blood was given");
+
+        DialogueManager.open(player, civilian, VtmMod.id("test_dice"));
+        DialogueManager.choose(player, 1);
+        helper.assertTrue(DialogueManager.session(player).node().equals("lost"), "a failed check goes to its fail node");
+        helper.assertTrue(civilian.memory().rapport(player.getUUID()) == -2 && !civilian.memory().hasFlag(player.getUUID(), "good"),
+                "failure effects apply, success ones do not");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void dicePoolsFollowV5Rules(GameTestHelper helper) {
+        var random = net.minecraft.util.RandomSource.create(7L);
+        int messy = 0;
+        int bestial = 0;
+        long successes = 0;
+        for (int i = 0; i < 4000; i++) {
+            var roll = Roll.make(random, 6, 0, 3);
+            helper.assertTrue(!roll.messyCritical() && !roll.bestialFailure(), "no hunger dice, no Beast");
+            successes += roll.successes();
+            var hungry = Roll.make(random, 6, 6, 3);
+            messy += hungry.messyCritical() ? 1 : 0;
+            bestial += hungry.bestialFailure() ? 1 : 0;
+        }
+        double mean = successes / 4000.0;
+        helper.assertTrue(mean > 3.0 && mean < 3.9, "six dice average about three successes plus crits, got " + mean);
+        helper.assertTrue(messy > 0 && bestial > 0, "all-hunger pools do show the Beast");
+        helper.assertTrue(Roll.make(random, 0, 5, 1).pool() == 1, "a pool is never empty");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "vtm_night")
+    public static void hostileAndBusyNpcsRefuse(GameTestHelper helper) {
+        helper.setDayTime(18000);
+        ServerPlayer player = vampire(helper, "gangrel");
+        ServerPlayer other = vampire(helper, "nosferatu");
+        var elder = NpcSpawner.vampire(helper.getLevel(), at(helper, 4.5, 2, 6.5), VtmMod.id("ventrue"));
+        var sleeper = NpcSpawner.civilian(helper.getLevel(), at(helper, 2.5, 2, 6.5));
+        sleeper.setState(VtmNpc.State.SLEEPING);
+        helper.assertTrue(!DialogueManager.open(player, sleeper), "people asleep do not chat");
+
+        helper.assertTrue(DialogueManager.open(player, elder), "a stranger vampire will talk");
+        helper.assertTrue(!DialogueManager.open(other, elder), "...but only to one person at a time");
+        DialogueManager.end(player);
+        helper.assertTrue(DialogueManager.open(other, elder), "free again once the first has left");
+        DialogueManager.end(other);
+
+        elder.memory().adjustRapport(player.getUUID(), -5, 0L);
+        helper.assertTrue(elder.attitudeTo(player) == Attitude.HOSTILE, "enough insults and a vampire turns on you");
+        helper.assertTrue(!DialogueManager.open(player, elder), "hostile vampires do not talk");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "vtm_night")
+    public static void conversationEndsWhenDisturbed(GameTestHelper helper) {
+        helper.setDayTime(18000);
+        ServerPlayer player = vampire(helper, "gangrel");
+        var civilian = NpcSpawner.civilian(helper.getLevel(), at(helper, 4.5, 2, 6.5));
+        DialogueManager.open(player, civilian);
+        helper.assertTrue(DialogueManager.session(player) != null, "talking");
+        civilian.hurt(helper.getLevel().damageSources().playerAttack(player), 1F);
+        helper.assertTrue(DialogueManager.session(player) == null && civilian.state() != VtmNpc.State.TALKING,
+                "a punch ends the conversation");
+        helper.assertTrue(civilian.memory().isThreat(player.getUUID()), "and is remembered");
+
+        var elder = NpcSpawner.vampire(helper.getLevel(), at(helper, 2.5, 2, 6.5), VtmMod.id("ventrue"));
+        DialogueManager.open(player, elder);
+        player.moveTo(at(helper, 4.5, 2, 4.5).add(0, 100, 0)); // far above, so it is not a stray witness for other tests
+        helper.succeedWhen(() -> helper.assertTrue(DialogueManager.session(player) == null, "walking away ends the conversation"));
+    }
+
+    @GameTest(template = "empty", batch = "vtm_night")
+    public static void vampiresTeachTrustedFriends(GameTestHelper helper) {
+        helper.setDayTime(18000);
+        ServerPlayer player = vampire(helper, "gangrel");
+        var elder = NpcSpawner.vampire(helper.getLevel(), at(helper, 4.5, 2, 6.5), VtmMod.id("ventrue"));
+        int xp = VampireData.of(player).experience();
+
+        DialogueManager.open(player, elder);
+        var teach = DialogueManager.session(player);
+        DialogueManager.choose(player, option(player, "dialogue.vtm.opt.ask_teach")); // locked: no trust yet
+        helper.assertTrue(DialogueManager.session(player).equals(teach), "a stranger is not taught");
+
+        for (String step : new String[]{"introduce", "ask_clan", "ask_sect"}) {
+            DialogueManager.choose(player, option(player, "dialogue.vtm.opt." + step));
+            DialogueManager.choose(player, option(player, "dialogue.vtm.opt.else"));
+        }
+        helper.assertTrue(elder.memory().rapport(player.getUUID()) == 3, "three questions earn their trust");
+        DialogueManager.choose(player, option(player, "dialogue.vtm.opt.ask_teach"));
+        helper.assertTrue(VampireData.of(player).experience() == xp + 3, "and a lesson");
+        DialogueManager.choose(player, option(player, "dialogue.vtm.opt.else"));
+        helper.assertTrue(elder.memory().hasFlag(player.getUUID(), "taught"), "taught once only");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void dialoguePayloadsSurviveTheWire(GameTestHelper helper) {
+        var buf = new net.minecraft.network.RegistryFriendlyByteBuf(io.netty.buffer.Unpooled.buffer(), helper.getLevel().registryAccess());
+        var node = new DialogueNodePayload.Node(42, net.minecraft.network.chat.Component.literal("Mara"), 0x5522AA,
+                net.minecraft.network.chat.Component.translatable("dialogue.vtm.civilian.greet.day", "Mara"),
+                java.util.Optional.of(net.minecraft.network.chat.Component.literal("roll")), 2, -3,
+                List.of(new DialogueNodePayload.Choice(net.minecraft.network.chat.Component.literal("hi"), false,
+                        java.util.Optional.of(net.minecraft.network.chat.Component.literal("locked")))));
+        DialogueNodePayload.STREAM_CODEC.encode(buf, new DialogueNodePayload(java.util.Optional.of(node)));
+        var decoded = DialogueNodePayload.STREAM_CODEC.decode(buf);
+        helper.assertTrue(decoded.node().isPresent() && decoded.node().get().equals(node), "node round-trips");
+        DialogueNodePayload.STREAM_CODEC.encode(buf, DialogueNodePayload.close());
+        helper.assertTrue(DialogueNodePayload.STREAM_CODEC.decode(buf).node().isEmpty(), "close round-trips");
+
+        // Rapport and flags persist with the NPC.
+        NpcMemory memory = new NpcMemory();
+        UUID id = UUID.randomUUID();
+        memory.adjustRapport(id, 4, 10L);
+        memory.setFlag(id, "introduced", true, 10L);
+        NpcMemory loaded = new NpcMemory();
+        loaded.load(memory.save());
+        helper.assertTrue(loaded.rapport(id) == 4 && loaded.hasFlag(id, "introduced"), "memory round-trips through NBT");
         helper.succeed();
     }
 }

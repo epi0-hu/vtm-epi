@@ -69,6 +69,30 @@ memory of players (`NpcMemory`, the foundation for the Nemesis System), and Geck
 - Spawn with the creative tab eggs or `/vtm npc spawn civilian|vampire [clan]`. Civilians spawn at world generation and
   vampires rarely at night (biome modifiers in `data/vtm/neoforge/biome_modifier/`).
 
+## Conversations
+Right-click an NPC to talk. Dialogue is data (`data/<ns>/vtm/dialogue/*.json`, reloadable with `/reload`) and the server
+runs everything: it picks the tree, evaluates conditions and dice, applies effects, and sends the client only the lines
+and choices to show (`DialogueNodePayload`). The client sends back an option index and nothing else, and the server
+ignores indices that are hidden, locked or out of range.
+
+- **Trees** have a `when` condition and a `priority`; the highest-priority tree that applies to the NPC and player is
+  used, so a Camarilla vampire, a wary civilian and a mortal approaching a vampire each get their own conversation.
+  Nodes hold a line (or a list of conditional lines, so greetings can depend on night, history or rapport) and options.
+- **Conditions** (all fields optional, all must hold): NPC kind, clan, faction, attitude, night, player species, clan,
+  humanity, discipline level, times seen, rapport range, flags, whether the NPC sees the player as a threat. Options use
+  `show` (hidden unless true) and `require` (greyed out, with a `locked` hint, unless true).
+- **Effects**: rapport, flags, blood given to the player, experience, humanity, and `alarm` (the NPC glimpses
+  something frightening and remembers the player as a threat).
+- **Checks** use the V5 dice pool: d10s, 6+ succeeds, pairs of 10s add two successes, and a vampire rolls Hunger dice.
+  A 10 on a Hunger die in a winning roll is a *messy critical* and a 1 on one in a losing roll is a *bestial failure*;
+  both make the NPC witness the Beast. The roll is shown under the NPC's line.
+- **Memory**: each NPC keeps per-player **rapport** (-10 to +10) and **flags** next to what it has witnessed. Rapport
+  moves attitude: a civilian at +3 is a friend and a threat is forgiven at +5; a vampire at -5 turns hostile and refuses
+  to talk. Hostile, sleeping, cowering and busy NPCs refuse; walking away, taking damage or the NPC turning hostile ends
+  the conversation.
+- Shipped trees: civilians (default, wary, friendly), vampires by sect (Camarilla, Anarch, Sabbat, independent, a
+  fallback) and vampires speaking to mortals. Vampires teach a trusted vampire (3 XP, once) after three questions.
+
 ## Libraries
 GeckoLib 4.9.3 (local jar in `libs/`) is the only runtime library. Citadel and Bookshelf were evaluated and left out:
 Citadel overlaps GeckoLib for animation and brings about 17 core mixins and a 3 MB jar; Bookshelf mostly duplicates
@@ -77,7 +101,7 @@ dilation for Celerity) remain options if NPC navigation or Celerity ever need th
 
 ## Tests and dev tools
 - `./gradlew runGameTestServer`: GameTests in `gametest/VtmGameTests` (data, embrace/learn, passives, feeding, every
-  power, mob control, every bane, frenzy, forms, sense link).
-- `./gradlew runClient -Pharness=player|npc`: scripted walkthrough of the real client that writes screenshots to
-  `run/screenshots/` (player: GUI tabs, HUD, forms, sense link, frenzy; npc: a lineup in every animation). Needs a
+  power, mob control, every bane, frenzy, forms, sense link, NPC behaviour, conversations).
+- `./gradlew runClient -Pharness=player|npc|dialogue`: scripted walkthrough of the real client that writes screenshots to
+  `run/screenshots/` (player: GUI tabs, HUD, forms, sense link, frenzy; npc: a lineup in every animation; dialogue: a conversation with a civilian and a vampire). Needs a
   world at `run/saves/harness` and, on a headless machine, `xvfb-run`. Inert without the property.

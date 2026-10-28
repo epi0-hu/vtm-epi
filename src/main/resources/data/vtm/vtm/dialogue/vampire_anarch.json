@@ -1,0 +1,225 @@
+{
+  "when": {
+    "npc": "vampire",
+    "player_vampire": true,
+    "faction": "vtm:anarch"
+  },
+  "priority": 5,
+  "start": "hub",
+  "nodes": {
+    "hub": {
+      "text": [
+        {
+          "when": {
+            "min_seen": 4
+          },
+          "key": "dialogue.vtm.vampire_anarch.greet.familiar"
+        },
+        {
+          "key": "dialogue.vtm.vampire_anarch.greet"
+        }
+      ],
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.introduce",
+          "show": {
+            "no_flag": "introduced"
+          },
+          "effects": [
+            {
+              "rapport": 1,
+              "flag": "introduced"
+            }
+          ],
+          "next": "intro"
+        },
+        {
+          "text": "dialogue.vtm.opt.ask_clan",
+          "show": {
+            "no_flag": "asked_clan"
+          },
+          "effects": [
+            {
+              "rapport": 1,
+              "flag": "asked_clan"
+            }
+          ],
+          "next": "clan"
+        },
+        {
+          "text": "dialogue.vtm.opt.ask_sect",
+          "show": {
+            "no_flag": "asked_sect"
+          },
+          "effects": [
+            {
+              "rapport": 1,
+              "flag": "asked_sect"
+            }
+          ],
+          "next": "sect"
+        },
+        {
+          "text": "dialogue.vtm.opt.ask_city",
+          "require": {
+            "flag": "introduced"
+          },
+          "locked": "dialogue.vtm.locked.introduce",
+          "next": "rumor"
+        },
+        {
+          "text": "dialogue.vtm.opt.ask_teach",
+          "show": {
+            "no_flag": "taught"
+          },
+          "require": {
+            "min_rapport": 3
+          },
+          "locked": "dialogue.vtm.locked.rapport",
+          "effects": [
+            {
+              "experience": 3,
+              "flag": "taught"
+            }
+          ],
+          "next": "teach"
+        },
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
+    },
+    "more": {
+      "text": "dialogue.vtm.vampire.more",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.introduce",
+          "show": {
+            "no_flag": "introduced"
+          },
+          "effects": [
+            {
+              "rapport": 1,
+              "flag": "introduced"
+            }
+          ],
+          "next": "intro"
+        },
+        {
+          "text": "dialogue.vtm.opt.ask_clan",
+          "show": {
+            "no_flag": "asked_clan"
+          },
+          "effects": [
+            {
+              "rapport": 1,
+              "flag": "asked_clan"
+            }
+          ],
+          "next": "clan"
+        },
+        {
+          "text": "dialogue.vtm.opt.ask_sect",
+          "show": {
+            "no_flag": "asked_sect"
+          },
+          "effects": [
+            {
+              "rapport": 1,
+              "flag": "asked_sect"
+            }
+          ],
+          "next": "sect"
+        },
+        {
+          "text": "dialogue.vtm.opt.ask_city",
+          "require": {
+            "flag": "introduced"
+          },
+          "locked": "dialogue.vtm.locked.introduce",
+          "next": "rumor"
+        },
+        {
+          "text": "dialogue.vtm.opt.ask_teach",
+          "show": {
+            "no_flag": "taught"
+          },
+          "require": {
+            "min_rapport": 3
+          },
+          "locked": "dialogue.vtm.locked.rapport",
+          "effects": [
+            {
+              "experience": 3,
+              "flag": "taught"
+            }
+          ],
+          "next": "teach"
+        },
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
+    },
+    "intro": {
+      "text": "dialogue.vtm.vampire_anarch.intro",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.else",
+          "next": "more"
+        },
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
+    },
+    "clan": {
+      "text": "dialogue.vtm.vampire.clan",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.else",
+          "next": "more"
+        },
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
+    },
+    "sect": {
+      "text": "dialogue.vtm.vampire_anarch.sect",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.else",
+          "next": "more"
+        },
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
+    },
+    "rumor": {
+      "text": "dialogue.vtm.vampire_anarch.rumor",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.else",
+          "next": "more"
+        },
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
+    },
+    "teach": {
+      "text": "dialogue.vtm.vampire_anarch.teach",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.else",
+          "next": "more"
+        },
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
+    }
+  }
+}

@@ -2,7 +2,9 @@ package com.epi0.vtm.npc;
 
 import com.epi0.vtm.registry.Faction;
 import com.epi0.vtm.registry.VtmRegistries;
+import com.epi0.vtm.dialogue.DialogueManager;
 import com.epi0.vtm.npc.goal.RestGoal;
+import com.epi0.vtm.npc.goal.TalkGoal;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -12,6 +14,9 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.DifficultyInstance;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -36,6 +41,7 @@ import software.bernie.geckolib.animation.RawAnimation;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
 import java.util.Optional;
+import java.util.UUID;
 
 /**
  * Shared base for every person in the world: a name, a look, a faction, a home, a daily rhythm, a memory of
@@ -43,7 +49,7 @@ import java.util.Optional;
  */
 public abstract class VtmNpc extends PathfinderMob implements GeoEntity {
     public enum State {
-        NORMAL, SLEEPING, COWERING, FEEDING;
+        NORMAL, SLEEPING, COWERING, FEEDING, TALKING;
 
         static State of(int ordinal) {
             return values()[Math.floorMod(ordinal, values().length)];
@@ -70,6 +76,8 @@ public abstract class VtmNpc extends PathfinderMob implements GeoEntity {
     private final NpcMemory memory = new NpcMemory();
     @Nullable
     private BlockPos home;
+    @Nullable
+    private UUID talker;
 
     protected VtmNpc(EntityType<? extends PathfinderMob> type, Level level) {
         super(type, level);
@@ -137,6 +145,39 @@ public abstract class VtmNpc extends PathfinderMob implements GeoEntity {
         return memory;
     }
 
+    // ---------------------------------------------------------------- conversation
+
+    /** The player this NPC is currently talking to; it holds still and faces them. */
+    @Nullable
+    public UUID talker() {
+        return talker;
+    }
+
+    public void beginTalk(Player player) {
+        talker = player.getUUID();
+        getNavigation().stop();
+        setState(State.TALKING);
+        memory.remember(player.getUUID(), NpcMemory.Event.SEEN, level().getGameTime());
+    }
+
+    public void endTalk() {
+        talker = null;
+        if (state() == State.TALKING) {
+            setState(State.NORMAL);
+        }
+    }
+
+    @Override
+    protected InteractionResult mobInteract(Player player, InteractionHand hand) {
+        if (hand != InteractionHand.MAIN_HAND || !isAlive()) {
+            return InteractionResult.PASS;
+        }
+        if (!level().isClientSide && player instanceof ServerPlayer serverPlayer) {
+            DialogueManager.open(serverPlayer, this);
+        }
+        return InteractionResult.sidedSuccess(level().isClientSide);
+    }
+
     @Nullable
     public BlockPos home() {
         return home;
@@ -187,6 +228,7 @@ public abstract class VtmNpc extends PathfinderMob implements GeoEntity {
 
     @Override
     protected void registerGoals() {
+        goalSelector.addGoal(0, new TalkGoal(this));
         goalSelector.addGoal(2, new RestGoal(this));
     }
 
@@ -202,6 +244,7 @@ public abstract class VtmNpc extends PathfinderMob implements GeoEntity {
             if (isResting()) {
                 setState(State.NORMAL);
             }
+            DialogueManager.endFor(this);
             if (source.getEntity() instanceof Player player) {
                 memory.remember(player.getUUID(), NpcMemory.Event.HARMED, level().getGameTime());
             }
@@ -259,7 +302,8 @@ public abstract class VtmNpc extends PathfinderMob implements GeoEntity {
         super.readAdditionalSaveData(tag);
         setVariant(tag.getInt("Variant"));
         entityData.set(DATA_FACTION, tag.getString("Faction"));
-        setState(State.of(tag.getInt("State")));
+        State saved = State.of(tag.getInt("State"));
+        setState(saved == State.TALKING ? State.NORMAL : saved); // a conversation does not survive a reload
         if (tag.contains("Memory")) {
             memory.load(tag.get("Memory"));
         }
@@ -285,6 +329,7 @@ public abstract class VtmNpc extends PathfinderMob implements GeoEntity {
         return switch (state()) {
             case SLEEPING -> animationState.setAndContinue(SLEEP);
             case COWERING -> animationState.setAndContinue(COWER);
+            case TALKING -> animationState.setAndContinue(TALK);
             default -> {
                 if (animationState.isMoving()) {
                     yield animationState.setAndContinue(walkAnimation.speed() > 0.55F ? RUN : WALK);

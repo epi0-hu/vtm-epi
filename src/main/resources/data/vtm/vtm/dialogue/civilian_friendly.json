@@ -1,0 +1,112 @@
+{
+  "when": {
+    "npc": "civilian",
+    "attitude": "friendly"
+  },
+  "priority": 10,
+  "start": "hub",
+  "nodes": {
+    "hub": {
+      "text": "dialogue.vtm.civilian_friendly.greet",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.how",
+          "next": "how"
+        },
+        {
+          "text": "dialogue.vtm.opt.friend_blood",
+          "show": {
+            "player_vampire": true
+          },
+          "require": {
+            "no_flag": "fed_friend"
+          },
+          "locked": "dialogue.vtm.locked.fed_friend",
+          "effects": [
+            {
+              "blood": 3.0,
+              "flag": "fed_friend"
+            }
+          ],
+          "next": "friend_give"
+        },
+        {
+          "text": "dialogue.vtm.opt.strange",
+          "next": "friend_strange"
+        },
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
+    },
+    "more": {
+      "text": "dialogue.vtm.more",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.how",
+          "next": "how"
+        },
+        {
+          "text": "dialogue.vtm.opt.friend_blood",
+          "show": {
+            "player_vampire": true
+          },
+          "require": {
+            "no_flag": "fed_friend"
+          },
+          "locked": "dialogue.vtm.locked.fed_friend",
+          "effects": [
+            {
+              "blood": 3.0,
+              "flag": "fed_friend"
+            }
+          ],
+          "next": "friend_give"
+        },
+        {
+          "text": "dialogue.vtm.opt.strange",
+          "next": "friend_strange"
+        },
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
+    },
+    "how": {
+      "text": "dialogue.vtm.civilian_friendly.how",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.else",
+          "next": "more"
+        },
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
+    },
+    "friend_give": {
+      "text": "dialogue.vtm.civilian_friendly.give",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.else",
+          "next": "more"
+        },
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
+    },
+    "friend_strange": {
+      "text": "dialogue.vtm.civilian_friendly.strange",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.else",
+          "next": "more"
+        },
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
+    }
+  }
+}
