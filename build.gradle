@@ -24,6 +24,11 @@ neoForge {
         client {
             client()
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            if (project.hasProperty('harness')) {
+                // Scripted dev walkthrough that writes screenshots: ./gradlew runClient -Pharness
+                systemProperty 'vtm.harness', 'true'
+                programArguments.addAll '--quickPlaySingleplayer', 'harness'
+            }
         }
 
         server {

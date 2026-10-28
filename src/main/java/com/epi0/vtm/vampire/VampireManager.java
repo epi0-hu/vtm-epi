@@ -2,13 +2,15 @@ package com.epi0.vtm.vampire;
 
 import com.epi0.vtm.VtmConfig;
 import com.epi0.vtm.network.SyncVampirePayload;
+import com.epi0.vtm.network.VtmNetwork;
+import com.epi0.vtm.power.Forms;
 import com.epi0.vtm.power.PassiveEffects;
+import com.epi0.vtm.power.SenseLink;
 import com.epi0.vtm.registry.ModAttachments;
 import com.epi0.vtm.registry.Discipline;
 import com.epi0.vtm.registry.VtmRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
-import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.Optional;
 
@@ -22,11 +24,7 @@ public final class VampireManager {
     }
 
     public static void sync(ServerPlayer player) {
-        // Connections that never negotiated our channel (e.g. test fakes) would throw on send.
-        if (player.connection == null || !player.connection.hasChannel(SyncVampirePayload.TYPE)) {
-            return;
-        }
-        PacketDistributor.sendToPlayer(player, new SyncVampirePayload(VampireData.of(player)));
+        VtmNetwork.send(player, new SyncVampirePayload(VampireData.of(player)));
     }
 
     public static VampireData embraced(ResourceLocation clan) {
@@ -43,6 +41,9 @@ public final class VampireManager {
     }
 
     public static void makeMortal(ServerPlayer player) {
+        Frenzy.quell(player);
+        SenseLink.end(player);
+        Forms.clear(player);
         set(player, VampireData.DEFAULT);
     }
 

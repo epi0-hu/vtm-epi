@@ -69,7 +69,7 @@ public final class MobControl {
     public static void onChangeTarget(LivingChangeTargetEvent event) {
         LivingEntity next = event.getNewAboutToBeSetTarget();
         if (next instanceof ServerPlayer player && event.getEntity() instanceof Mob mob
-                && (isHidden(player) || isCalm(mob))) {
+                && (isHidden(player) || isCalm(mob) || Forms.isIn(player, Form.MIST))) {
             event.setNewAboutToBeSetTarget(null);
         }
     }

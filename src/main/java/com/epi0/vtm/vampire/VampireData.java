@@ -23,11 +23,12 @@ public record VampireData(
         int humanity,
         int stains,
         int experience,
-        Map<ResourceLocation, Integer> disciplines
+        Map<ResourceLocation, Integer> disciplines,
+        int bestialFeatures
 ) {
     public static final VampireData DEFAULT = new VampireData(
             Species.MORTAL, Optional.empty(), VampireRules.DEFAULT_GENERATION, 0, 0F,
-            VampireRules.DEFAULT_HUMANITY, 0, 0, Map.of());
+            VampireRules.DEFAULT_HUMANITY, 0, 0, Map.of(), 0);
 
     public static final Codec<VampireData> CODEC = RecordCodecBuilder.create(i -> i.group(
             Species.CODEC.optionalFieldOf("species", DEFAULT.species).forGetter(VampireData::species),
@@ -39,7 +40,8 @@ public record VampireData(
             Codec.INT.optionalFieldOf("stains", DEFAULT.stains).forGetter(VampireData::stains),
             Codec.INT.optionalFieldOf("experience", DEFAULT.experience).forGetter(VampireData::experience),
             Codec.unboundedMap(ResourceLocation.CODEC, Codec.INT).optionalFieldOf("disciplines", Map.of())
-                    .forGetter(VampireData::disciplines)
+                    .forGetter(VampireData::disciplines),
+            Codec.INT.optionalFieldOf("bestial_features", 0).forGetter(VampireData::bestialFeatures)
     ).apply(i, VampireData::new));
 
     public static VampireData of(Player player) {
@@ -64,35 +66,39 @@ public record VampireData(
     }
 
     public VampireData withSpecies(Species v) {
-        return new VampireData(v, clan, generation, bloodPotency, blood, humanity, stains, experience, disciplines);
+        return new VampireData(v, clan, generation, bloodPotency, blood, humanity, stains, experience, disciplines, bestialFeatures);
     }
 
     public VampireData withClan(Optional<ResourceLocation> v) {
-        return new VampireData(species, v, generation, bloodPotency, blood, humanity, stains, experience, disciplines);
+        return new VampireData(species, v, generation, bloodPotency, blood, humanity, stains, experience, disciplines, bestialFeatures);
     }
 
     public VampireData withGeneration(int v) {
-        return new VampireData(species, clan, v, bloodPotency, blood, humanity, stains, experience, disciplines);
+        return new VampireData(species, clan, v, bloodPotency, blood, humanity, stains, experience, disciplines, bestialFeatures);
     }
 
     public VampireData withBloodPotency(int v) {
-        return new VampireData(species, clan, generation, v, blood, humanity, stains, experience, disciplines);
+        return new VampireData(species, clan, generation, v, blood, humanity, stains, experience, disciplines, bestialFeatures);
     }
 
     public VampireData withBlood(float v) {
-        return new VampireData(species, clan, generation, bloodPotency, v, humanity, stains, experience, disciplines);
+        return new VampireData(species, clan, generation, bloodPotency, v, humanity, stains, experience, disciplines, bestialFeatures);
     }
 
     public VampireData withHumanity(int v) {
-        return new VampireData(species, clan, generation, bloodPotency, blood, v, stains, experience, disciplines);
+        return new VampireData(species, clan, generation, bloodPotency, blood, v, stains, experience, disciplines, bestialFeatures);
     }
 
     public VampireData withStains(int v) {
-        return new VampireData(species, clan, generation, bloodPotency, blood, humanity, v, experience, disciplines);
+        return new VampireData(species, clan, generation, bloodPotency, blood, humanity, v, experience, disciplines, bestialFeatures);
     }
 
     public VampireData withExperience(int v) {
-        return new VampireData(species, clan, generation, bloodPotency, blood, humanity, stains, v, disciplines);
+        return new VampireData(species, clan, generation, bloodPotency, blood, humanity, stains, v, disciplines, bestialFeatures);
+    }
+
+    public VampireData withBestialFeatures(int v) {
+        return new VampireData(species, clan, generation, bloodPotency, blood, humanity, stains, experience, disciplines, v);
     }
 
     public VampireData withDiscipline(ResourceLocation discipline, int level) {
@@ -102,6 +108,6 @@ public record VampireData(
         } else {
             copy.put(discipline, level);
         }
-        return new VampireData(species, clan, generation, bloodPotency, blood, humanity, stains, experience, Map.copyOf(copy));
+        return new VampireData(species, clan, generation, bloodPotency, blood, humanity, stains, experience, Map.copyOf(copy), bestialFeatures);
     }
 }

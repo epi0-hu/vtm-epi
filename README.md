@@ -29,16 +29,32 @@ Phases 1 (core vampire data), 2 (character sheet GUI) and discipline powers are 
 - **Commands** (op): `/vtm embrace|mortal|set|discipline|info`.
 
 ## Discipline powers
-All 12 disciplines have 5 powers (one per level), 60 in total, defined in `power/Powers.java`
-(costs, cooldowns and effects are all there). Celerity, Potence and Fortitude level 1 are passive attribute bonuses
-that scale with dots; everything else is an active power that costs blood and has a cooldown.
+All 12 disciplines have 5 levels of powers (62 in total), defined in `power/Powers.java` (costs, cooldowns and
+effects are all there). Celerity, Potence and Fortitude level 1 are passive attribute bonuses that scale with dots;
+everything else is an active power that costs blood and has a cooldown.
 
 - `Z` / `X` cycle the armed power, `G` uses it, or pick one in the **Powers** tab of the sheet (`V`).
 - Activation is server-validated (`PowerManager`): the client only sends a power id.
 - Mind powers (Dominate, Presence, Obfuscate, ...) use `MobControl`: calmed mobs and hidden players are enforced by
   rewriting target changes, so vanilla retargeting cannot undo them.
 - Effect durations stretch 20% per Blood Potency above 1.
+- **Shapechange** (Protean 5) is real: wolf, bat (flies) and mist (invisible, flying, nearly untouchable but unable
+  to act) are infinite effects, so they sync to nearby clients and persist. `FormRenderer` draws the animal in place
+  of the player. Holding a form drains blood slowly; toggle powers can always be released.
+- **Share the Senses** (Auspex 5) moves your camera into the creature you look at (`SenseLink` /
+  `SenseLinkClient`) while your body stands helpless. Being hurt, the host dying or straying, or time ends it.
 
-## Tests
-`./gradlew runGameTestServer` runs the GameTests in `gametest/VtmGameTests` (data loading, embrace/learn,
-passives, feeding, every power at max level, mob control).
+## Frenzy and clan banes
+Frenzy (`Frenzy`) is an effect: stronger and faster, no powers except Quell the Beast, and the vampire feeds on
+whatever is near. It triggers from hunger next to prey, or from a clan bane. Clan banes are data: each clan JSON has an
+optional `bane` object (`registry/Bane`) combining any of: `frenzy_hunger`, `rage_frenzy`, `vampire_blood_frenzy`,
+`bestial_features`, `unease`, `bite_damage`, `bite_self_damage`, `prey_tag`, `blood_gain_multiplier`, `derangement`,
+`doomed_minutes`, `grounded_blocks`, `dark_fatigue`; plus `sun_damage_multiplier` on the clan. Where tabletop banes have
+no Minecraft equivalent they are mapped to a close analogue (see each clan's `.bane` lang text).
+
+## Tests and dev tools
+- `./gradlew runGameTestServer`: GameTests in `gametest/VtmGameTests` (data, embrace/learn, passives, feeding, every
+  power, mob control, every bane, frenzy, forms, sense link).
+- `./gradlew runClient -Pharness`: scripted walkthrough of the real client that writes screenshots to
+  `run/screenshots/` (GUI tabs, HUD, forms, sense link, frenzy). Needs a world at `run/saves/harness` and, on a
+  headless machine, `xvfb-run`. Inert without the property.

@@ -1,6 +1,7 @@
 package com.epi0.vtm;
 
 import com.epi0.vtm.registry.ModAttachments;
+import com.epi0.vtm.registry.ModEffects;
 import com.mojang.logging.LogUtils;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.bus.api.IEventBus;
@@ -16,6 +17,7 @@ public class VtmMod {
 
     public VtmMod(IEventBus modBus, ModContainer container) {
         ModAttachments.ATTACHMENTS.register(modBus);
+        ModEffects.EFFECTS.register(modBus);
         container.registerConfig(ModConfig.Type.SERVER, VtmConfig.SPEC);
     }
 

@@ -26,6 +26,8 @@ public final class PowerContext {
     private final VampireData data;
     private float bloodGain;
     private int stainChange;
+    private int featureChange;
+    private boolean waived;
 
     PowerContext(ServerPlayer player, VampireData data) {
         this.player = player;
@@ -50,6 +52,23 @@ public final class PowerContext {
 
     int stainChange() {
         return stainChange;
+    }
+
+    int featureChange() {
+        return featureChange;
+    }
+
+    boolean waived() {
+        return waived;
+    }
+
+    /** Skip the blood cost and cooldown (e.g. reverting a toggle). */
+    public void waive() {
+        waived = true;
+    }
+
+    public void changeFeatures(int delta) {
+        featureChange += delta;
     }
 
     public void gainBlood(float amount) {

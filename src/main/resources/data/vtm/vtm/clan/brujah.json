@@ -1,5 +1,12 @@
 {
   "color": "#B03A2E",
   "sun_damage_multiplier": 1.0,
-  "disciplines": ["vtm:celerity", "vtm:potence", "vtm:presence"]
+  "disciplines": [
+    "vtm:celerity",
+    "vtm:potence",
+    "vtm:presence"
+  ],
+  "bane": {
+    "rage_frenzy": true
+  }
 }

@@ -3,8 +3,11 @@ package com.epi0.vtm.event;
 import com.epi0.vtm.VtmMod;
 import com.epi0.vtm.power.PassiveEffects;
 import com.epi0.vtm.power.PowerManager;
+import com.epi0.vtm.power.SenseLink;
 import com.epi0.vtm.registry.ModAttachments;
+import com.epi0.vtm.vampire.Banes;
 import com.epi0.vtm.vampire.Feeding;
+import com.epi0.vtm.vampire.Frenzy;
 import com.epi0.vtm.vampire.VampireData;
 import com.epi0.vtm.vampire.VampireManager;
 import com.epi0.vtm.vampire.VampireRules;
@@ -35,11 +38,15 @@ public final class ServerEvents {
     public static void onLogout(PlayerEvent.PlayerLoggedOutEvent event) {
         Feeding.forget(event.getEntity().getUUID());
         PowerManager.forget(event.getEntity().getUUID());
+        Frenzy.forget(event.getEntity().getUUID());
+        Banes.forget(event.getEntity().getUUID());
+        SenseLink.forget(event.getEntity().getUUID());
     }
 
     @SubscribeEvent
     public static void onChangedDimension(PlayerEvent.PlayerChangedDimensionEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
+            SenseLink.end(player);
             VampireManager.sync(player);
         }
     }

@@ -1,7 +1,10 @@
 package com.epi0.vtm.power;
 
 import com.epi0.vtm.VtmMod;
+import com.epi0.vtm.registry.ModEffects;
 import com.epi0.vtm.util.Scheduler;
+import com.epi0.vtm.vampire.Banes;
+import com.epi0.vtm.vampire.Frenzy;
 import com.epi0.vtm.vampire.VampireData;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
@@ -33,12 +36,16 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Predicate;
 
 /**
  * Every discipline power in the mod: five per discipline, one per level.
  * Costs and cooldowns live here so balance changes are one-file edits.
  */
 public final class Powers {
+    /** The one power a frenzied vampire may still use. */
+    public static final ResourceLocation QUELL_THE_BEAST = VtmMod.id("quell_the_beast");
+
     private static final Map<ResourceLocation, Power> BY_ID = new LinkedHashMap<>();
 
     // ------------------------------------------------------------ Animalism
@@ -60,13 +67,20 @@ public final class Powers {
         active("quell_the_beast", "animalism", 3, 2, 60, ctx -> {
             ServerPlayer p = ctx.player();
             List<MobEffectInstance> harmful = p.getActiveEffects().stream()
-                    .filter(i -> i.getEffect().value().getCategory() == MobEffectCategory.HARMFUL).toList();
-            if (harmful.isEmpty() && ctx.data().stains() == 0) {
+                    .filter(i -> i.getEffect().value().getCategory() == MobEffectCategory.HARMFUL
+                            && !i.getEffect().is(ModEffects.FRENZY.getId())).toList();
+            boolean frenzied = Frenzy.isFrenzied(p);
+            VampireData data = ctx.data();
+            if (harmful.isEmpty() && !frenzied && data.stains() == 0 && data.bestialFeatures() == 0) {
                 return false;
             }
+            Frenzy.quell(p);
             harmful.forEach(i -> p.removeEffect(i.getEffect()));
-            if (ctx.data().stains() > 0) {
+            if (data.stains() > 0) {
                 ctx.changeStains(-1);
+            }
+            if (data.bestialFeatures() > 0) {
+                ctx.changeFeatures(-1);
             }
             return true;
         });
@@ -140,11 +154,7 @@ public final class Powers {
             }
             return true;
         });
-        active("share_the_senses", "auspex", 5, 3, 120, ctx -> {
-            ctx.self(MobEffects.NIGHT_VISION, 30, 0);
-            ctx.nearby(48, e -> true).forEach(e -> ctx.on(e, MobEffects.GLOWING, 20, 0));
-            return true;
-        });
+        toggle("share_the_senses", "auspex", 5, 3, 60, SenseLink::isLinked, SenseLink::toggle);
     }
 
     // ------------------------------------------------------------ Blood Sorcery
@@ -193,6 +203,9 @@ public final class Powers {
                 VampireData od = VampireData.of(other);
                 taken = Math.min(taken, od.blood());
                 com.epi0.vtm.vampire.VampireManager.set(other, od.withBlood(od.blood() - taken));
+                if (Banes.of(ctx.player()).vampireBloodFrenzy()) {
+                    Frenzy.start(ctx.player(), 12);
+                }
             } else {
                 target.hurt(ctx.player().damageSources().indirectMagic(ctx.player(), ctx.player()), 4F);
             }
@@ -528,18 +541,14 @@ public final class Powers {
             ctx.self(MobEffects.FIRE_RESISTANCE, 120, 0);
             ctx.self(MobEffects.DAMAGE_RESISTANCE, 10, 4);
             ctx.self(MobEffects.REGENERATION, 10, 2);
-            ctx.self(MobEffects.MOVEMENT_SLOWDOWN, 10, 6);
+            ctx.self(ModEffects.PROJECTION, 10, 0);
             MobControl.hide(ctx.player(), ctx.ticks(10));
             MobControl.dropAggro(ctx.player(), 24, ctx.ticks(10));
             return true;
         });
-        active("shapechange", "protean", 5, 3, 120, ctx -> {
-            ctx.self(MobEffects.MOVEMENT_SPEED, 60, 1);
-            ctx.self(MobEffects.JUMP, 60, 1);
-            ctx.self(MobEffects.DAMAGE_BOOST, 60, 1);
-            ctx.self(MobEffects.NIGHT_VISION, 60, 0);
-            return true;
-        });
+        toggle("shapechange", "protean", 5, 3, 10, p -> Forms.isIn(p, Form.WOLF), ctx -> Forms.toggle(ctx, Form.WOLF));
+        toggle("bat_form", "protean", 5, 3, 10, p -> Forms.isIn(p, Form.BAT), ctx -> Forms.toggle(ctx, Form.BAT));
+        toggle("mist_form", "protean", 5, 3, 10, p -> Forms.isIn(p, Form.MIST), ctx -> Forms.toggle(ctx, Form.MIST));
     }
 
     // ------------------------------------------------------------ Thin-Blood Alchemy
@@ -577,17 +586,22 @@ public final class Powers {
     }
 
     private static void active(String name, String discipline, int level, int cost, int cooldownSeconds, PowerAction action) {
-        register(name, discipline, level, PowerKind.ACTIVE, cost, cooldownSeconds * 20, action);
+        register(name, discipline, level, PowerKind.ACTIVE, cost, cooldownSeconds * 20, action, null);
+    }
+
+    private static void toggle(String name, String discipline, int level, int cost, int cooldownSeconds,
+                               Predicate<ServerPlayer> engaged, PowerAction action) {
+        register(name, discipline, level, PowerKind.ACTIVE, cost, cooldownSeconds * 20, action, engaged);
     }
 
     private static void passive(String name, String discipline, int level) {
-        register(name, discipline, level, PowerKind.PASSIVE, 0, 0, ctx -> false);
+        register(name, discipline, level, PowerKind.PASSIVE, 0, 0, ctx -> false, null);
     }
 
     private static void register(String name, String discipline, int level, PowerKind kind, int cost, int cooldownTicks,
-                                 PowerAction action) {
+                                 PowerAction action, Predicate<ServerPlayer> engaged) {
         ResourceLocation id = VtmMod.id(name);
-        if (BY_ID.put(id, new Power(id, VtmMod.id(discipline), level, kind, cost, cooldownTicks, action)) != null) {
+        if (BY_ID.put(id, new Power(id, VtmMod.id(discipline), level, kind, cost, cooldownTicks, action, engaged)) != null) {
             throw new IllegalStateException("Duplicate power " + id);
         }
     }
@@ -604,9 +618,9 @@ public final class Powers {
         return BY_ID.values().stream().filter(p -> p.discipline().equals(discipline)).toList();
     }
 
-    /** The power unlocked by reaching {@code level} in {@code discipline}, if any. */
-    public static Optional<Power> at(ResourceLocation discipline, int level) {
-        return BY_ID.values().stream().filter(p -> p.discipline().equals(discipline) && p.level() == level).findFirst();
+    /** The powers unlocked by reaching {@code level} in {@code discipline}. */
+    public static List<Power> at(ResourceLocation discipline, int level) {
+        return BY_ID.values().stream().filter(p -> p.discipline().equals(discipline) && p.level() == level).toList();
     }
 
     /** All powers the player has unlocked, ordered by discipline then level. */

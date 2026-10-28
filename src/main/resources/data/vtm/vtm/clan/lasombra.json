@@ -1,5 +1,12 @@
 {
   "color": "#1B2631",
   "sun_damage_multiplier": 1.0,
-  "disciplines": ["vtm:dominate", "vtm:oblivion", "vtm:potence"]
+  "disciplines": [
+    "vtm:dominate",
+    "vtm:oblivion",
+    "vtm:potence"
+  ],
+  "bane": {
+    "unease": 2
+  }
 }

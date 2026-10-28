@@ -1,5 +1,12 @@
 {
   "color": "#922B21",
   "sun_damage_multiplier": 1.0,
-  "disciplines": ["vtm:auspex", "vtm:blood_sorcery", "vtm:dominate"]
+  "disciplines": [
+    "vtm:auspex",
+    "vtm:blood_sorcery",
+    "vtm:dominate"
+  ],
+  "bane": {
+    "blood_gain_multiplier": 0.75
+  }
 }

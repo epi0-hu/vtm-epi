@@ -1,6 +1,9 @@
 package com.epi0.vtm.vampire;
 
 import com.epi0.vtm.VtmConfig;
+import com.epi0.vtm.power.Forms;
+import com.epi0.vtm.power.SenseLink;
+import com.epi0.vtm.registry.Bane;
 import com.epi0.vtm.registry.Clan;
 import com.epi0.vtm.registry.VtmRegistries;
 import net.minecraft.core.BlockPos;
@@ -34,6 +37,11 @@ public final class VampireTicker {
             next = heal(player, next);
             applyHungerPenalties(player, next);
             applySunlight(player, next);
+            Bane bane = Banes.of(player);
+            next = Banes.tick(player, next, bane);
+            next = Forms.tick(player, next);
+            Frenzy.tick(player, next, bane);
+            SenseLink.tick(player);
         }
         next = passiveExperience(player, next);
 

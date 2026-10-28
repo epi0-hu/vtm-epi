@@ -1,5 +1,7 @@
 {
   "color": "#D5DBDB",
-  "sun_damage_multiplier": 1.0,
-  "disciplines": ["vtm:thin_blood_alchemy"]
+  "sun_damage_multiplier": 0.5,
+  "disciplines": [
+    "vtm:thin_blood_alchemy"
+  ]
 }

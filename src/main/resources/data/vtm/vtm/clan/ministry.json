@@ -1,5 +1,9 @@
 {
   "color": "#D4AC0D",
   "sun_damage_multiplier": 2.0,
-  "disciplines": ["vtm:obfuscate", "vtm:presence", "vtm:protean"]
+  "disciplines": [
+    "vtm:obfuscate",
+    "vtm:presence",
+    "vtm:protean"
+  ]
 }

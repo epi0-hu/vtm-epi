@@ -16,6 +16,7 @@ import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FormattedCharSequence;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -29,12 +30,12 @@ import java.util.List;
  * All values are read from the synced {@link VampireData}; the only thing the client sends is a learn request.
  */
 public class VampireScreen extends Screen {
-    private enum Tab { OVERVIEW, DISCIPLINES, POWERS, CLAN }
+    enum Tab { OVERVIEW, DISCIPLINES, POWERS, CLAN }
 
     private static final int WIDTH = 280;
     private static final int HEIGHT = 214;
     private static final int ROW_HEIGHT = 14;
-    private static final int VISIBLE_ROWS = 11;
+    private static final int VISIBLE_ROWS = 10;
     private static final int LIST_TOP = 52;
 
     private static final int PANEL = 0xE0181015;
@@ -46,14 +47,19 @@ public class VampireScreen extends Screen {
 
     private record LearnButton(Button button, ResourceLocation discipline) {}
 
-    private Tab tab = Tab.OVERVIEW;
+    private Tab tab;
     private int scroll;
     private int left;
     private int top;
     private final List<LearnButton> learnButtons = new ArrayList<>();
 
     public VampireScreen() {
+        this(Tab.OVERVIEW);
+    }
+
+    VampireScreen(Tab tab) {
         super(Component.translatable("gui.vtm.title"));
+        this.tab = tab;
     }
 
     @Override
@@ -86,8 +92,17 @@ public class VampireScreen extends Screen {
                         .bounds(left + WIDTH - 30, y - 2, 18, 12).build();
                 int next = data().disciplineLevel(id) + 1;
                 if (next <= VampireRules.MAX_DISCIPLINE_LEVEL) {
-                    Powers.at(id, next).ifPresent(p -> plus.setTooltip(Tooltip.create(
-                            Component.translatable("gui.vtm.unlocks", p.name()).append("\n").append(p.description()))));
+                    List<Power> unlocks = Powers.at(id, next);
+                    if (!unlocks.isEmpty()) {
+                        MutableComponent tip = Component.empty();
+                        for (Power p : unlocks) {
+                            if (!tip.getSiblings().isEmpty()) {
+                                tip.append("\n\n");
+                            }
+                            tip.append(Component.translatable("gui.vtm.unlocks", p.name())).append("\n").append(p.description());
+                        }
+                        plus.setTooltip(Tooltip.create(tip));
+                    }
                 }
                 learnButtons.add(new LearnButton(plus, id));
                 addRenderableWidget(plus);
@@ -196,7 +211,7 @@ public class VampireScreen extends Screen {
         Component clanName = clanName(data);
         int clanColor = data.clan().flatMap(id -> VtmRegistries.clan(access(), id)).map(Clan::color).orElse(0xAAAAAA);
         g.drawString(font, Component.translatable("gui.vtm.clan"), x, y, MUTED, false);
-        g.drawString(font, clanName, x + 90, y, 0xFF000000 | clanColor, false);
+        g.drawString(font, clanName, x + 90, y, readable(clanColor), false);
 
         y += 16;
         row(g, x, y, "gui.vtm.generation", Component.literal(ordinal(data.generation())));
@@ -248,8 +263,8 @@ public class VampireScreen extends Screen {
             int level = data.disciplineLevel(id);
             Component name = VtmRegistries.name("discipline", id);
             g.drawString(font, inClan ? Component.literal("★ ").append(name) : name,
-                    left + 12, y, 0xFF000000 | discipline.color(), false);
-            pips(g, left + 124, y, level, VampireRules.MAX_DISCIPLINE_LEVEL, 0xFF000000 | discipline.color());
+                    left + 12, y, readable(discipline.color()), false);
+            pips(g, left + 124, y, level, VampireRules.MAX_DISCIPLINE_LEVEL, readable(discipline.color()));
             if (level < VampireRules.MAX_DISCIPLINE_LEVEL) {
                 boolean learnable = !discipline.clanOnly() || inClan;
                 g.drawString(font, learnable
@@ -281,13 +296,16 @@ public class VampireScreen extends Screen {
         for (int i = scroll; i < end; i++) {
             Power power = powers.get(i);
             int y = top + LIST_TOP + (i - scroll) * ROW_HEIGHT;
-            int color = 0xFF000000 | VtmRegistries.discipline(access, power.discipline()).map(Discipline::color).orElse(0xAAAAAA);
+            int color = readable(VtmRegistries.discipline(access, power.discipline()).map(Discipline::color).orElse(0xAAAAAA));
             boolean isArmed = armed != null && armed.id().equals(power.id());
             g.drawString(font, Component.literal(isArmed ? "\u25B6 " : "").append(power.name()), left + 12, y, color, false);
             g.drawString(font, power.kind() == PowerKind.PASSIVE
                             ? Component.translatable("gui.vtm.passive")
                             : Component.translatable("gui.vtm.blood_cost", power.bloodCost()),
                     left + 160, y, MUTED, false);
+        }
+        if (powers.size() > VISIBLE_ROWS) {
+            g.drawString(font, Component.translatable("gui.vtm.scroll_powers"), left + 12, top + HEIGHT - 14, MUTED, false);
         }
     }
 
@@ -300,7 +318,7 @@ public class VampireScreen extends Screen {
             g.drawString(font, Component.translatable("gui.vtm.no_clan"), x, y, MUTED, false);
             return;
         }
-        g.drawString(font, clanName(data), x, y, 0xFF000000 | clan.color(), false);
+        g.drawString(font, clanName(data), x, y, readable(clan.color()), false);
         y += 14;
         y = paragraph(g, VtmRegistries.text("clan", clanId, "desc"), x, y, TEXT);
         y += 6;
@@ -315,12 +333,27 @@ public class VampireScreen extends Screen {
         }
         for (ResourceLocation id : clan.disciplines()) {
             int color = VtmRegistries.discipline(access(), id).map(Discipline::color).orElse(0xAAAAAA);
-            g.drawString(font, VtmRegistries.name("discipline", id), x, y, 0xFF000000 | color, false);
+            g.drawString(font, VtmRegistries.name("discipline", id), x, y, readable(color), false);
             y += 11;
         }
     }
 
     // ---------------------------------------------------------------- helpers
+
+    /** Opaque, and lifted towards white if the colour would be hard to read on the dark panel. */
+    private static int readable(int rgb) {
+        int r = rgb >> 16 & 0xFF;
+        int gr = rgb >> 8 & 0xFF;
+        int b = rgb & 0xFF;
+        double luma = 0.299 * r + 0.587 * gr + 0.114 * b;
+        if (luma < 120) {
+            double mix = (120 - luma) / (255 - luma);
+            r += (int) ((255 - r) * mix);
+            gr += (int) ((255 - gr) * mix);
+            b += (int) ((255 - b) * mix);
+        }
+        return 0xFF000000 | r << 16 | gr << 8 | b;
+    }
 
     private void row(GuiGraphics g, int x, int y, String labelKey, Component value) {
         g.drawString(font, Component.translatable(labelKey), x, y, MUTED, false);

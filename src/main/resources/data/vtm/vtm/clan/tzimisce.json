@@ -1,5 +1,12 @@
 {
   "color": "#1E8449",
   "sun_damage_multiplier": 1.0,
-  "disciplines": ["vtm:animalism", "vtm:dominate", "vtm:protean"]
+  "disciplines": [
+    "vtm:animalism",
+    "vtm:dominate",
+    "vtm:protean"
+  ],
+  "bane": {
+    "grounded_blocks": 512
+  }
 }

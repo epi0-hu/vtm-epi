@@ -4,9 +4,11 @@ import com.epi0.vtm.VtmMod;
 import com.epi0.vtm.registry.ModAttachments;
 import com.epi0.vtm.power.PowerManager;
 import com.epi0.vtm.vampire.VampireManager;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
@@ -29,12 +31,23 @@ public final class VtmNetwork {
                     }
                 });
 
+        // Lambda (not a method reference) so the client-only class is only resolved when a client runs it.
+        registrar.playToClient(SenseLinkPayload.TYPE, SenseLinkPayload.STREAM_CODEC,
+                (payload, ctx) -> com.epi0.vtm.client.SenseLinkClient.apply(payload.entityId()));
+
         registrar.playToServer(ActivatePowerPayload.TYPE, ActivatePowerPayload.STREAM_CODEC,
                 (payload, ctx) -> {
                     if (ctx.player() instanceof ServerPlayer player) {
                         PowerManager.activate(player, payload.power());
                     }
                 });
+    }
+
+    /** Sends only to connections that negotiated our channels (not e.g. test fakes). */
+    public static void send(ServerPlayer player, CustomPacketPayload payload) {
+        if (player.connection != null && player.connection.hasChannel(payload.type())) {
+            PacketDistributor.sendToPlayer(player, payload);
+        }
     }
 
     private VtmNetwork() {}

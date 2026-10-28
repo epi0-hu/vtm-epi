@@ -12,12 +12,14 @@ import java.util.List;
  *
  * @param color               accent colour used by the GUI
  * @param disciplines         in-clan disciplines (cheaper to learn)
- * @param sunDamageMultiplier mechanical hook for clan banes that change sunlight vulnerability
+ * @param sunDamageMultiplier how hard sunlight burns this clan (Ministry: 2.0, Thin-Bloods: 0.5)
+ * @param bane                the clan's mechanical curse; see {@link Bane}
  */
-public record Clan(int color, List<ResourceLocation> disciplines, float sunDamageMultiplier) {
+public record Clan(int color, List<ResourceLocation> disciplines, float sunDamageMultiplier, Bane bane) {
     public static final Codec<Clan> CODEC = RecordCodecBuilder.create(i -> i.group(
             VtmCodecs.HEX_COLOR.fieldOf("color").forGetter(Clan::color),
             ResourceLocation.CODEC.listOf().optionalFieldOf("disciplines", List.of()).forGetter(Clan::disciplines),
-            Codec.FLOAT.optionalFieldOf("sun_damage_multiplier", 1.0F).forGetter(Clan::sunDamageMultiplier)
+            Codec.FLOAT.optionalFieldOf("sun_damage_multiplier", 1.0F).forGetter(Clan::sunDamageMultiplier),
+            Bane.CODEC.optionalFieldOf("bane", Bane.NONE).forGetter(Clan::bane)
     ).apply(i, Clan::new));
 }

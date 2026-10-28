@@ -1,5 +1,12 @@
 {
   "color": "#CA6F1E",
   "sun_damage_multiplier": 1.0,
-  "disciplines": ["vtm:animalism", "vtm:obfuscate", "vtm:presence"]
+  "disciplines": [
+    "vtm:animalism",
+    "vtm:obfuscate",
+    "vtm:presence"
+  ],
+  "bane": {
+    "doomed_minutes": 30
+  }
 }

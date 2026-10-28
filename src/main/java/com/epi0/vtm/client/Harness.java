@@ -1,0 +1,155 @@
+package com.epi0.vtm.client;
+
+import com.epi0.vtm.VtmMod;
+import com.epi0.vtm.power.PowerManager;
+import com.epi0.vtm.power.Powers;
+import com.epi0.vtm.vampire.Frenzy;
+import com.mojang.blaze3d.platform.Window;
+import net.minecraft.client.CameraType;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.Screenshot;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerPlayer;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * Dev-only scripted walkthrough that drives the real client and saves screenshots to {@code run/screenshots}.
+ * Inert unless the JVM is started with {@code -Dvtm.harness=true} (see the {@code harness} Gradle property).
+ */
+@EventBusSubscriber(modid = VtmMod.MOD_ID, value = Dist.CLIENT)
+public final class Harness {
+    private record Step(int delay, Runnable action) {}
+
+    private static final boolean ENABLED = Boolean.getBoolean("vtm.harness");
+    private static final List<Step> STEPS = new ArrayList<>();
+    private static int joined = -1;
+    private static int clock;
+    private static int index;
+
+    @SubscribeEvent
+    public static void onClientTick(ClientTickEvent.Post event) {
+        if (!ENABLED) {
+            return;
+        }
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null || mc.level == null || mc.getSingleplayerServer() == null) {
+            return;
+        }
+        if (joined < 0) {
+            joined = mc.player.tickCount;
+        }
+        if (mc.player.tickCount - joined < 120) {
+            return;
+        }
+        if (STEPS.isEmpty()) {
+            script(mc);
+        }
+        if (index >= STEPS.size()) {
+            return;
+        }
+        if (++clock >= STEPS.get(index).delay) {
+            clock = 0;
+            STEPS.get(index++).action.run();
+        }
+    }
+
+    private static void then(int delayTicks, Runnable action) {
+        STEPS.add(new Step(delayTicks, action));
+    }
+
+    private static void server(Minecraft mc, int delay, java.util.function.Consumer<ServerPlayer> action) {
+        then(delay, () -> {
+            MinecraftServer server = mc.getSingleplayerServer();
+            server.execute(() -> action.accept(server.getPlayerList().getPlayers().get(0)));
+        });
+    }
+
+    private static void cmd(Minecraft mc, int delay, String command) {
+        server(mc, delay, player -> {
+            MinecraftServer server = player.getServer();
+            server.getCommands().performPrefixedCommand(player.createCommandSourceStack().withPermission(4), command);
+        });
+    }
+
+    private static void shot(Minecraft mc, String name) {
+        then(12, () -> {
+            Window window = mc.getWindow();
+            VtmMod.LOGGER.info("HARNESS screenshot {} ({}x{})", name, window.getWidth(), window.getHeight());
+            Screenshot.grab(mc.gameDirectory, name + ".png", mc.getMainRenderTarget(), msg -> {});
+        });
+    }
+
+    private static void script(Minecraft mc) {
+        mc.options.pauseOnLostFocus = false;
+        mc.options.hideGui = false;
+        for (String c : new String[]{
+                "time set 18000", "gamerule doDaylightCycle false", "gamerule doMobSpawning false", "weather clear",
+                "execute at @s run fill ~-8 ~-1 ~-8 ~8 ~-1 ~8 minecraft:smooth_stone",
+                "execute at @s run fill ~-8 ~ ~-8 ~8 ~6 ~8 minecraft:air",
+                "tp @s ~ ~ ~ 0 12",
+                "vtm embrace @s ventrue", "vtm set @s xp 60", "vtm set @s potency 2", "vtm set @s blood 11",
+                "vtm discipline @s dominate 3", "vtm discipline @s fortitude 2", "vtm discipline @s presence 1",
+                "vtm discipline @s protean 5", "vtm discipline @s auspex 5", "vtm discipline @s animalism 3",
+                "vtm discipline @s celerity 4",
+                "execute at @s run summon minecraft:cow ~ ~ ~5", "execute at @s run summon minecraft:villager ~2 ~ ~5"}) {
+            cmd(mc, 3, c);
+        }
+        then(40, () -> PowerSelection.select(Powers.get(VtmMod.id("blink")).orElseThrow()));
+
+        for (VampireScreen.Tab tab : VampireScreen.Tab.values()) {
+            then(10, () -> mc.setScreen(new VampireScreen(tab)));
+            shot(mc, "gui_" + tab.name().toLowerCase());
+        }
+        then(10, () -> mc.setScreen(null));
+        shot(mc, "hud");
+
+        // Shapechange, seen from outside.
+        then(5, () -> mc.options.setCameraType(CameraType.THIRD_PERSON_BACK));
+        for (String power : new String[]{"shapechange", "bat_form", "mist_form"}) {
+            cmd(mc, 5, "vtm set @s blood 14");
+            server(mc, 10, p -> PowerManager.activate(p, VtmMod.id(power)));
+            then(30, () -> {});
+            shot(mc, "form_" + power);
+        }
+        server(mc, 15, p -> PowerManager.activate(p, VtmMod.id("mist_form")));
+        cmd(mc, 3, "vtm set @s blood 14");
+        then(30, () -> {});
+        shot(mc, "form_human");
+
+        // Share the Senses: camera moves into the cow.
+        then(5, () -> mc.options.setCameraType(CameraType.FIRST_PERSON));
+        cmd(mc, 5, "vtm set @s blood 14");
+        cmd(mc, 3, "effect clear @s");
+        cmd(mc, 3, "tp @s ~ ~ ~ 0 12");
+        cmd(mc, 3, "kill @e[type=minecraft:cow]");
+        cmd(mc, 3, "execute at @s run summon minecraft:cow ~ ~ ~5");
+        server(mc, 25, p -> {
+            boolean ok = PowerManager.activate(p, VtmMod.id("share_the_senses"));
+            VtmMod.LOGGER.info("HARNESS sense activate -> {} frenzied={} blood={}", ok,
+                    Frenzy.isFrenzied(p), com.epi0.vtm.vampire.VampireData.of(p).blood());
+        });
+        then(30, () -> {});
+        shot(mc, "sense_link");
+        then(1, () -> VtmMod.LOGGER.info("HARNESS camera is player: {}", mc.getCameraEntity() == mc.player));
+        server(mc, 5, p -> PowerManager.activate(p, VtmMod.id("share_the_senses")));
+        then(20, () -> VtmMod.LOGGER.info("HARNESS camera is player after release: {}", mc.getCameraEntity() == mc.player));
+
+        // Frenzy.
+        server(mc, 10, p -> Frenzy.start(p, 60));
+        then(30, () -> {});
+        shot(mc, "frenzy");
+
+        then(20, () -> {
+            VtmMod.LOGGER.info("HARNESS DONE");
+            mc.stop();
+        });
+    }
+
+    private Harness() {}
+}
