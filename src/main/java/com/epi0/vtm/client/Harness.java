@@ -405,25 +405,39 @@ public final class Harness {
                 "gamerule doMobSpawning false", "weather clear", "gamemode spectator", "vtm embrace @s ventrue"}) {
             cmd(mc, 3, c);
         }
-        server(mc, 20, p -> {
-            var server = p.getServer();
-            var structure = server.registryAccess().registryOrThrow(net.minecraft.core.registries.Registries.STRUCTURE)
-                    .getHolder(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.STRUCTURE, VtmMod.id("metropolis")));
-            var found = p.serverLevel().getChunkSource().getGenerator().findNearestMapStructure(p.serverLevel(),
-                    net.minecraft.core.HolderSet.direct(structure.orElseThrow()), p.blockPosition(), 120, false);
-            metroOrigin = found == null ? null : found.getFirst();
-            VtmMod.LOGGER.info("HARNESS metropolis at {}", metroOrigin);
-            if (metroOrigin != null) {
-                int size = com.epi0.vtm.world.CityPlan.size();
-                for (int cx = (metroOrigin.getX() >> 4) - 2; cx <= ((metroOrigin.getX() + size) >> 4) + 2; cx++) {
-                    for (int cz = (metroOrigin.getZ() >> 4) - 2; cz <= ((metroOrigin.getZ() + size) >> 4) + 2; cz++) {
-                        p.serverLevel().setChunkForced(cx, cz, true);
+        // `place structure` needs every chunk loaded; try a few sites until the terrain lets a metropolis stand.
+        metroOrigin = null;
+        int size = com.epi0.vtm.world.CityPlan.size();
+        for (int i = 0; i < 5; i++) {
+            int x = 600 + i * 400;
+            int z = (i % 2) * 300;
+            server(mc, 5, p -> {
+                if (metroOrigin == null) {
+                    for (int cx = (x >> 4) - 1; cx <= ((x + size) >> 4) + 1; cx++) {
+                        for (int cz = (z >> 4) - 1; cz <= ((z + size) >> 4) + 1; cz++) {
+                            p.serverLevel().setChunkForced(cx, cz, true);
+                        }
                     }
+                    p.teleportTo(p.serverLevel(), x + size / 2.0, 150, z + size / 2.0, 0F, 90F);
                 }
-                p.teleportTo(p.serverLevel(), metroOrigin.getX() + size / 2.0, 200, metroOrigin.getZ() + size / 2.0, 0F, 90F);
-            }
-        });
-        then(1400, () -> {});
+            });
+            then(i == 0 ? 700 : 600, () -> {});
+            server(mc, 5, p -> {
+                if (metroOrigin != null) {
+                    return;
+                }
+                int surface = p.serverLevel().getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE_WG, x, z);
+                try {
+                    p.getServer().getCommands().getDispatcher().execute("place structure vtm:metropolis " + x + " " + surface + " " + z,
+                            p.createCommandSourceStack().withPermission(4).withPosition(net.minecraft.world.phys.Vec3.atCenterOf(new net.minecraft.core.BlockPos(x, surface, z))));
+                    metroOrigin = new net.minecraft.core.BlockPos(x & ~15, surface, z & ~15);
+                } catch (com.mojang.brigadier.exceptions.CommandSyntaxException e) {
+                    VtmMod.LOGGER.info("HARNESS metropolis at {} {} refused: {}", x, z, e.getMessage());
+                }
+                VtmMod.LOGGER.info("HARNESS metropolis origin {}", metroOrigin);
+            });
+        }
+        then(900, () -> {});
         server(mc, 5, p -> {
             var level = p.serverLevel();
             var structure = level.registryAccess().registryOrThrow(net.minecraft.core.registries.Registries.STRUCTURE)
