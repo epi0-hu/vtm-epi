@@ -158,7 +158,7 @@ public class CityPiece extends StructurePiece {
     }
 
     /** The plaza: paving, a fountain around the Domain Stone, benches and a pair of trees. */
-    private void plaza(Canvas c, int x0, int z0, int y0, City layout) {
+    static void plaza(Canvas c, int x0, int z0, int y0, City layout) {
         int cx = x0 + LOT / 2;
         int cz = z0 + LOT / 2;
         for (int x = x0; x < x0 + LOT; x++) {

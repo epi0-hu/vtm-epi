@@ -22,5 +22,10 @@ public final class ModStructures {
     public static final DeferredHolder<StructurePieceType, StructurePieceType> CITY_PIECE = PIECES.register("city",
             () -> (StructurePieceType.ContextlessType) com.epi0.vtm.world.CityPiece::new);
 
+    public static final DeferredHolder<StructureType<?>, StructureType<com.epi0.vtm.world.MetropolisStructure>> METROPOLIS = TYPES.register("metropolis",
+            () -> () -> com.epi0.vtm.world.MetropolisStructure.CODEC);
+    public static final DeferredHolder<StructurePieceType, StructurePieceType> METROPOLIS_PIECE = PIECES.register("metropolis",
+            () -> (StructurePieceType.ContextlessType) com.epi0.vtm.world.MetropolisPiece::new);
+
     private ModStructures() {}
 }

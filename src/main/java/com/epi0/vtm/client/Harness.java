@@ -68,6 +68,8 @@ public final class Harness {
                 domainsScript(mc);
             } else if (SCENARIO.equals("city")) {
                 cityScript(mc);
+            } else if (SCENARIO.equals("metropolis")) {
+                metropolisScript(mc);
             } else if (SCENARIO.equals("sewer")) {
                 structureScript(mc, "nosferatu_sewer", "nosferatu", new int[]{3, 1, 6}, new int[][]{
                         {17, 1, 4, 9, 1, 6}, {12, 1, 6, 3, 1, 6}, {7, 2, 3, 3, 0, 7}, {14, 1, 8, 14, 1, 13}, {18, 1, 4, 18, 9, 3}}, 0, "sewer");
@@ -391,6 +393,93 @@ public final class Harness {
     private static final List<net.minecraft.core.BlockPos> LAIRS = new ArrayList<>();
 
     /** Places each lair on a raised lawn (the harness world is flat and low) and photographs it from outside and in. */
+    private static net.minecraft.core.BlockPos metroOrigin;
+    private static com.epi0.vtm.world.CityPlan metroPlan;
+    private static int metroY;
+
+    /** Finds the nearest metropolis, lets all of it generate, and photographs it from the air and from its streets. */
+    private static void metropolisScript(Minecraft mc) {
+        mc.options.pauseOnLostFocus = false;
+        mc.options.renderDistance().set(18);
+        for (String c : new String[]{"gamerule sendCommandFeedback false", "time set 6000", "gamerule doDaylightCycle false",
+                "gamerule doMobSpawning false", "weather clear", "gamemode spectator", "vtm embrace @s ventrue"}) {
+            cmd(mc, 3, c);
+        }
+        server(mc, 20, p -> {
+            var server = p.getServer();
+            var structure = server.registryAccess().registryOrThrow(net.minecraft.core.registries.Registries.STRUCTURE)
+                    .getHolder(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.STRUCTURE, VtmMod.id("metropolis")));
+            var found = p.serverLevel().getChunkSource().getGenerator().findNearestMapStructure(p.serverLevel(),
+                    net.minecraft.core.HolderSet.direct(structure.orElseThrow()), p.blockPosition(), 120, false);
+            metroOrigin = found == null ? null : found.getFirst();
+            VtmMod.LOGGER.info("HARNESS metropolis at {}", metroOrigin);
+            if (metroOrigin != null) {
+                int size = com.epi0.vtm.world.CityPlan.size();
+                for (int cx = (metroOrigin.getX() >> 4) - 2; cx <= ((metroOrigin.getX() + size) >> 4) + 2; cx++) {
+                    for (int cz = (metroOrigin.getZ() >> 4) - 2; cz <= ((metroOrigin.getZ() + size) >> 4) + 2; cz++) {
+                        p.serverLevel().setChunkForced(cx, cz, true);
+                    }
+                }
+                p.teleportTo(p.serverLevel(), metroOrigin.getX() + size / 2.0, 200, metroOrigin.getZ() + size / 2.0, 0F, 90F);
+            }
+        });
+        then(1400, () -> {});
+        server(mc, 5, p -> {
+            var level = p.serverLevel();
+            var structure = level.registryAccess().registryOrThrow(net.minecraft.core.registries.Registries.STRUCTURE)
+                    .get(VtmMod.id("metropolis"));
+            var start = level.structureManager().getStructureAt(metroOrigin.offset(100, 0, 100), structure);
+            metroPlan = start.isValid() && start.getPieces().get(0) instanceof com.epi0.vtm.world.MetropolisPiece piece ? piece.plan() : null;
+            var city = com.epi0.vtm.city.CityData.get(p.getServer()).all().stream()
+                    .filter(c -> c.radius > 100).findFirst().orElse(null);
+            metroY = city == null ? 64 : city.center.getY() - 2;
+            VtmMod.LOGGER.info("HARNESS metropolis plan {} ground {} city {}", metroPlan != null, metroY, city == null ? null : city.name + " homes=" + city.homes.size() + " works=" + city.works.size());
+        });
+        // Views: camera x, y, z then target x, y, z, all relative to the city's north-west corner and ground level.
+        int mid = com.epi0.vtm.world.CityPlan.size() / 2;
+        int avenue = com.epi0.vtm.world.CityPlan.lotStart(com.epi0.vtm.world.CityPlan.CENTRE - 1) + com.epi0.vtm.world.CityPlan.LOT + 3;
+        int[][] fixed = {
+                {mid, 230, mid + 4, mid, 0, mid},
+                {-90, 110, -90, mid, 10, mid},
+                {mid + 130, 70, mid + 130, mid, 10, mid},
+                {avenue, 3, 12, avenue, 10, mid},
+                {mid - 12, 4, mid + 16, mid, 3, mid},
+                {avenue, 6, -22, avenue, 5, 2},
+        };
+        for (int n = 0; n < fixed.length; n++) {
+            int[] v = fixed[n];
+            int index = n;
+            server(mc, 5, p -> p.getServer().getCommands().performPrefixedCommand(p.createCommandSourceStack().withPermission(4),
+                    "tp @s " + (metroOrigin.getX() + v[0] + 0.5) + " " + (metroY + v[1]) + " " + (metroOrigin.getZ() + v[2] + 0.5)
+                            + " facing " + (metroOrigin.getX() + v[3] + 0.5) + " " + (metroY + v[4]) + " " + (metroOrigin.getZ() + v[5] + 0.5)));
+            shotAfter(mc, 80, "metro_" + index);
+        }
+        String[] kinds = {"TOWER", "CHURCH", "MARKET", "PARK", "ASYLUM", "TENEMENT", "DEPOT", "CLUB", "HAVEN"};
+        for (String kind : kinds) {
+            server(mc, 5, p -> {
+                if (metroPlan == null) {
+                    return;
+                }
+                var lot = metroPlan.lots.stream().filter(l -> l.kind().name().equals(kind)).min(java.util.Comparator.comparingInt(l -> Math.abs(l.i() - 5) + Math.abs(l.j() - 5))).orElse(null);
+                if (lot == null) {
+                    return;
+                }
+                int h = lot.kind() == com.epi0.vtm.world.CityPlan.Kind.TOWER ? lot.floors() * 5 / 2 : 4;
+                int back = lot.kind() == com.epi0.vtm.world.CityPlan.Kind.TOWER ? 34 : lot.kind() == com.epi0.vtm.world.CityPlan.Kind.ASYLUM ? 40 : 24;
+                double cx = metroOrigin.getX() + lot.centreX() + 0.5 - 16;
+                double cz = metroOrigin.getZ() + lot.centreZ() + 0.5 + back;
+                p.getServer().getCommands().performPrefixedCommand(p.createCommandSourceStack().withPermission(4),
+                        "tp @s " + cx + " " + (metroY + (lot.kind() == com.epi0.vtm.world.CityPlan.Kind.TOWER ? 14 : 12)) + " " + cz
+                                + " facing " + (metroOrigin.getX() + lot.centreX() + 0.5) + " " + (metroY + h) + " " + (metroOrigin.getZ() + lot.centreZ() + 0.5));
+            });
+            shotAfter(mc, 60, "metro_" + kind.toLowerCase());
+        }
+        then(10, () -> {
+            VtmMod.LOGGER.info("HARNESS DONE");
+            mc.stop();
+        });
+    }
+
     private static int[] structureOrigin = new int[3];
 
     /**

@@ -22,6 +22,7 @@ import java.util.UUID;
  * Registered by the city's Domain Stone the first time its chunk is live, and kept in {@link CityData}.
  */
 public final class City {
+    /** Half the width of a town; bigger cities say so in {@link #radius}. */
     public static final int RADIUS = 44;
     public static final int MAX_STRENGTH = 100;
     public static final int MAX_HEAT = 100;
@@ -53,6 +54,8 @@ public final class City {
     public UUID warden;
     public long lastReinforcement = -100000L;
     public long founded;
+    /** How far the city reaches from its Domain Stone, along each axis. */
+    public int radius = RADIUS;
 
     public City(UUID id, String name, ResourceKey<Level> dimension, BlockPos center, ResourceLocation owner) {
         this.id = id;
@@ -63,8 +66,8 @@ public final class City {
     }
 
     public boolean contains(Level level, BlockPos pos) {
-        return level.dimension().equals(dimension) && Math.abs(pos.getX() - center.getX()) <= RADIUS
-                && Math.abs(pos.getZ() - center.getZ()) <= RADIUS;
+        return level.dimension().equals(dimension) && Math.abs(pos.getX() - center.getX()) <= radius
+                && Math.abs(pos.getZ() - center.getZ()) <= radius;
     }
 
     public int heatOf(UUID player) {
@@ -108,6 +111,7 @@ public final class City {
         }
         tag.putLong("Reinforced", lastReinforcement);
         tag.putLong("Founded", founded);
+        tag.putInt("Radius", radius);
         return tag;
     }
 
@@ -138,6 +142,7 @@ public final class City {
         city.warden = tag.hasUUID("Warden") ? tag.getUUID("Warden") : null;
         city.lastReinforcement = tag.getLong("Reinforced");
         city.founded = tag.getLong("Founded");
+        city.radius = tag.contains("Radius") ? tag.getInt("Radius") : RADIUS;
         return city;
     }
 

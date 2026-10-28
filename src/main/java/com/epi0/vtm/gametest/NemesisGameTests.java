@@ -751,7 +751,7 @@ public final class NemesisGameTests {
         NemesisData data = fresh(helper);
         var coffins = generate(helper, structure);
         // (Coffins left by other tests in nearby chunks have already been claimed; only the one just built is fresh.)
-        var occupied = coffins.stream().filter(c -> faction.equals(c.faction()) && c.claimed() == null).toList();
+        var occupied = coffins.stream().filter(c -> faction.equals(c.faction()) && c.claimed() == null && (clan == null || clan.equals(c.clan()))).toList();
         helper.assertTrue(!occupied.isEmpty(), structure + " builds a coffin that belongs to " + faction + " (coffins found: " + coffins.size() + ")");
         var coffin = occupied.get(0);
         helper.succeedWhen(() -> {

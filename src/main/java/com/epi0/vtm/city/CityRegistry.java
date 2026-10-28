@@ -39,6 +39,7 @@ public final class CityRegistry {
             works.add(t);
         }
         tag.put("Works", works);
+        tag.putInt("Radius", city.radius);
         if (city.plaza != null) {
             tag.putLong("Plaza", city.plaza.asLong());
         }
@@ -62,6 +63,7 @@ public final class CityRegistry {
             CompoundTag wt = (CompoundTag) t;
             Job.byId(wt.getString("Job")).ifPresent(job -> city.works.add(new City.Work(job, BlockPos.of(wt.getLong("Pos")))));
         }
+        city.radius = pois.contains("Radius") ? pois.getInt("Radius") : City.RADIUS;
         city.plaza = pois.contains("Plaza") ? BlockPos.of(pois.getLong("Plaza")) : null;
         city.club = pois.contains("Club") ? BlockPos.of(pois.getLong("Club")) : null;
         city.watch = pois.contains("Watch") ? BlockPos.of(pois.getLong("Watch")) : null;

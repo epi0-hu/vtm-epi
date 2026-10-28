@@ -25,7 +25,8 @@ import java.util.Set;
  * trouble fades. Runs for cities with a player close enough to see them.
  */
 public final class CityLife {
-    public static final int ACTIVE_RANGE = 110;
+    /** How far past a city's edge a player still keeps it alive. */
+    public static final int ACTIVE_MARGIN = 60;
     public static final int MAX_POPULATION = 16;
     private static final int SPAWNS_PER_PASS = 3;
 
@@ -36,7 +37,32 @@ public final class CityLife {
     }
 
     public static int targetPopulation(City city) {
-        return Math.min(MAX_POPULATION, city.homes.size() + city.works.size() / 2);
+        return Math.min(populationCap(city), city.homes.size() + city.works.size() / 2);
+    }
+
+    /** A town holds sixteen people; a metropolis a good many more. */
+    public static int populationCap(City city) {
+        return MAX_POPULATION + Math.max(0, city.radius - City.RADIUS) * 3 / 4;
+    }
+
+    private static int spawnsPerPass(City city) {
+        return SPAWNS_PER_PASS + Math.max(0, city.radius - City.RADIUS) / 20;
+    }
+
+    /** Whether a player is close enough to the city for it to be going about its business. */
+    static boolean isNear(City city, ServerPlayer player) {
+        return !player.isSpectator() && Math.abs(player.getX() - city.center.getX()) <= city.radius + ACTIVE_MARGIN
+                && Math.abs(player.getZ() - city.center.getZ()) <= city.radius + ACTIVE_MARGIN;
+    }
+
+    private static double distanceToPlayers(ServerLevel level, BlockPos pos) {
+        double best = Double.MAX_VALUE;
+        for (ServerPlayer player : level.players()) {
+            if (!player.isSpectator()) {
+                best = Math.min(best, player.distanceToSqr(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5));
+            }
+        }
+        return best;
     }
 
     // ---------------------------------------------------------------- trouble
@@ -72,7 +98,7 @@ public final class CityLife {
             if (level == null) {
                 continue;
             }
-            List<ServerPlayer> near = level.getPlayers(p -> !p.isSpectator() && p.distanceToSqr(Vec3.atCenterOf(city.center)) < ACTIVE_RANGE * ACTIVE_RANGE);
+            List<ServerPlayer> near = level.getPlayers(p -> isNear(city, p));
             if (near.isEmpty()) {
                 continue;
             }
@@ -96,7 +122,7 @@ public final class CityLife {
 
     /** Everyone who belongs to the city and is standing in the world right now. */
     public static List<CivilianNpc> residents(ServerLevel level, City city) {
-        AABB area = new AABB(city.center).inflate(City.RADIUS + 8, 40, City.RADIUS + 8);
+        AABB area = new AABB(city.center).inflate(city.radius + 8, 80, city.radius + 8);
         return level.getEntitiesOfClass(CivilianNpc.class, area, c -> city.id.equals(c.cityId()) && c.isAlive());
     }
 
@@ -115,14 +141,20 @@ public final class CityLife {
             }
         });
         int target = targetPopulation(city);
-        for (City.Work work : city.works) {
-            if (here.size() + spawned >= target + city.works.size() || spawned >= SPAWNS_PER_PASS) {
+        int perPass = spawnsPerPass(city);
+        // The people nearest a player are the ones worth settling first.
+        List<City.Work> works = city.works.size() < 2 ? city.works : city.works.stream()
+                .sorted(java.util.Comparator.comparingDouble(w -> distanceToPlayers(level, w.pos()))).toList();
+        List<BlockPos> homes = city.homes.size() < 2 ? city.homes : city.homes.stream()
+                .sorted(java.util.Comparator.comparingDouble(b -> distanceToPlayers(level, b))).toList();
+        for (City.Work work : works) {
+            if (here.size() + spawned >= target + city.works.size() || spawned >= perPass) {
                 break;
             }
             if (worked.contains(work.pos()) || !level.isLoaded(work.pos())) {
                 continue;
             }
-            BlockPos bed = freeBed(city, slept);
+            BlockPos bed = freeBed(homes, slept);
             if (bed == null) {
                 bed = work.pos();
             }
@@ -130,8 +162,8 @@ public final class CityLife {
             slept.add(bed);
             spawned++;
         }
-        for (BlockPos bed : city.homes) {
-            if (here.size() + spawned >= target + city.works.size() || spawned >= SPAWNS_PER_PASS) {
+        for (BlockPos bed : homes) {
+            if (here.size() + spawned >= target + city.works.size() || spawned >= perPass) {
                 break;
             }
             if (slept.contains(bed) || !level.isLoaded(bed)) {
@@ -145,8 +177,8 @@ public final class CityLife {
     }
 
     @Nullable
-    private static BlockPos freeBed(City city, Set<BlockPos> taken) {
-        return city.homes.stream().filter(b -> !taken.contains(b)).findFirst().orElse(null);
+    private static BlockPos freeBed(List<BlockPos> homes, Set<BlockPos> taken) {
+        return homes.stream().filter(b -> !taken.contains(b)).findFirst().orElse(null);
     }
 
     public static CivilianNpc spawn(ServerLevel level, City city, BlockPos at, BlockPos bed, Job job, @Nullable BlockPos work) {
@@ -157,8 +189,8 @@ public final class CityLife {
 
     /** Vampires of the ruling faction walk the streets after dark; the stronger the hold, the more of them. */
     public static int patrol(ServerLevel level, City city) {
-        int wanted = 1 + city.strength / 40;
-        AABB area = new AABB(city.center).inflate(City.RADIUS + 8, 40, City.RADIUS + 8);
+        int wanted = 1 + city.strength / 40 + (city.radius - City.RADIUS) / 40;
+        AABB area = new AABB(city.center).inflate(city.radius + 8, 80, city.radius + 8);
         int present = level.getEntitiesOfClass(VampireNpc.class, area, v -> city.id.equals(v.patrol()) && v.isAlive()).size();
         long dawn = level.getGameTime() + Math.max(200L, 23500L - level.getDayTime() % 24000L);
         int spawned = 0;

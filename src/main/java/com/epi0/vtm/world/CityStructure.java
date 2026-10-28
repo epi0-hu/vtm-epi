@@ -63,12 +63,16 @@ public class CityStructure extends Structure {
         int ground = Math.max(context.heightAccessor().getMinBuildHeight() + CityPiece.DEPTH_BELOW + 1, (min + max) / 2);
         long seed = context.random().nextLong();
         ResourceLocation faction = factions.get(Math.floorMod((int) (seed >> 7), factions.size()));
-        var random = new java.util.Random(seed);
-        String name = FIRST[random.nextInt(FIRST.length)] + LAST[random.nextInt(LAST.length)];
-        name = Character.toUpperCase(name.charAt(0)) + name.substring(1);
-        String finalName = name;
+        String finalName = nameFor(seed);
         return Optional.of(new GenerationStub(new BlockPos(x, ground, z),
                 builder -> builder.addPiece(new CityPiece(x, ground, z, seed, faction, finalName))));
+    }
+
+    /** A place name drawn from the seed. */
+    static String nameFor(long seed) {
+        var random = new java.util.Random(seed);
+        String name = FIRST[random.nextInt(FIRST.length)] + LAST[random.nextInt(LAST.length)];
+        return Character.toUpperCase(name.charAt(0)) + name.substring(1);
     }
 
     @Override

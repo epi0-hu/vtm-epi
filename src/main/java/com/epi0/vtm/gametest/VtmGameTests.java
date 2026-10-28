@@ -485,13 +485,18 @@ public final class VtmGameTests {
         });
     }
 
-    @GameTest(template = "empty", batch = "vtm_night", timeoutTicks = 800)
+    @GameTest(template = "empty", batch = "vtm_night_feed", timeoutTicks = 800)
     public static void hungryVampiresFeedOnIsolatedCivilians(GameTestHelper helper) {
         helper.setDayTime(18000);
+        // Other tests share this ground and leave their people behind; a witness nearby would stop the bite.
+        helper.getLevel().getEntitiesOfClass(com.epi0.vtm.npc.VtmNpc.class, new net.minecraft.world.phys.AABB(helper.absolutePos(new net.minecraft.core.BlockPos(4, 2, 4))).inflate(40))
+                .forEach(net.minecraft.world.entity.Entity::discard);
+        helper.getLevel().players().forEach(p -> p.setGameMode(net.minecraft.world.level.GameType.SPECTATOR));
         var vampire = NpcSpawner.vampire(helper.getLevel(), at(helper, 1.5, 2, 1.5), VtmMod.id("ventrue"));
         var victim = NpcSpawner.civilian(helper.getLevel(), at(helper, 7.5, 2, 7.5));
         vampire.setBlood(1F);
         helper.succeedWhen(() -> {
+            helper.setDayTime(18000); // other tests share the clock
             helper.assertTrue(vampire.blood() > 3F, "the vampire should have fed");
             helper.assertTrue(victim.getHealth() < victim.getMaxHealth() || !victim.isAlive(), "...from the civilian");
         });

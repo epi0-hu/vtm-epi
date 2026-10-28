@@ -9,6 +9,10 @@
     "type": "minecraft:random_spread",
     "spacing": 26,
     "separation": 10,
-    "salt": 51608847
+    "salt": 51608847,
+    "exclusion_zone": {
+      "other_set": "vtm:metropolises",
+      "chunk_count": 16
+    }
   }
 }

@@ -37,6 +37,10 @@ public final class Canvas {
         this.seed = seed;
     }
 
+    public BoundingBox box() {
+        return box;
+    }
+
     public static BlockState state(Block block) {
         return block.defaultBlockState();
     }

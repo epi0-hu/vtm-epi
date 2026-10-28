@@ -102,6 +102,114 @@ public final class CityGameTests {
         });
     }
 
+    // ---------------------------------------------------------------- metropolis
+
+    @GameTest(template = "empty", batch = "metro_plan")
+    public static void aMetropolisPlanIsAPureFunctionOfItsSeed(GameTestHelper helper) {
+        for (long seed : new long[]{1L, 42L, -7L, 123456789L, 99L}) {
+            var plan = com.epi0.vtm.world.CityPlan.of(seed);
+            var again = new java.util.ArrayList<>(com.epi0.vtm.world.CityPlan.of(seed).lots);
+            helper.assertTrue(plan.lots.equals(again), "the same seed gives the same plan (" + seed + ")");
+            helper.assertTrue(plan.size == com.epi0.vtm.world.CityPlan.size() && plan.size > 200, "a big city: " + plan.size);
+            var kinds = new java.util.EnumMap<com.epi0.vtm.world.CityPlan.Kind, Integer>(com.epi0.vtm.world.CityPlan.Kind.class);
+            long cells = 0;
+            for (var lot : plan.lots) {
+                kinds.merge(lot.kind(), 1, Integer::sum);
+                cells += (long) lot.span() * lot.span();
+                helper.assertTrue(lot.x() >= 0 && lot.z() >= 0 && lot.x() + lot.size() <= plan.size && lot.z() + lot.size() <= plan.size, "every lot is inside the city");
+            }
+            helper.assertTrue(cells == (long) com.epi0.vtm.world.CityPlan.N * com.epi0.vtm.world.CityPlan.N, "and every cell of the grid is built on exactly once: " + cells);
+            for (var a : plan.lots) {
+                for (var b : plan.lots) {
+                    if (a != b) {
+                        boolean apart = a.x() + a.size() <= b.x() || b.x() + b.size() <= a.x() || a.z() + a.size() <= b.z() || b.z() + b.size() <= a.z();
+                        helper.assertTrue(apart, "lots do not overlap");
+                    }
+                }
+            }
+            helper.assertTrue(kinds.getOrDefault(com.epi0.vtm.world.CityPlan.Kind.PLAZA, 0) == 1
+                    && kinds.getOrDefault(com.epi0.vtm.world.CityPlan.Kind.HAVEN, 0) == 1
+                    && kinds.getOrDefault(com.epi0.vtm.world.CityPlan.Kind.ASYLUM, 0) == 1
+                    && kinds.getOrDefault(com.epi0.vtm.world.CityPlan.Kind.CHURCH, 0) >= 1
+                    && kinds.getOrDefault(com.epi0.vtm.world.CityPlan.Kind.WATCH, 0) >= 2
+                    && kinds.getOrDefault(com.epi0.vtm.world.CityPlan.Kind.TOWER, 0) >= 5
+                    && kinds.getOrDefault(com.epi0.vtm.world.CityPlan.Kind.HOUSE, 0) >= 5, "one plaza, haven and asylum, a church, two watch stations, towers and houses: " + kinds);
+            var plaza = plan.first(com.epi0.vtm.world.CityPlan.Kind.PLAZA);
+            helper.assertTrue(plaza.centreX() == plan.size / 2 || Math.abs(plaza.centreX() - plan.size / 2) <= 1, "the plaza is in the middle");
+        }
+        helper.assertTrue(!com.epi0.vtm.world.CityPlan.of(1L).lots.equals(com.epi0.vtm.world.CityPlan.of(2L).lots), "different seeds give different cities");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "metro_scale")
+    public static void bigCitiesHoldMorePeople(GameTestHelper helper) {
+        City town = new City(java.util.UUID.randomUUID(), "Town", helper.getLevel().dimension(), helper.absolutePos(new BlockPos(1, 2, 1)), CAMARILLA);
+        City metropolis = new City(java.util.UUID.randomUUID(), "Metro", helper.getLevel().dimension(), helper.absolutePos(new BlockPos(1, 2, 1)), CAMARILLA);
+        metropolis.radius = 120;
+        for (int i = 0; i < 200; i++) {
+            town.homes.add(new BlockPos(i, 2, 0));
+            metropolis.homes.add(new BlockPos(i, 2, 0));
+        }
+        helper.assertTrue(CityLife.targetPopulation(town) == CityLife.MAX_POPULATION, "a town holds sixteen");
+        helper.assertTrue(CityLife.targetPopulation(metropolis) >= 60, "a metropolis holds far more: " + CityLife.targetPopulation(metropolis));
+        helper.assertTrue(metropolis.contains(helper.getLevel(), metropolis.center.offset(110, 0, -110)) && !town.contains(helper.getLevel(), town.center.offset(110, 0, 0)),
+                "and reaches further");
+        var copy = City.load(metropolis.save());
+        helper.assertTrue(copy.radius == 120, "the radius is remembered");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "metro_gen", timeoutTicks = 1800)
+    public static void metropolisesAreBuiltAndRegistered(GameTestHelper helper) {
+        BlockPos arena = helper.absolutePos(new BlockPos(4, 2, 4));
+        int centreOffset = com.epi0.vtm.world.CityPlan.lotStart(com.epi0.vtm.world.CityPlan.CENTRE) + com.epi0.vtm.world.CityPlan.LOT / 2;
+        BlockPos at = arena.offset(-centreOffset, 0, -centreOffset);
+        var level = helper.getLevel();
+        int minCx = (at.getX() >> 4) - 1;
+        int minCz = (at.getZ() >> 4) - 1;
+        int chunks = com.epi0.vtm.world.CityPlan.size() / 16 + 4;
+        java.util.List<net.minecraft.world.level.ChunkPos> forced = new java.util.ArrayList<>();
+        for (int cx = 0; cx < chunks; cx++) {
+            for (int cz = 0; cz < chunks; cz++) {
+                level.setChunkForced(minCx + cx, minCz + cz, true);
+                forced.add(new net.minecraft.world.level.ChunkPos(minCx + cx, minCz + cz));
+            }
+        }
+        helper.runAfterDelay(120, () -> {
+            var source = server(helper).createCommandSourceStack().withLevel(level)
+                    .withPosition(net.minecraft.world.phys.Vec3.atCenterOf(at)).withPermission(4);
+            server(helper).getCommands().performPrefixedCommand(source, "place structure vtm:metropolis " + at.getX() + " " + at.getY() + " " + at.getZ());
+        });
+        helper.succeedWhen(() -> {
+            City city = CityData.get(server(helper)).all().stream()
+                    .filter(c -> c.radius > 100 && Math.abs(c.center.getX() - arena.getX()) <= 16 && Math.abs(c.center.getZ() - arena.getZ()) <= 16)
+                    .findFirst().orElse(null);
+            helper.assertTrue(city != null, "the Domain Stone registers the metropolis once its chunk is live");
+            forced.forEach(p -> level.setChunkForced(p.x, p.z, false));
+            helper.assertTrue(city.homes.size() >= 150, "with beds for a great many people: " + city.homes.size());
+            helper.assertTrue(city.works.stream().filter(w -> w.job() == Job.SHOPKEEPER).count() >= 6
+                    && city.works.stream().anyMatch(w -> w.job() == Job.BARTENDER)
+                    && city.works.stream().filter(w -> w.job() == Job.WATCHMAN).count() >= 4, "and work: " + city.works.size());
+            helper.assertTrue(city.plaza != null && city.club != null && city.watch != null && city.haven != null, "a plaza, a club, a watch station and a haven");
+            helper.assertTrue(level.getBlockState(city.center).is(com.epi0.vtm.registry.ModBlocks.CITY_HEART.get()), "the Domain Stone stands in the plaza");
+            int checked = 0;
+            for (BlockPos bed : city.homes) {
+                if (level.isLoaded(bed)) {
+                    helper.assertTrue(level.getBlockState(bed).getBlock() instanceof net.minecraft.world.level.block.BedBlock, "a bed at " + bed);
+                    checked++;
+                }
+            }
+            helper.assertTrue(checked >= 150, "and the beds are really there: " + checked);
+            // The wall stands at the edge, and the avenue is open through it.
+            BlockPos wall = city.center.offset(-centreOffset + 1, -1, -centreOffset + 20);
+            var wallBlock = level.getBlockState(wall);
+            helper.assertTrue(wallBlock.is(net.minecraft.world.level.block.Blocks.STONE_BRICKS) || wallBlock.is(net.minecraft.world.level.block.Blocks.CRACKED_STONE_BRICKS)
+                    || wallBlock.is(net.minecraft.world.level.block.Blocks.MOSSY_STONE_BRICKS), "a wall rings the city, found " + wallBlock + " at " + wall);
+            // The other tests share this ground: forget the city so that none of them finds itself inside it.
+            CityData.get(server(helper)).clear();
+        });
+    }
+
     // ---------------------------------------------------------------- people
 
     @GameTest(template = "empty", batch = "city_people")
