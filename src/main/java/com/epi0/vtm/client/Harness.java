@@ -228,7 +228,7 @@ public final class Harness {
                     .withStanding(VtmMod.id("camarilla"), 55));
             com.epi0.vtm.nemesis.NemesisActions.send(p);
         });
-        then(15, () -> mc.setScreen(new NemesisScreen(NemesisScreen.Tab.COURT)));
+        then(15, () -> mc.setScreen(new com.epi0.vtm.client.ui.Codex(com.epi0.vtm.client.ui.PageId.COURT)));
         shot(mc, "court_before");
         then(5, () -> mc.setScreen(null));
         server(mc, 5, p -> {
@@ -251,7 +251,7 @@ public final class Harness {
             reign.tribute = 6;
             com.epi0.vtm.nemesis.NemesisActions.send(p);
         });
-        then(15, () -> mc.setScreen(new NemesisScreen(NemesisScreen.Tab.COURT)));
+        then(15, () -> mc.setScreen(new com.epi0.vtm.client.ui.Codex(com.epi0.vtm.client.ui.PageId.COURT)));
         shot(mc, "court_ruling");
         then(10, () -> {
             VtmMod.LOGGER.info("HARNESS DONE");
@@ -295,7 +295,7 @@ public final class Harness {
             }
             com.epi0.vtm.nemesis.NemesisActions.send(p);
         });
-        then(15, () -> mc.setScreen(new NemesisScreen(NemesisScreen.Tab.DOMAINS)));
+        then(15, () -> mc.setScreen(new com.epi0.vtm.client.ui.Codex(com.epi0.vtm.client.ui.PageId.DOMAINS)));
         shot(mc, "nem_domains");
         then(10, () -> {
             VtmMod.LOGGER.info("HARNESS DONE");
@@ -511,13 +511,13 @@ public final class Harness {
             }
             com.epi0.vtm.nemesis.NemesisActions.send(p);
         });
-        then(15, () -> mc.setScreen(new NemesisScreen(NemesisScreen.Tab.DOSSIERS)));
+        then(15, () -> mc.setScreen(new com.epi0.vtm.client.ui.Codex(com.epi0.vtm.client.ui.PageId.DOSSIERS)));
         shot(mc, "nem_dossiers");
-        then(5, () -> mc.setScreen(new NemesisScreen(NemesisScreen.Tab.COURTS)));
+        then(5, () -> mc.setScreen(new com.epi0.vtm.client.ui.Codex(com.epi0.vtm.client.ui.PageId.COURTS)));
         shot(mc, "nem_courts");
-        then(5, () -> mc.setScreen(new NemesisScreen(NemesisScreen.Tab.CHRONICLE)));
+        then(5, () -> mc.setScreen(new com.epi0.vtm.client.ui.Codex(com.epi0.vtm.client.ui.PageId.CHRONICLE)));
         shot(mc, "nem_chronicle");
-        then(5, () -> mc.setScreen(new NemesisScreen(NemesisScreen.Tab.COTERIE)));
+        then(5, () -> mc.setScreen(new com.epi0.vtm.client.ui.Codex(com.epi0.vtm.client.ui.PageId.COTERIE)));
         shot(mc, "nem_coterie");
         then(5, () -> mc.setScreen(null));
         server(mc, 5, p -> {
@@ -551,7 +551,7 @@ public final class Harness {
                 "vtm sect standing @s vtm:sabbat -45", "vtm sect standing @s vtm:anarch 12"}) {
             cmd(mc, 3, c);
         }
-        then(10, () -> mc.setScreen(new VampireScreen(VampireScreen.Tab.SECT)));
+        then(10, () -> mc.setScreen(new com.epi0.vtm.client.ui.Codex(com.epi0.vtm.client.ui.PageId.SECT)));
         shot(mc, "sect_tab");
         then(10, () -> mc.setScreen(null));
         server(mc, 10, p -> {
@@ -705,12 +705,16 @@ public final class Harness {
         }
         then(40, () -> PowerSelection.select(Powers.get(VtmMod.id("blink")).orElseThrow()));
 
-        for (VampireScreen.Tab tab : VampireScreen.Tab.values()) {
-            then(10, () -> mc.setScreen(new VampireScreen(tab)));
+        for (com.epi0.vtm.client.ui.PageId tab : com.epi0.vtm.client.ui.PageId.values()) {
+            then(10, () -> mc.setScreen(new com.epi0.vtm.client.ui.Codex(tab)));
             shot(mc, "gui_" + tab.name().toLowerCase());
         }
         then(10, () -> mc.setScreen(null));
+        cmd(mc, 3, "gamemode survival");
         shot(mc, "hud");
+        then(5, () -> CityNotice.receive(new com.epi0.vtm.network.CityNoticePayload(java.util.Optional.of("Ashgrove"), VtmMod.id("camarilla"), 72)));
+        shotAfter(mc, 25, "hud_city");
+        shotAfter(mc, 120, "hud_city_later");
 
         // Shapechange, seen from outside.
         then(5, () -> mc.options.setCameraType(CameraType.THIRD_PERSON_BACK));

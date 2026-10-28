@@ -25,7 +25,7 @@ Phases 1 (core vampire data), 2 (character sheet GUI) and discipline powers are 
 - **Rules** live in `vampire/VampireRules` (our spin on V5). Tunables are in the server config (`vtm-server.toml`).
 - **Loop**: passive blood loss, sunlight, blood healing (no food), starvation penalties, passive XP, biting
   (sneak + empty hand on a creature), humanity stains for killing innocents.
-- **GUI**: press `V` for the character sheet (overview, disciplines with XP spending, clan). Blood bar replaces the food bar.
+- **GUI**: the **Vampire Codex**, one tabbed screen built on a small shared UI toolkit (`client/ui`: `Theme`, `Draw`, `Ui`, `Scroll`, pages). `V` opens it on the character pages (Overview, Disciplines with XP spending, Powers, Clan, Sect) and `N` on the world pages (Dossiers, Courts, Domains, Your court, Chronicle, Coterie); each remembers where you left off. `Q` / `E` (or Page Up / Down) change page, `Tab` / `Shift+Tab` move keyboard focus, `Enter` or `Space` activates it, the mouse wheel scrolls, and Up / Down browse dossiers. Narrow windows collapse the side rail to icons. The HUD's blood bar is segmented with hunger pips and the armed power beside it, and replaces the food bar; entering a city shows a banner and, while you are wanted there, a heat plate. Conversations use the same look: click or `Space` skips the typing, `1`-`9` pick an answer.
 - **Commands** (op): `/vtm embrace|mortal|set|discipline|info`.
 
 ## Discipline powers
@@ -33,7 +33,7 @@ All 12 disciplines have 5 levels of powers (62 in total), defined in `power/Powe
 effects are all there). Celerity, Potence and Fortitude level 1 are passive attribute bonuses that scale with dots;
 everything else is an active power that costs blood and has a cooldown.
 
-- `Z` / `X` cycle the armed power, `G` uses it, or pick one in the **Powers** tab of the sheet (`V`).
+- `Z` / `X` cycle the armed power, `G` uses it, or pick one on the **Powers** page of the Codex (`V`).
 - Activation is server-validated (`PowerManager`): the client only sends a power id.
 - Mind powers (Dominate, Presence, Obfuscate, ...) use `MobControl`: calmed mobs and hidden players are enforced by
   rewriting target changes, so vanilla retargeting cannot undo them.
@@ -150,7 +150,7 @@ happens to be standing in. Records are advanced by `NemesisSimulator` while unob
 - **Coterie**: up to 3 bound vampires follow you after dark, fight for you, and can be sent on **errands** (spy on a
   faction, hunt a known vampire, gather tribute) that the simulation resolves. Their loyalty drains unless you feed
   them; a vampire who no longer feels the bond turns on you, with a grudge.
-- **GUI** (`N`): Dossiers, Courts (who sits where, as far as you know), Domains (a map of the cities you know), Court (your own, or the way to one), Chronicle and Coterie.
+- **GUI** (`N`): the world pages of the Codex: Dossiers, Courts (who sits where, as far as you know), Domains (a map of the cities you know), Your court (or the way to one), Chronicle and Coterie.
   `/vtm nemesis list|step|spawn|ambush|feud|reveal|destroy` for ops. Config: `nemesis.enabled`, `stepTicks`,
   `populationPerFaction`, `ambushes`.
 
@@ -188,5 +188,5 @@ dilation for Celerity) remain options if NPC navigation or Celerity ever need th
 - `./gradlew runGameTestServer`: GameTests in `gametest/VtmGameTests` (data, embrace/learn, passives, feeding, every
   power, mob control, every bane, frenzy, forms, sense link, NPC behaviour, conversations, sects, the nemesis simulation and its combat rules, lairs, cities, territory, courts).
 - `./gradlew runClient -Pharness=player|npc|dialogue|sect|nemesis|lairs|city|domains|court`: scripted walkthrough of the real client that writes screenshots to
-  `run/screenshots/` (player: GUI tabs, HUD, forms, sense link, frenzy; npc: a lineup in every animation; dialogue: a conversation with a civilian and a vampire; sect: the Sect tab and a member's conversation; nemesis: the Nemesis tabs and a verdict conversation; lairs, city, domains, court: the world and the Court tab). Needs a
+  `run/screenshots/` (player: every Codex page, HUD, city banner, forms, sense link, frenzy; npc: a lineup in every animation; dialogue: a conversation with a civilian and a vampire; sect: the Sect tab and a member's conversation; nemesis: the Nemesis tabs and a verdict conversation; lairs, city, domains, court: the world and the Court tab). Needs a
   world at `run/saves/harness` and, on a headless machine, `xvfb-run`. Inert without the property.

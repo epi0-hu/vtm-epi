@@ -48,6 +48,7 @@ public final class ClientModEvents {
     @SubscribeEvent
     public static void registerLayers(RegisterGuiLayersEvent event) {
         event.registerAbove(VanillaGuiLayers.FOOD_LEVEL, VtmMod.id("blood"), BloodHud::render);
+        event.registerAboveAll(VtmMod.id("city"), (g, delta) -> CityNotice.render(g, delta.getGameTimeDeltaPartialTick(false)));
     }
 
     private ClientModEvents() {}

@@ -56,7 +56,10 @@ public final class VtmNetwork {
                 });
 
         registrar.playToClient(NemesisViewsPayload.TYPE, NemesisViewsPayload.STREAM_CODEC,
-                (payload, ctx) -> com.epi0.vtm.client.NemesisScreen.receive(payload.snapshot()));
+                (payload, ctx) -> com.epi0.vtm.client.ui.ClientWorld.receive(payload.snapshot()));
+
+        registrar.playToClient(CityNoticePayload.TYPE, CityNoticePayload.STREAM_CODEC,
+                (payload, ctx) -> com.epi0.vtm.client.CityNotice.receive(payload));
 
         registrar.playToServer(NemesisActionPayload.TYPE, NemesisActionPayload.STREAM_CODEC,
                 (payload, ctx) -> {

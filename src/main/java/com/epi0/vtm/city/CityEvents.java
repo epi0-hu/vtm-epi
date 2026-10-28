@@ -4,6 +4,8 @@ import com.epi0.vtm.VtmMod;
 import com.epi0.vtm.npc.CivilianNpc;
 import com.epi0.vtm.registry.VtmRegistries;
 import net.minecraft.network.chat.Component;
+import com.epi0.vtm.network.CityNoticePayload;
+import com.epi0.vtm.network.VtmNetwork;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -20,6 +22,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class CityEvents {
     public static final int LIFE_INTERVAL = 100;
     private static final Map<UUID, UUID> INSIDE = new ConcurrentHashMap<>();
+    private static final Map<UUID, Integer> HEAT_SENT = new ConcurrentHashMap<>();
 
     @SubscribeEvent
     public static void onServerTick(ServerTickEvent.Post event) {
@@ -39,12 +42,22 @@ public final class CityEvents {
         }
     }
 
-    /** Tells the player which city they have just entered or left. */
+    /** Tells the player which city they have just entered or left, and keeps their heat there current. */
     public static void announce(ServerPlayer player) {
         City city = CityLife.at(player);
         UUID now = city == null ? null : city.id;
         UUID before = INSIDE.get(player.getUUID());
-        if (java.util.Objects.equals(now, before)) {
+        boolean changed = !java.util.Objects.equals(now, before);
+        if (city != null) {
+            int heat = city.heatOf(player.getUUID());
+            if (changed || !java.util.Objects.equals(HEAT_SENT.put(player.getUUID(), heat), heat)) {
+                VtmNetwork.send(player, new CityNoticePayload(java.util.Optional.of(city.name), city.owner, heat));
+            }
+        } else if (changed) {
+            HEAT_SENT.remove(player.getUUID());
+            VtmNetwork.send(player, new CityNoticePayload(java.util.Optional.empty(), VtmMod.id("none"), 0));
+        }
+        if (!changed) {
             return;
         }
         if (now == null) {
@@ -52,8 +65,10 @@ public final class CityEvents {
         } else {
             INSIDE.put(player.getUUID(), now);
             Territory.discover(player, city);
-            player.displayClientMessage(Component.translatable("message.vtm.city.enter", city.name,
-                    VtmRegistries.name("faction", city.owner)), true);
+            if (player.connection == null || !player.connection.hasChannel(CityNoticePayload.TYPE)) {
+                player.displayClientMessage(Component.translatable("message.vtm.city.enter", city.name,
+                        VtmRegistries.name("faction", city.owner)), true);
+            }
         }
     }
 
@@ -71,6 +86,7 @@ public final class CityEvents {
     @SubscribeEvent
     public static void onLogout(PlayerEvent.PlayerLoggedOutEvent event) {
         INSIDE.remove(event.getEntity().getUUID());
+        HEAT_SENT.remove(event.getEntity().getUUID());
     }
 
     private CityEvents() {}

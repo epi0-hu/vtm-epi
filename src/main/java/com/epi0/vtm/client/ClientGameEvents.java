@@ -14,16 +14,21 @@ import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
 public final class ClientGameEvents {
 
     @SubscribeEvent
+    public static void onLoggingOut(net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent.LoggingOut event) {
+        CityNotice.clear();
+    }
+
+    @SubscribeEvent
     public static void onClientTick(ClientTickEvent.Post event) {
         Minecraft mc = Minecraft.getInstance();
         while (ClientModEvents.OPEN_MENU.consumeClick()) {
             if (mc.player != null && mc.screen == null) {
-                mc.setScreen(new VampireScreen());
+                com.epi0.vtm.client.ui.Codex.openSelf();
             }
         }
         while (ClientModEvents.OPEN_NEMESES.consumeClick()) {
             if (mc.player != null && mc.screen == null) {
-                NemesisScreen.open();
+                com.epi0.vtm.client.ui.Codex.openWorld();
             }
         }
         while (ClientModEvents.NEXT_POWER.consumeClick()) {
