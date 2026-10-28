@@ -405,38 +405,44 @@ public final class Harness {
                 "gamerule doMobSpawning false", "weather clear", "gamemode spectator", "vtm embrace @s ventrue"}) {
             cmd(mc, 3, c);
         }
-        // `place structure` needs every chunk loaded; try a few sites until the terrain lets a metropolis stand.
+        // The harness world is hilly, and a metropolis refuses hills; so level a site by hand, then ask for the city.
         metroOrigin = null;
         int size = com.epi0.vtm.world.CityPlan.size();
-        for (int i = 0; i < 5; i++) {
-            int x = 600 + i * 400;
-            int z = (i % 2) * 300;
-            server(mc, 5, p -> {
-                if (metroOrigin == null) {
-                    for (int cx = (x >> 4) - 1; cx <= ((x + size) >> 4) + 1; cx++) {
-                        for (int cz = (z >> 4) - 1; cz <= ((z + size) >> 4) + 1; cz++) {
-                            p.serverLevel().setChunkForced(cx, cz, true);
-                        }
+        int x = 600;
+        int z = 0;
+        server(mc, 5, p -> {
+            for (int cx = (x >> 4) - 1; cx <= ((x + size) >> 4) + 1; cx++) {
+                for (int cz = (z >> 4) - 1; cz <= ((z + size) >> 4) + 1; cz++) {
+                    p.serverLevel().setChunkForced(cx, cz, true);
+                }
+            }
+            p.teleportTo(p.serverLevel(), x + size / 2.0, 150, z + size / 2.0, 0F, 90F);
+        });
+        then(700, () -> {});
+        server(mc, 5, p -> {
+            var level = p.serverLevel();
+            int ground = level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE_WG, x + size / 2, z + size / 2);
+            var pos = new net.minecraft.core.BlockPos.MutableBlockPos();
+            for (int wx = x - 8; wx < x + size + 8; wx++) {
+                for (int wz = z - 8; wz < z + size + 8; wz++) {
+                    for (int y = ground - 6; y < ground; y++) {
+                        level.setBlock(pos.set(wx, y, wz), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 2);
                     }
-                    p.teleportTo(p.serverLevel(), x + size / 2.0, 150, z + size / 2.0, 0F, 90F);
+                    level.setBlock(pos.set(wx, ground - 1, wz), net.minecraft.world.level.block.Blocks.GRASS_BLOCK.defaultBlockState(), 2);
+                    for (int y = ground; y < ground + 40; y++) {
+                        level.setBlock(pos.set(wx, y, wz), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 2);
+                    }
                 }
-            });
-            then(i == 0 ? 700 : 600, () -> {});
-            server(mc, 5, p -> {
-                if (metroOrigin != null) {
-                    return;
-                }
-                int surface = p.serverLevel().getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE_WG, x, z);
-                try {
-                    p.getServer().getCommands().getDispatcher().execute("place structure vtm:metropolis " + x + " " + surface + " " + z,
-                            p.createCommandSourceStack().withPermission(4).withPosition(net.minecraft.world.phys.Vec3.atCenterOf(new net.minecraft.core.BlockPos(x, surface, z))));
-                    metroOrigin = new net.minecraft.core.BlockPos(x & ~15, surface, z & ~15);
-                } catch (com.mojang.brigadier.exceptions.CommandSyntaxException e) {
-                    VtmMod.LOGGER.info("HARNESS metropolis at {} {} refused: {}", x, z, e.getMessage());
-                }
-                VtmMod.LOGGER.info("HARNESS metropolis origin {}", metroOrigin);
-            });
-        }
+            }
+            try {
+                p.getServer().getCommands().getDispatcher().execute("place structure vtm:metropolis " + x + " " + ground + " " + z,
+                        p.createCommandSourceStack().withPermission(4).withPosition(net.minecraft.world.phys.Vec3.atCenterOf(new net.minecraft.core.BlockPos(x, ground, z))));
+                metroOrigin = new net.minecraft.core.BlockPos(x & ~15, ground, z & ~15);
+            } catch (com.mojang.brigadier.exceptions.CommandSyntaxException e) {
+                VtmMod.LOGGER.info("HARNESS metropolis refused: {}", e.getMessage());
+            }
+            VtmMod.LOGGER.info("HARNESS metropolis origin {} ground {}", metroOrigin, ground);
+        });
         then(900, () -> {});
         server(mc, 5, p -> {
             var level = p.serverLevel();
