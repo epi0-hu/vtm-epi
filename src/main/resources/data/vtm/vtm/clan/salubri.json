@@ -1,0 +1,5 @@
+{
+  "color": "#48C9B0",
+  "sun_damage_multiplier": 1.0,
+  "disciplines": ["vtm:auspex", "vtm:dominate", "vtm:fortitude"]
+}
