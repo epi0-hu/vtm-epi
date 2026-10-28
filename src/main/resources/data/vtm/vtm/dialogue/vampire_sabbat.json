@@ -11,6 +11,14 @@
       "text": [
         {
           "when": {
+            "sect": {
+              "member": true
+            }
+          },
+          "key": "dialogue.vtm.vampire_sabbat.greet.member"
+        },
+        {
+          "when": {
             "min_seen": 4
           },
           "key": "dialogue.vtm.vampire_sabbat.greet.familiar"
@@ -61,6 +69,9 @@
         },
         {
           "text": "dialogue.vtm.opt.ask_city",
+          "show": {
+            "min_rapport": 1
+          },
           "require": {
             "flag": "introduced"
           },
@@ -70,7 +81,8 @@
         {
           "text": "dialogue.vtm.opt.ask_teach",
           "show": {
-            "no_flag": "taught"
+            "no_flag": "taught",
+            "min_rapport": 2
           },
           "require": {
             "min_rapport": 3
@@ -83,6 +95,70 @@
             }
           ],
           "next": "teach"
+        },
+        {
+          "text": "dialogue.vtm.opt.join",
+          "show": {
+            "sect": {
+              "unaligned": true
+            }
+          },
+          "require": {
+            "min_rapport": 3
+          },
+          "locked": "dialogue.vtm.locked.rapport",
+          "effects": [
+            {
+              "join": true
+            }
+          ],
+          "next": "joined"
+        },
+        {
+          "text": "dialogue.vtm.opt.serve",
+          "show": {
+            "sect": {
+              "member": true
+            },
+            "no_flag": "served"
+          },
+          "effects": [
+            {
+              "standing": 5,
+              "flag": "served"
+            }
+          ],
+          "next": "served"
+        },
+        {
+          "text": "dialogue.vtm.opt.promote",
+          "show": {
+            "sect": {
+              "member": true,
+              "outranks": true
+            }
+          },
+          "require": {
+            "sect": {
+              "can_promote": true
+            }
+          },
+          "locked": "dialogue.vtm.locked.promote",
+          "effects": [
+            {
+              "promote": true
+            }
+          ],
+          "next": "promoted"
+        },
+        {
+          "text": "dialogue.vtm.opt.renounce",
+          "show": {
+            "sect": {
+              "member": true
+            }
+          },
+          "next": "renounce"
         },
         {
           "text": "dialogue.vtm.opt.leave"
@@ -133,6 +209,9 @@
         },
         {
           "text": "dialogue.vtm.opt.ask_city",
+          "show": {
+            "min_rapport": 1
+          },
           "require": {
             "flag": "introduced"
           },
@@ -142,7 +221,8 @@
         {
           "text": "dialogue.vtm.opt.ask_teach",
           "show": {
-            "no_flag": "taught"
+            "no_flag": "taught",
+            "min_rapport": 2
           },
           "require": {
             "min_rapport": 3
@@ -155,6 +235,70 @@
             }
           ],
           "next": "teach"
+        },
+        {
+          "text": "dialogue.vtm.opt.join",
+          "show": {
+            "sect": {
+              "unaligned": true
+            }
+          },
+          "require": {
+            "min_rapport": 3
+          },
+          "locked": "dialogue.vtm.locked.rapport",
+          "effects": [
+            {
+              "join": true
+            }
+          ],
+          "next": "joined"
+        },
+        {
+          "text": "dialogue.vtm.opt.serve",
+          "show": {
+            "sect": {
+              "member": true
+            },
+            "no_flag": "served"
+          },
+          "effects": [
+            {
+              "standing": 5,
+              "flag": "served"
+            }
+          ],
+          "next": "served"
+        },
+        {
+          "text": "dialogue.vtm.opt.promote",
+          "show": {
+            "sect": {
+              "member": true,
+              "outranks": true
+            }
+          },
+          "require": {
+            "sect": {
+              "can_promote": true
+            }
+          },
+          "locked": "dialogue.vtm.locked.promote",
+          "effects": [
+            {
+              "promote": true
+            }
+          ],
+          "next": "promoted"
+        },
+        {
+          "text": "dialogue.vtm.opt.renounce",
+          "show": {
+            "sect": {
+              "member": true
+            }
+          },
+          "next": "renounce"
         },
         {
           "text": "dialogue.vtm.opt.leave"
@@ -220,6 +364,63 @@
           "text": "dialogue.vtm.opt.leave"
         }
       ]
+    },
+    "joined": {
+      "text": "dialogue.vtm.vampire_sabbat.joined",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.else",
+          "next": "more"
+        },
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
+    },
+    "served": {
+      "text": "dialogue.vtm.vampire_sabbat.served",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.else",
+          "next": "more"
+        },
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
+    },
+    "promoted": {
+      "text": "dialogue.vtm.vampire_sabbat.promoted",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.else",
+          "next": "more"
+        },
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
+    },
+    "renounce": {
+      "text": "dialogue.vtm.renounce.confirm",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.renounce_yes",
+          "effects": [
+            {
+              "leave": true
+            }
+          ],
+          "next": "renounced"
+        },
+        {
+          "text": "dialogue.vtm.opt.renounce_no",
+          "next": "more"
+        }
+      ]
+    },
+    "renounced": {
+      "text": "dialogue.vtm.renounce.done"
     }
   }
 }

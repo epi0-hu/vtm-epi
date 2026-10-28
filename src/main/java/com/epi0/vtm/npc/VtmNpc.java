@@ -145,6 +145,11 @@ public abstract class VtmNpc extends PathfinderMob implements GeoEntity {
         return memory;
     }
 
+    /** Standing within the NPC's own faction: 0 is the lowest rank. */
+    public int rank() {
+        return 0;
+    }
+
     // ---------------------------------------------------------------- conversation
 
     /** The player this NPC is currently talking to; it holds still and faces them. */

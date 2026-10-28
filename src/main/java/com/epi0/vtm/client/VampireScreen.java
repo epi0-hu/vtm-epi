@@ -6,6 +6,9 @@ import com.epi0.vtm.power.PowerKind;
 import com.epi0.vtm.power.Powers;
 import com.epi0.vtm.registry.Clan;
 import com.epi0.vtm.registry.Discipline;
+import com.epi0.vtm.registry.Faction;
+import com.epi0.vtm.sect.Membership;
+import com.epi0.vtm.sect.SectManager;
 import com.epi0.vtm.registry.VtmRegistries;
 import com.epi0.vtm.vampire.VampireData;
 import com.epi0.vtm.vampire.VampireRules;
@@ -30,9 +33,9 @@ import java.util.List;
  * All values are read from the synced {@link VampireData}; the only thing the client sends is a learn request.
  */
 public class VampireScreen extends Screen {
-    enum Tab { OVERVIEW, DISCIPLINES, POWERS, CLAN }
+    enum Tab { OVERVIEW, DISCIPLINES, POWERS, CLAN, SECT }
 
-    private static final int WIDTH = 280;
+    private static final int WIDTH = 330;
     private static final int HEIGHT = 214;
     private static final int ROW_HEIGHT = 14;
     private static final int VISIBLE_ROWS = 10;
@@ -75,10 +78,10 @@ public class VampireScreen extends Screen {
                         tab = t;
                         scroll = 0;
                         rebuildWidgets();
-                    }).bounds(x, top + 8, 64, 18).build();
+                    }).bounds(x, top + 8, 60, 18).build();
             button.active = t != tab;
             addRenderableWidget(button);
-            x += 67;
+            x += 63;
         }
 
         if (tab == Tab.DISCIPLINES && data().isVampire()) {
@@ -202,6 +205,7 @@ public class VampireScreen extends Screen {
             case DISCIPLINES -> renderDisciplines(g, data);
             case POWERS -> renderPowers(g, data);
             case CLAN -> renderClan(g, data);
+            case SECT -> renderSect(g);
         }
     }
 
@@ -336,6 +340,70 @@ public class VampireScreen extends Screen {
             g.drawString(font, VtmRegistries.name("discipline", id), x, y, readable(color), false);
             y += 11;
         }
+    }
+
+    private void renderSect(GuiGraphics g) {
+        Membership m = Membership.of(minecraft.player);
+        int x = left + 12;
+        int y = top + 38;
+        ResourceLocation id = m.faction().orElse(null);
+        Faction faction = id == null ? null : VtmRegistries.faction(access(), id).orElse(null);
+        if (faction == null) {
+            g.drawString(font, Component.translatable("gui.vtm.sect.none"), x, y, MUTED, false);
+            y = paragraph(g, Component.translatable("gui.vtm.sect.none_hint"), x, y + 12, TEXT);
+        } else {
+            g.drawString(font, VtmRegistries.name("faction", id), x, y, readable(faction.color()), false);
+            y += 12;
+            g.drawString(font, Component.translatable("gui.vtm.sect.rank", SectManager.rankTitle(access(), id, m.rank()),
+                    m.rank() + 1, faction.rankCount()), x, y, TEXT, false);
+            y += 12;
+            int standing = m.standingWith(id);
+            if (m.rank() + 1 < faction.rankCount()) {
+                g.drawString(font, Component.translatable("gui.vtm.sect.next", SectManager.rankTitle(access(), id, m.rank() + 1),
+                        standing, faction.standingFor(m.rank() + 1)), x, y, MUTED, false);
+            } else {
+                g.drawString(font, Component.translatable("gui.vtm.sect.top"), x, y, MUTED, false);
+            }
+            y += 14;
+            y = relationLine(g, "gui.vtm.sect.allies", faction.allies(), x, y);
+            y = relationLine(g, "gui.vtm.sect.enemies", faction.enemies(), x, y);
+        }
+        y += 6;
+        g.drawString(font, Component.translatable("gui.vtm.sect.standing"), x, y, MUTED, false);
+        y += 12;
+        int barLeft = x + 110;
+        int barWidth = WIDTH - 24 - 110 - 30;
+        for (ResourceLocation other : access().registry(VtmRegistries.FACTION)
+                .map(r -> r.keySet().stream().sorted(Comparator.comparing(ResourceLocation::getPath)).toList()).orElse(List.of())) {
+            Faction def = VtmRegistries.faction(access(), other).orElse(null);
+            if (def == null || !def.joinable() && m.standingWith(other) == 0) {
+                continue;
+            }
+            int value = m.standingWith(other);
+            g.drawString(font, VtmRegistries.name("faction", other), x, y, readable(def.color()), false);
+            g.fill(barLeft, y + 2, barLeft + barWidth, y + 7, PIP_EMPTY);
+            int mid = barLeft + barWidth / 2;
+            int end = mid + value * (barWidth / 2) / Membership.MAX_STANDING;
+            g.fill(Math.min(mid, end), y + 2, Math.max(mid, end), y + 7, value >= 0 ? readable(def.color()) : BLOOD);
+            g.fill(mid, y, mid + 1, y + 9, MUTED);
+            g.drawString(font, String.valueOf(value), barLeft + barWidth + 6, y, value <= SectManager.OUTCAST ? BLOOD : TEXT, false);
+            y += 12;
+        }
+    }
+
+    private int relationLine(GuiGraphics g, String labelKey, List<ResourceLocation> factions, int x, int y) {
+        if (factions.isEmpty()) {
+            return y;
+        }
+        net.minecraft.network.chat.MutableComponent names = Component.empty();
+        for (ResourceLocation other : factions) {
+            if (!names.getSiblings().isEmpty()) {
+                names.append(", ");
+            }
+            names.append(VtmRegistries.name("faction", other));
+        }
+        g.drawString(font, Component.translatable(labelKey, names), x, y, MUTED, false);
+        return y + 11;
     }
 
     // ---------------------------------------------------------------- helpers

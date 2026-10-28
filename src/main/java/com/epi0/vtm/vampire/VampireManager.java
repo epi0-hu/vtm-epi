@@ -25,6 +25,7 @@ public final class VampireManager {
 
     public static void sync(ServerPlayer player) {
         VtmNetwork.send(player, new SyncVampirePayload(VampireData.of(player)));
+        com.epi0.vtm.sect.SectManager.sync(player);
     }
 
     public static VampireData embraced(ResourceLocation clan) {
@@ -45,6 +46,7 @@ public final class VampireManager {
         SenseLink.end(player);
         Forms.clear(player);
         set(player, VampireData.DEFAULT);
+        com.epi0.vtm.sect.SectManager.set(player, com.epi0.vtm.sect.Membership.DEFAULT);
     }
 
     /** Spends experience on the next level of {@code disciplineId}, if the player is allowed to. */

@@ -24,6 +24,9 @@ public final class VtmNetwork {
         registrar.playToClient(SyncVampirePayload.TYPE, SyncVampirePayload.STREAM_CODEC,
                 (payload, ctx) -> ctx.player().setData(ModAttachments.VAMPIRE, payload.data()));
 
+        registrar.playToClient(SyncMembershipPayload.TYPE, SyncMembershipPayload.STREAM_CODEC,
+                (payload, ctx) -> ctx.player().setData(ModAttachments.MEMBERSHIP, payload.membership()));
+
         registrar.playToServer(LearnDisciplinePayload.TYPE, LearnDisciplinePayload.STREAM_CODEC,
                 (payload, ctx) -> {
                     if (ctx.player() instanceof ServerPlayer player) {

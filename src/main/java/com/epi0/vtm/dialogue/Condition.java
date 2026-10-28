@@ -5,6 +5,8 @@ import com.epi0.vtm.npc.CivilianNpc;
 import com.epi0.vtm.npc.NpcMemory;
 import com.epi0.vtm.npc.VampireNpc;
 import com.epi0.vtm.npc.VtmNpc;
+import com.epi0.vtm.sect.Membership;
+import com.epi0.vtm.sect.SectManager;
 import com.epi0.vtm.vampire.VampireData;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
@@ -38,13 +40,50 @@ public record Condition(Optional<String> npc, Optional<ResourceLocation> clan, O
                         Optional<ResourceLocation> playerClan, Optional<Integer> minHumanity,
                         Optional<Requirement> discipline, Optional<Integer> minSeen, Optional<Integer> minRapport,
                         Optional<Integer> maxRapport, Optional<String> flag, Optional<String> noFlag,
-                        Optional<Boolean> threat) {
+                        Optional<Boolean> threat, Optional<SectReq> sect) {
 
     public record Requirement(ResourceLocation id, int level) {
         public static final Codec<Requirement> CODEC = RecordCodecBuilder.create(i -> i.group(
                 ResourceLocation.CODEC.fieldOf("id").forGetter(Requirement::id),
                 Codec.INT.optionalFieldOf("level", 1).forGetter(Requirement::level)
         ).apply(i, Requirement::new));
+    }
+
+    /**
+     * Membership requirements, all measured against the NPC's own faction.
+     *
+     * @param member     the player belongs to the NPC's faction
+     * @param unaligned  the player belongs to no faction at all
+     * @param minRank    the player is a member of at least this rank
+     * @param outranks   the NPC holds a higher rank than the player (who must be a member)
+     * @param canPromote the player has the standing for the next rank
+     * @param minStanding standing with the NPC's faction
+     * @param maxStanding standing with the NPC's faction
+     */
+    public record SectReq(Optional<Boolean> member, Optional<Boolean> unaligned, Optional<Integer> minRank,
+                          Optional<Boolean> outranks, Optional<Boolean> canPromote, Optional<Integer> minStanding,
+                          Optional<Integer> maxStanding) {
+        public static final Codec<SectReq> CODEC = RecordCodecBuilder.create(i -> i.group(
+                Codec.BOOL.optionalFieldOf("member").forGetter(SectReq::member),
+                Codec.BOOL.optionalFieldOf("unaligned").forGetter(SectReq::unaligned),
+                Codec.INT.optionalFieldOf("min_rank").forGetter(SectReq::minRank),
+                Codec.BOOL.optionalFieldOf("outranks").forGetter(SectReq::outranks),
+                Codec.BOOL.optionalFieldOf("can_promote").forGetter(SectReq::canPromote),
+                Codec.INT.optionalFieldOf("min_standing").forGetter(SectReq::minStanding),
+                Codec.INT.optionalFieldOf("max_standing").forGetter(SectReq::maxStanding)
+        ).apply(i, SectReq::new));
+
+        boolean test(ServerPlayer player, VtmNpc npc) {
+            Membership m = Membership.of(player);
+            boolean isMember = m.isMemberOf(npc.factionId());
+            return member.map(v -> v == isMember).orElse(true)
+                    && unaligned.map(v -> v == m.faction().isEmpty()).orElse(true)
+                    && minRank.map(v -> isMember && m.rank() >= v).orElse(true)
+                    && outranks.map(v -> v == (isMember && npc.rank() > m.rank())).orElse(true)
+                    && canPromote.map(v -> v == (isMember && SectManager.canPromote(m, npc.level().registryAccess()))).orElse(true)
+                    && minStanding.map(v -> m.standingWith(npc.factionId()) >= v).orElse(true)
+                    && maxStanding.map(v -> m.standingWith(npc.factionId()) <= v).orElse(true);
+        }
     }
 
     private static final Codec<Attitude> ATTITUDE = Codec.STRING.xmap(
@@ -65,12 +104,13 @@ public record Condition(Optional<String> npc, Optional<ResourceLocation> clan, O
             Codec.INT.optionalFieldOf("max_rapport").forGetter(Condition::maxRapport),
             Codec.STRING.optionalFieldOf("flag").forGetter(Condition::flag),
             Codec.STRING.optionalFieldOf("no_flag").forGetter(Condition::noFlag),
-            Codec.BOOL.optionalFieldOf("threat").forGetter(Condition::threat)
+            Codec.BOOL.optionalFieldOf("threat").forGetter(Condition::threat),
+            SectReq.CODEC.optionalFieldOf("sect").forGetter(Condition::sect)
     ).apply(i, Condition::new));
 
     public static final Condition ANY = new Condition(Optional.empty(), Optional.empty(), Optional.empty(),
             Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
-            Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
+            Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
 
     public static final com.mojang.serialization.MapCodec<Condition> WHEN = CODEC.optionalFieldOf("when", ANY);
 
@@ -121,6 +161,9 @@ public record Condition(Optional<String> npc, Optional<ResourceLocation> clan, O
         if (noFlag.isPresent() && memory.hasFlag(uuid, noFlag.get())) {
             return false;
         }
-        return threat.isEmpty() || threat.get() == memory.isThreat(uuid);
+        if (threat.isPresent() && threat.get() != memory.isThreat(uuid)) {
+            return false;
+        }
+        return sect.isEmpty() || sect.get().test(player, npc);
     }
 }

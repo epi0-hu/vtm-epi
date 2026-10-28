@@ -4,6 +4,9 @@ import com.epi0.vtm.npc.goal.FeedOnPreyGoal;
 import com.epi0.vtm.npc.goal.HomeStrollGoal;
 import com.epi0.vtm.power.PassiveEffects;
 import com.epi0.vtm.registry.Clan;
+import com.epi0.vtm.registry.Faction;
+import com.epi0.vtm.sect.Membership;
+import com.epi0.vtm.sect.SectManager;
 import com.epi0.vtm.registry.VtmRegistries;
 import com.epi0.vtm.vampire.VampireData;
 import net.minecraft.core.BlockPos;
@@ -53,6 +56,7 @@ public class VampireNpc extends VtmNpc {
     private static final EntityDataAccessor<String> DATA_CLAN = SynchedEntityData.defineId(VampireNpc.class, EntityDataSerializers.STRING);
 
     private float blood = 8F;
+    private int rank;
     @Nullable
     private BlockPos shelter;
 
@@ -137,6 +141,16 @@ public class VampireNpc extends VtmNpc {
             }
         }
         PassiveEffects.applyLevels(this, celerity, potence, fortitude);
+    }
+
+    @Override
+    public int rank() {
+        return rank;
+    }
+
+    public void setRank(int rank) {
+        int max = faction().map(Faction::rankCount).orElse(1) - 1;
+        this.rank = Math.max(0, Math.min(rank, max));
     }
 
     // ---------------------------------------------------------------- hunger
@@ -245,7 +259,16 @@ public class VampireNpc extends VtmNpc {
             if (memory().isThreat(player.getUUID()) || rapport <= HOSTILE_RAPPORT) {
                 return Attitude.HOSTILE;
             }
-            if (rapport >= FRIENDLY_RAPPORT) {
+            Membership membership = Membership.of(player);
+            if (membership.standingWith(factionId()) <= SectManager.OUTCAST) {
+                return Attitude.HOSTILE; // an outcast of this sect, member or not
+            }
+            Faction.Relation relation = membership.faction().flatMap(f -> faction().map(own -> own.relationTo(factionId(), f)))
+                    .orElse(Faction.Relation.NEUTRAL);
+            if (relation == Faction.Relation.ENEMY) {
+                return Attitude.HOSTILE; // a sworn member of an enemy sect
+            }
+            if (rapport >= FRIENDLY_RAPPORT || relation == Faction.Relation.ALLY) {
                 return Attitude.FRIENDLY;
             }
             boolean mortal = !VampireData.of(player).isVampire();
@@ -254,7 +277,7 @@ public class VampireNpc extends VtmNpc {
         }
         if (other instanceof VampireNpc vampire) {
             return faction().map(f -> f.relationTo(factionId(), vampire.factionId())).orElse(null)
-                    == com.epi0.vtm.registry.Faction.Relation.ENEMY ? Attitude.HOSTILE : Attitude.NEUTRAL;
+                    == Faction.Relation.ENEMY ? Attitude.HOSTILE : Attitude.NEUTRAL;
         }
         return Attitude.NEUTRAL;
     }
@@ -280,6 +303,8 @@ public class VampireNpc extends VtmNpc {
             }
         }
         setBlood(5F + random.nextInt(5));
+        int roll = random.nextInt(10);
+        setRank(roll < 6 ? 0 : roll < 9 ? 1 : 2);
         return data;
     }
 
@@ -288,12 +313,14 @@ public class VampireNpc extends VtmNpc {
         super.addAdditionalSaveData(tag);
         tag.putString("Clan", entityData.get(DATA_CLAN));
         tag.putFloat("Blood", blood);
+        tag.putInt("Rank", rank);
     }
 
     @Override
     public void readAdditionalSaveData(CompoundTag tag) {
         super.readAdditionalSaveData(tag);
         entityData.set(DATA_CLAN, tag.getString("Clan"));
+        rank = tag.getInt("Rank");
         blood = tag.contains("Blood") ? tag.getFloat("Blood") : blood;
     }
 

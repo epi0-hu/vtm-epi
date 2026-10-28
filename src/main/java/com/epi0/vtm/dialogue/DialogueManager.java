@@ -207,8 +207,16 @@ public final class DialogueManager {
 
         int color = npc.faction().map(com.epi0.vtm.registry.Faction::color).orElse(0xFFFFFF);
         VtmNetwork.send(player, new DialogueNodePayload(Optional.of(new DialogueNodePayload.Node(
-                npc.getId(), npc.getDisplayName(), color, Component.translatable(key, args), note,
+                npc.getId(), speaker(npc), color, Component.translatable(key, args), note,
                 npc.attitudeTo(player).ordinal(), npc.memory().rapport(player.getUUID()), choices))));
+    }
+
+    /** The NPC's name, with their rank in their sect when it has more than one. */
+    private static Component speaker(VtmNpc npc) {
+        boolean ranked = npc.faction().map(f -> f.rankCount() > 1).orElse(false) && !npc.getDisplayName().getString().isEmpty();
+        return ranked ? Component.empty().append(npc.getDisplayName()).append(" | ")
+                .append(com.epi0.vtm.sect.SectManager.rankTitle(npc.level().registryAccess(), npc.factionId(), npc.rank()))
+                : npc.getDisplayName();
     }
 
     /** {@code %1$s} NPC name, {@code %2$s} player name, {@code %3$s} clan, {@code %4$s} faction, {@code %5$s} clan description. */

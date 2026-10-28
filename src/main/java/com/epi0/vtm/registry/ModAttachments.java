@@ -1,6 +1,7 @@
 package com.epi0.vtm.registry;
 
 import com.epi0.vtm.VtmMod;
+import com.epi0.vtm.sect.Membership;
 import com.epi0.vtm.vampire.VampireData;
 import net.neoforged.neoforge.attachment.AttachmentType;
 import net.neoforged.neoforge.registries.DeferredRegister;
@@ -16,6 +17,13 @@ public final class ModAttachments {
     public static final Supplier<AttachmentType<VampireData>> VAMPIRE = ATTACHMENTS.register("vampire",
             () -> AttachmentType.builder(() -> VampireData.DEFAULT)
                     .serialize(VampireData.CODEC)
+                    .copyOnDeath()
+                    .build());
+
+    /** The player's sect, rank and standing. Persisted, kept through death, synced by {@code SyncMembershipPayload}. */
+    public static final Supplier<AttachmentType<Membership>> MEMBERSHIP = ATTACHMENTS.register("membership",
+            () -> AttachmentType.builder(() -> Membership.DEFAULT)
+                    .serialize(Membership.CODEC)
                     .copyOnDeath()
                     .build());
 

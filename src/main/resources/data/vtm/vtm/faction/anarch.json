@@ -3,5 +3,11 @@
   "enemies": [
     "vtm:sabbat",
     "vtm:hunters"
+  ],
+  "joinable": true,
+  "ranks": [
+    0,
+    20,
+    50
   ]
 }

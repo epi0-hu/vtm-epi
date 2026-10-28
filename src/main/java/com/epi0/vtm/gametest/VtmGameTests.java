@@ -6,6 +6,9 @@ import com.epi0.vtm.dialogue.DialogueTree;
 import com.epi0.vtm.dialogue.Dialogues;
 import com.epi0.vtm.dialogue.Roll;
 import com.epi0.vtm.network.DialogueNodePayload;
+import com.epi0.vtm.network.SyncMembershipPayload;
+import com.epi0.vtm.sect.Membership;
+import com.epi0.vtm.sect.SectManager;
 import com.epi0.vtm.npc.VtmNpc;
 import com.epi0.vtm.power.Form;
 import com.epi0.vtm.power.Forms;
@@ -735,6 +738,153 @@ public final class VtmGameTests {
         NpcMemory loaded = new NpcMemory();
         loaded.load(memory.save());
         helper.assertTrue(loaded.rapport(id) == 4 && loaded.hasFlag(id, "introduced"), "memory round-trips through NBT");
+        helper.succeed();
+    }
+
+    // ---------------------------------------------------------------- sects
+
+    private static ResourceLocation sect(String name) {
+        return VtmMod.id(name);
+    }
+
+    @GameTest(template = "empty")
+    public static void sectJoiningFollowsTheRules(GameTestHelper helper) {
+        ServerPlayer mortal = survivalPlayer(helper);
+        helper.assertTrue(!SectManager.join(mortal, sect("camarilla")), "mortals cannot join");
+
+        ServerPlayer player = vampire(helper, "gangrel");
+        helper.assertTrue(!SectManager.join(player, sect("hunters")), "hunters are not joinable");
+        helper.assertTrue(SectManager.join(player, sect("camarilla")), "vampires can join the Camarilla");
+        Membership m = Membership.of(player);
+        helper.assertTrue(m.isMemberOf(sect("camarilla")) && m.rank() == 0, "...as the lowest rank");
+        helper.assertTrue(!SectManager.join(player, sect("anarch")), "one sect at a time");
+
+        helper.assertTrue(!SectManager.promote(player), "no promotion without standing");
+        SectManager.set(player, m.withStanding(sect("camarilla"), 25));
+        helper.assertTrue(SectManager.promote(player) && Membership.of(player).rank() == 1, "25 standing makes an Ancilla");
+        helper.assertTrue(!SectManager.promote(player), "...and not an Elder");
+        SectManager.set(player, Membership.of(player).withStanding(sect("camarilla"), 100));
+        helper.assertTrue(SectManager.promote(player) && !SectManager.promote(player), "the top rank is the top");
+
+        SectManager.leave(player);
+        m = Membership.of(player);
+        helper.assertTrue(m.faction().isEmpty() && m.rank() == 0, "renouncing clears membership");
+        helper.assertTrue(m.standingWith(sect("camarilla")) == 80, "...at a price in standing");
+
+        SectManager.set(player, m.withStanding(sect("sabbat"), SectManager.OUTCAST));
+        helper.assertTrue(!SectManager.join(player, sect("sabbat")), "outcasts are not taken in");
+        VampireManager.makeMortal(player);
+        helper.assertTrue(Membership.of(player).equals(Membership.DEFAULT), "becoming mortal forgets all of it");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "vtm_night")
+    public static void deedsMoveStanding(GameTestHelper helper) {
+        helper.setDayTime(18000);
+        ServerPlayer player = vampire(helper, "ventrue");
+        SectManager.join(player, sect("camarilla"));
+        var sabbatVictim = NpcSpawner.vampire(helper.getLevel(), at(helper, 3.5, 2, 6.5), VtmMod.id("tzimisce"));
+        var friendVictim = NpcSpawner.vampire(helper.getLevel(), at(helper, 5.5, 2, 6.5), VtmMod.id("toreador"));
+        player.moveTo(at(helper, 4.5, 2, 4.5));
+
+        sabbatVictim.hurt(helper.getLevel().damageSources().playerAttack(player), 1000F);
+        Membership m = Membership.of(player);
+        helper.assertTrue(m.standingWith(sect("camarilla")) == SectManager.KILL_ENEMY, "killing an enemy of the sect earns standing");
+        helper.assertTrue(m.standingWith(sect("sabbat")) == SectManager.KILL_RESENTMENT, "...and the victim's sect resents it");
+
+        friendVictim.hurt(helper.getLevel().damageSources().playerAttack(player), 1000F);
+        helper.assertTrue(Membership.of(player).standingWith(sect("camarilla")) == SectManager.KILL_ENEMY + SectManager.KILL_MEMBER,
+                "killing a member of your own sect costs you");
+
+        var civilian = NpcSpawner.civilian(helper.getLevel(), at(helper, 4.5, 2, 6.5));
+        int before = Membership.of(player).standingWith(sect("camarilla"));
+        helper.assertTrue(Feeding.bite(player, civilian), "bite failed");
+        helper.assertTrue(Membership.of(player).standingWith(sect("camarilla")) == before + SectManager.MASQUERADE_BREACH,
+                "feeding in front of a civilian breaks the Masquerade");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "vtm_night")
+    public static void sectsShapeHowVampiresTreatYou(GameTestHelper helper) {
+        helper.setDayTime(18000);
+        ServerPlayer player = vampire(helper, "gangrel");
+        var camarilla = NpcSpawner.vampire(helper.getLevel(), at(helper, 3.5, 2, 6.5), VtmMod.id("ventrue"));
+        var sabbat = NpcSpawner.vampire(helper.getLevel(), at(helper, 5.5, 2, 6.5), VtmMod.id("tzimisce"));
+        helper.assertTrue(camarilla.attitudeTo(player) == Attitude.NEUTRAL, "strangers are strangers");
+
+        SectManager.join(player, sect("camarilla"));
+        helper.assertTrue(camarilla.attitudeTo(player) == Attitude.FRIENDLY, "your own sect is friendly");
+        helper.assertTrue(sabbat.attitudeTo(player) == Attitude.HOSTILE, "an enemy sect attacks a sworn member");
+
+        SectManager.leave(player);
+        helper.assertTrue(sabbat.attitudeTo(player) == Attitude.NEUTRAL, "...but not a free agent");
+        SectManager.set(player, Membership.of(player).withStanding(sect("sabbat"), SectManager.OUTCAST));
+        helper.assertTrue(sabbat.attitudeTo(player) == Attitude.HOSTILE, "an outcast is hunted by the sect they wronged");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "vtm_night")
+    public static void sectsAreJoinedThroughConversation(GameTestHelper helper) {
+        helper.setDayTime(18000);
+        ServerPlayer player = vampire(helper, "gangrel");
+        var elder = NpcSpawner.vampire(helper.getLevel(), at(helper, 4.5, 2, 6.5), VtmMod.id("ventrue"));
+        elder.setRank(2);
+        DialogueManager.open(player, elder);
+        var hub = DialogueManager.session(player);
+
+        DialogueManager.choose(player, option(player, "dialogue.vtm.opt.join")); // locked: no rapport yet
+        helper.assertTrue(DialogueManager.session(player).equals(hub) && Membership.of(player).faction().isEmpty(),
+                "a stranger is not accepted");
+
+        elder.memory().adjustRapport(player.getUUID(), 3, 0L);
+        DialogueManager.choose(player, option(player, "dialogue.vtm.opt.join"));
+        helper.assertTrue(Membership.of(player).isMemberOf(sect("camarilla")), "a trusted vampire vouches for you");
+        DialogueManager.choose(player, option(player, "dialogue.vtm.opt.else"));
+
+        DialogueManager.choose(player, option(player, "dialogue.vtm.opt.serve"));
+        helper.assertTrue(Membership.of(player).standingWith(sect("camarilla")) == 5, "service earns standing");
+        DialogueManager.choose(player, option(player, "dialogue.vtm.opt.else"));
+
+        DialogueManager.choose(player, option(player, "dialogue.vtm.opt.promote")); // locked: 5 < 25
+        helper.assertTrue(Membership.of(player).rank() == 0, "not enough standing for a promotion");
+        SectManager.set(player, Membership.of(player).withStanding(sect("camarilla"), 30));
+        DialogueManager.choose(player, option(player, "dialogue.vtm.opt.promote"));
+        helper.assertTrue(Membership.of(player).rank() == 1, "with standing, an elder promotes you");
+        DialogueManager.choose(player, option(player, "dialogue.vtm.opt.else"));
+
+        elder.setRank(1);
+        DialogueManager.choose(player, option(player, "dialogue.vtm.opt.renounce"));
+        DialogueManager.choose(player, option(player, "dialogue.vtm.opt.renounce_yes"));
+        helper.assertTrue(Membership.of(player).faction().isEmpty(), "renouncing in conversation leaves the sect");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "vtm_night")
+    public static void peersCannotPromoteYou(GameTestHelper helper) {
+        helper.setDayTime(18000);
+        ServerPlayer player = vampire(helper, "gangrel");
+        SectManager.join(player, sect("camarilla"));
+        SectManager.set(player, Membership.of(player).withStanding(sect("camarilla"), 50));
+        var peer = NpcSpawner.vampire(helper.getLevel(), at(helper, 4.5, 2, 6.5), VtmMod.id("ventrue"));
+        peer.setRank(0);
+        DialogueManager.open(player, peer);
+        var hub = DialogueManager.session(player);
+        DialogueManager.choose(player, option(player, "dialogue.vtm.opt.promote"));
+        helper.assertTrue(DialogueManager.session(player).equals(hub) && Membership.of(player).rank() == 0,
+                "only someone of higher rank can promote you");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void membershipSurvivesTheWire(GameTestHelper helper) {
+        var buf = new net.minecraft.network.RegistryFriendlyByteBuf(io.netty.buffer.Unpooled.buffer(), helper.getLevel().registryAccess());
+        Membership m = Membership.DEFAULT.withFaction(java.util.Optional.of(sect("sabbat")), 2).withStanding(sect("anarch"), -40);
+        SyncMembershipPayload.STREAM_CODEC.encode(buf, new SyncMembershipPayload(m));
+        helper.assertTrue(SyncMembershipPayload.STREAM_CODEC.decode(buf).membership().equals(m), "membership round-trips");
+        helper.assertTrue(Membership.of(survivalPlayer(helper)).equals(Membership.DEFAULT), "new players belong nowhere");
+
+        var sabbat = VtmRegistries.faction(helper.getLevel().registryAccess(), sect("sabbat")).orElseThrow();
+        helper.assertTrue(sabbat.joinable() && sabbat.rankCount() == 3 && sabbat.standingFor(2) == 60, "ranks come from the datapack");
         helper.succeed();
     }
 }

@@ -69,6 +69,24 @@ memory of players (`NpcMemory`, the foundation for the Nemesis System), and Geck
 - Spawn with the creative tab eggs or `/vtm npc spawn civilian|vampire [clan]`. Civilians spawn at world generation and
   vampires rarely at night (biome modifiers in `data/vtm/neoforge/biome_modifier/`).
 
+## Sects and membership
+Vampire players can swear themselves to a sect (`sect/SectManager`, state in `sect/Membership`, a synced data
+attachment kept through death). Factions in `data/<ns>/vtm/faction/*.json` gained `joinable`, `masquerade` and `ranks`
+(the standing each rank needs; titles are the lang keys `faction.<ns>.<name>.rank.<n>`). Camarilla, Anarch and Sabbat
+are joinable, with three ranks each.
+
+- **Standing** is kept per faction (-100 to +100), even for sects you do not belong to. Killing an enemy of your sect
+  earns standing (+5); killing a member costs you (-15); killing anyone makes their sect resent you (-10); Camarilla
+  members lose standing when a mortal sees them feed (-3). Offering your services to a sect vampire earns +5, once per vampire.
+- **Joining** needs a vampire with no sect, a joinable faction, and standing above the outcast line (-30). In play you
+  win a sect vampire's trust in conversation and ask to be accepted. **Leaving** costs 20 standing.
+- **Ranks**: a member is promoted by a vampire of higher rank, once their standing reaches the next rank's threshold.
+  Vampire NPCs have a rank too (shown after their name in conversation).
+- **Consequences**: vampires of your own or an allied sect are friendly; vampires of an enemy sect attack a sworn
+  member on sight; a faction's outcasts, members or not, are hunted by it.
+- **GUI**: the Sect tab shows your sect, rank, progress to the next rank, its allies and enemies, and your standing
+  with every sect. `/vtm sect join|leave|rank|standing` for ops; `/vtm info` shows the sect.
+
 ## Conversations
 Right-click an NPC to talk. Dialogue is data (`data/<ns>/vtm/dialogue/*.json`, reloadable with `/reload`) and the server
 runs everything: it picks the tree, evaluates conditions and dice, applies effects, and sends the client only the lines
@@ -79,9 +97,9 @@ ignores indices that are hidden, locked or out of range.
   used, so a Camarilla vampire, a wary civilian and a mortal approaching a vampire each get their own conversation.
   Nodes hold a line (or a list of conditional lines, so greetings can depend on night, history or rapport) and options.
 - **Conditions** (all fields optional, all must hold): NPC kind, clan, faction, attitude, night, player species, clan,
-  humanity, discipline level, times seen, rapport range, flags, whether the NPC sees the player as a threat. Options use
+  humanity, discipline level, sect membership relative to the NPC (`sect`: member, unaligned, rank, outranks, can_promote, standing), times seen, rapport range, flags, whether the NPC sees the player as a threat. Options use
   `show` (hidden unless true) and `require` (greyed out, with a `locked` hint, unless true).
-- **Effects**: rapport, flags, blood given to the player, experience, humanity, and `alarm` (the NPC glimpses
+- **Effects**: rapport, flags, blood given to the player, experience, humanity, standing, `join`, `leave`, `promote`, and `alarm` (the NPC glimpses
   something frightening and remembers the player as a threat).
 - **Checks** use the V5 dice pool: d10s, 6+ succeeds, pairs of 10s add two successes, and a vampire rolls Hunger dice.
   A 10 on a Hunger die in a winning roll is a *messy critical* and a 1 on one in a losing roll is a *bestial failure*;
@@ -102,6 +120,6 @@ dilation for Celerity) remain options if NPC navigation or Celerity ever need th
 ## Tests and dev tools
 - `./gradlew runGameTestServer`: GameTests in `gametest/VtmGameTests` (data, embrace/learn, passives, feeding, every
   power, mob control, every bane, frenzy, forms, sense link, NPC behaviour, conversations).
-- `./gradlew runClient -Pharness=player|npc|dialogue`: scripted walkthrough of the real client that writes screenshots to
-  `run/screenshots/` (player: GUI tabs, HUD, forms, sense link, frenzy; npc: a lineup in every animation; dialogue: a conversation with a civilian and a vampire). Needs a
+- `./gradlew runClient -Pharness=player|npc|dialogue|sect`: scripted walkthrough of the real client that writes screenshots to
+  `run/screenshots/` (player: GUI tabs, HUD, forms, sense link, frenzy; npc: a lineup in every animation; dialogue: a conversation with a civilian and a vampire; sect: the Sect tab and a member's conversation). Needs a
   world at `run/saves/harness` and, on a headless machine, `xvfb-run`. Inert without the property.

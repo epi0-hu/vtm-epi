@@ -60,6 +60,9 @@
         },
         {
           "text": "dialogue.vtm.opt.ask_city",
+          "show": {
+            "min_rapport": 1
+          },
           "require": {
             "flag": "introduced"
           },
@@ -69,7 +72,8 @@
         {
           "text": "dialogue.vtm.opt.ask_teach",
           "show": {
-            "no_flag": "taught"
+            "no_flag": "taught",
+            "min_rapport": 2
           },
           "require": {
             "min_rapport": 3
@@ -132,6 +136,9 @@
         },
         {
           "text": "dialogue.vtm.opt.ask_city",
+          "show": {
+            "min_rapport": 1
+          },
           "require": {
             "flag": "introduced"
           },
@@ -141,7 +148,8 @@
         {
           "text": "dialogue.vtm.opt.ask_teach",
           "show": {
-            "no_flag": "taught"
+            "no_flag": "taught",
+            "min_rapport": 2
           },
           "require": {
             "min_rapport": 3

@@ -5,5 +5,11 @@
     "vtm:anarch",
     "vtm:hunters"
   ],
-  "hunts_mortals": true
+  "hunts_mortals": true,
+  "joinable": true,
+  "ranks": [
+    0,
+    25,
+    60
+  ]
 }

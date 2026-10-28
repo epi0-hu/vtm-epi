@@ -49,7 +49,9 @@ public final class Harness {
             return;
         }
         if (STEPS.isEmpty()) {
-            if (SCENARIO.equals("dialogue")) {
+            if (SCENARIO.equals("sect")) {
+                sectScript(mc);
+            } else if (SCENARIO.equals("dialogue")) {
                 dialogueScript(mc);
             } else if (SCENARIO.equals("npc")) {
                 npcScript(mc);
@@ -119,6 +121,37 @@ public final class Harness {
                 }
             }
             VtmMod.LOGGER.info("HARNESS option {} not in {}", textKey, session.node());
+        });
+    }
+
+    /** The Sect tab for a member, and a conversation with a higher-ranked member of the same sect. */
+    private static void sectScript(Minecraft mc) {
+        mc.options.pauseOnLostFocus = false;
+        for (String c : new String[]{"gamerule sendCommandFeedback false", "time set 18000", "gamerule doDaylightCycle false",
+                "gamerule doMobSpawning false", "weather clear", "effect give @s minecraft:night_vision infinite 0 true",
+                "execute at @s run fill ~-12 ~-1 ~-12 ~12 ~-1 ~12 minecraft:smooth_stone",
+                "execute at @s run fill ~-12 ~ ~-12 ~12 ~8 ~12 minecraft:air", "tp @s ~ ~ ~ 0 8",
+                "vtm embrace @s toreador", "vtm sect join @s vtm:camarilla", "vtm sect standing @s vtm:camarilla 31",
+                "vtm sect standing @s vtm:sabbat -45", "vtm sect standing @s vtm:anarch 12"}) {
+            cmd(mc, 3, c);
+        }
+        then(10, () -> mc.setScreen(new VampireScreen(VampireScreen.Tab.SECT)));
+        shot(mc, "sect_tab");
+        then(10, () -> mc.setScreen(null));
+        server(mc, 10, p -> {
+            var npc = com.epi0.vtm.npc.NpcSpawner.vampire(p.serverLevel(), p.position().add(0, 0, 2.5), VtmMod.id("ventrue"));
+            npc.setRank(2);
+            npc.setNoAi(true);
+            npc.setYRot(180F);
+            npc.yHeadRot = 180F;
+            npc.yBodyRot = 180F;
+            npc.setCustomName(net.minecraft.network.chat.Component.literal("Lucian Ashworth"));
+            com.epi0.vtm.dialogue.DialogueManager.open(p, npc);
+        });
+        shotAfter(mc, 70, "sect_dialogue");
+        then(10, () -> {
+            VtmMod.LOGGER.info("HARNESS DONE");
+            mc.stop();
         });
     }
 

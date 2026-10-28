@@ -25,6 +25,7 @@ public class DialogueScreen extends Screen {
     private static final int WIDTH = 330;
     private static final int PORTRAIT = 62;
     private static final int PAD = 8;
+    private static final int ROW = 17;
     private static final int PANEL = 0xE0181015;
     private static final int BORDER = 0xFF7A1F1F;
     private static final int TEXT = 0xFFE6E0E0;
@@ -83,25 +84,25 @@ public class DialogueScreen extends Screen {
         boolean terminal = visible.isEmpty();
         int textHeight = Math.max(PORTRAIT, 14 + lines.size() * 10 + (noteLines.isEmpty() ? 0 : 4 + noteLines.size() * 10));
         int rows = terminal ? 1 : visible.size();
-        panelHeight = PAD * 2 + textHeight + 6 + rows * 22;
+        panelHeight = PAD * 2 + textHeight + 6 + rows * ROW;
         left = (width - WIDTH) / 2;
-        top = height - panelHeight - 20;
+        top = Math.max(4, height - panelHeight - 20);
 
         int y = top + PAD * 2 + textHeight + 6;
         if (terminal) {
             addRenderableWidget(Button.builder(Component.translatable("gui.vtm.dialogue.leave"), b -> leave())
-                    .bounds(left + PAD, y, WIDTH - PAD * 2, 20).build());
+                    .bounds(left + PAD, y, WIDTH - PAD * 2, ROW - 2).build());
             return;
         }
         int number = 1;
         for (int index : visible) {
             DialogueNodePayload.Choice choice = node.choices().get(index);
             Button button = Button.builder(Component.literal(number++ + ". ").append(choice.text()), b -> choose(index))
-                    .bounds(left + PAD, y, WIDTH - PAD * 2, 20).build();
+                    .bounds(left + PAD, y, WIDTH - PAD * 2, ROW - 2).build();
             button.active = choice.enabled();
             choice.hint().ifPresent(hint -> button.setTooltip(Tooltip.create(hint)));
             addRenderableWidget(button);
-            y += 22;
+            y += ROW;
         }
     }
 

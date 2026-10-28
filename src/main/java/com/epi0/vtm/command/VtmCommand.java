@@ -2,6 +2,8 @@ package com.epi0.vtm.command;
 
 import com.epi0.vtm.VtmMod;
 import com.epi0.vtm.npc.CivilianNpc;
+import com.epi0.vtm.sect.Membership;
+import com.epi0.vtm.sect.SectManager;
 import com.epi0.vtm.npc.NpcSpawner;
 import com.epi0.vtm.npc.VampireNpc;
 import com.epi0.vtm.registry.VtmRegistries;
@@ -38,6 +40,7 @@ import java.util.stream.Stream;
  * /vtm mortal &lt;targets&gt;
  * /vtm set &lt;targets&gt; (generation|potency|blood|humanity|stains|xp) &lt;value&gt;
  * /vtm discipline &lt;targets&gt; &lt;discipline&gt; &lt;level&gt;
+ * /vtm sect join &lt;targets&gt; &lt;faction&gt; | leave &lt;targets&gt; | rank &lt;targets&gt; &lt;n&gt; | standing &lt;targets&gt; &lt;faction&gt; &lt;value&gt;
  * /vtm info &lt;target&gt;
  * </pre>
  */
@@ -49,6 +52,10 @@ public final class VtmCommand {
 
     private static final SuggestionProvider<CommandSourceStack> DISCIPLINES = (ctx, builder) ->
             SharedSuggestionProvider.suggestResource(ctx.getSource().registryAccess().registry(VtmRegistries.DISCIPLINE)
+                    .map(r -> r.keySet().stream()).orElseGet(Stream::empty), builder);
+
+    private static final SuggestionProvider<CommandSourceStack> FACTIONS = (ctx, builder) ->
+            SharedSuggestionProvider.suggestResource(ctx.getSource().registryAccess().registry(VtmRegistries.FACTION)
                     .map(r -> r.keySet().stream()).orElseGet(Stream::empty), builder);
 
     private static final SimpleCommandExceptionType NOT_VAMPIRE =
@@ -97,6 +104,30 @@ public final class VtmCommand {
                                                 .suggests(CLANS)
                                                 .executes(ctx -> spawnVampire(ctx,
                                                         vtmId(ResourceLocationArgument.getId(ctx, "clan"))))))))
+                .then(Commands.literal("sect")
+                        .then(Commands.literal("join")
+                                .then(Commands.argument("targets", EntityArgument.players())
+                                        .then(Commands.argument("faction", ResourceLocationArgument.id()).suggests(FACTIONS)
+                                                .executes(ctx -> sect(ctx, (player, faction) -> SectManager.join(player, faction))))))
+                        .then(Commands.literal("leave")
+                                .then(Commands.argument("targets", EntityArgument.players())
+                                        .executes(ctx -> sect(ctx, (player, faction) -> SectManager.leave(player)))))
+                        .then(Commands.literal("rank")
+                                .then(Commands.argument("targets", EntityArgument.players())
+                                        .then(Commands.argument("rank", IntegerArgumentType.integer(0, 9))
+                                                .executes(ctx -> sect(ctx, (player, faction) -> {
+                                                    SectManager.setRank(player, IntegerArgumentType.getInteger(ctx, "rank"));
+                                                    return true;
+                                                })))))
+                        .then(Commands.literal("standing")
+                                .then(Commands.argument("targets", EntityArgument.players())
+                                        .then(Commands.argument("faction", ResourceLocationArgument.id()).suggests(FACTIONS)
+                                                .then(Commands.argument("value", IntegerArgumentType.integer(-Membership.MAX_STANDING, Membership.MAX_STANDING))
+                                                        .executes(ctx -> sect(ctx, (player, faction) -> {
+                                                            int value = IntegerArgumentType.getInteger(ctx, "value");
+                                                            SectManager.set(player, Membership.of(player).withStanding(faction, value));
+                                                            return true;
+                                                        })))))))
                 .then(Commands.literal("info")
                         .then(Commands.argument("target", EntityArgument.player())
                                 .executes(VtmCommand::info))));
@@ -183,10 +214,35 @@ public final class VtmCommand {
         return targets.size();
     }
 
+    private static int sect(CommandContext<CommandSourceStack> ctx, java.util.function.BiPredicate<ServerPlayer, ResourceLocation> action)
+            throws CommandSyntaxException {
+        ResourceLocation faction = null;
+        try {
+            faction = vtmId(ResourceLocationArgument.getId(ctx, "faction"));
+        } catch (IllegalArgumentException absent) {
+            // not every sect subcommand names a faction
+        }
+        if (faction != null && VtmRegistries.faction(ctx.getSource().registryAccess(), faction).isEmpty()) {
+            throw new SimpleCommandExceptionType(Component.translatable("commands.vtm.unknown_faction", faction.toString())).create();
+        }
+        int done = 0;
+        for (ServerPlayer player : EntityArgument.getPlayers(ctx, "targets")) {
+            done += action.test(player, faction) ? 1 : 0;
+        }
+        int count = done;
+        ctx.getSource().sendSuccess(() -> Component.translatable("commands.vtm.sect", count), true);
+        return done;
+    }
+
     private static int info(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
         ServerPlayer player = EntityArgument.getPlayer(ctx, "target");
         VampireData data = VampireData.of(player);
         Component clan = data.clan().map(id -> VtmRegistries.name("clan", id)).orElse(Component.translatable("gui.vtm.none"));
+        Membership membership = Membership.of(player);
+        ctx.getSource().sendSuccess(() -> Component.translatable("commands.vtm.info_sect", membership.faction()
+                .map(id -> (Component) Component.empty().append(VtmRegistries.name("faction", id)).append(" | ")
+                        .append(SectManager.rankTitle(ctx.getSource().registryAccess(), id, membership.rank())))
+                .orElse(Component.translatable("gui.vtm.none"))), false);
         ctx.getSource().sendSuccess(() -> Component.translatable("commands.vtm.info",
                 player.getDisplayName(), data.species().getSerializedName(), clan, data.generation(),
                 data.bloodPotency(), String.format("%.1f/%.0f", data.blood(), data.maxBlood()),
