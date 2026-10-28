@@ -194,6 +194,12 @@ public abstract class VtmNpc extends PathfinderMob implements GeoEntity {
         this.home = home;
     }
 
+    /** Where this NPC mills about: home, unless something (a job, the time of day) says otherwise. */
+    @Nullable
+    public BlockPos strollCentre() {
+        return home;
+    }
+
     /** Client + server: path of this NPC's skin under {@code textures/}. */
     public abstract String textureName();
 

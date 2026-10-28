@@ -215,12 +215,16 @@ public final class DialogueManager {
     /** The NPC's name, with their rank in their sect when it has more than one. */
     private static Component speaker(VtmNpc npc) {
         boolean ranked = npc.faction().map(f -> f.rankCount() > 1).orElse(false) && !npc.getDisplayName().getString().isEmpty();
+        if (npc instanceof com.epi0.vtm.npc.CivilianNpc civilian && civilian.job() != com.epi0.vtm.npc.Job.RESIDENT) {
+            return Component.empty().append(npc.getDisplayName()).append(" | ")
+                    .append(Component.translatable("job.vtm." + civilian.job().id()));
+        }
         return ranked ? Component.empty().append(npc.getDisplayName()).append(" | ")
                 .append(com.epi0.vtm.sect.SectManager.rankTitle(npc.level().registryAccess(), npc.factionId(), npc.rank()))
                 : npc.getDisplayName();
     }
 
-    /** {@code %1$s} NPC name, {@code %2$s} player name, {@code %3$s} clan, {@code %4$s} faction, {@code %5$s} clan description. */
+    /** {@code %1$s} NPC name, {@code %2$s} player, {@code %3$s} clan, {@code %4$s} faction, {@code %5$s} clan description, {@code %6$s} city, {@code %7$s} the city's ruling faction. */
     private static Object[] args(ServerPlayer player, VtmNpc npc) {
         Component clan = Component.translatable("dialogue.vtm.no_clan");
         Component description = Component.empty();
@@ -228,8 +232,11 @@ public final class DialogueManager {
             clan = VtmRegistries.name("clan", vampire.clanId());
             description = VtmRegistries.text("clan", vampire.clanId(), "desc");
         }
+        com.epi0.vtm.city.City city = DialogueCity.of(npc);
         return new Object[]{npc.getDisplayName(), player.getDisplayName(), clan,
-                VtmRegistries.name("faction", npc.factionId()), description};
+                VtmRegistries.name("faction", npc.factionId()), description,
+                city == null ? Component.translatable("dialogue.vtm.no_city") : Component.literal(city.name),
+                city == null ? Component.translatable("dialogue.vtm.no_city") : VtmRegistries.name("faction", city.owner)};
     }
 
     // ---------------------------------------------------------------- housekeeping

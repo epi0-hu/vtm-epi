@@ -18,6 +18,9 @@ public final class NpcWitness {
                 mortalSaw = true;
             }
         }
+        if (mortalSaw) {
+            com.epi0.vtm.city.CityLife.crime(player, event == NpcMemory.Event.WITNESSED_FRENZY ? 18 : 12);
+        }
         if (mortalSaw && event == NpcMemory.Event.WITNESSED_FEEDING) {
             com.epi0.vtm.sect.SectManager.masqueradeBreach(player);
         }

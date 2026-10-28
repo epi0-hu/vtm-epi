@@ -18,5 +18,9 @@ public final class ModStructures {
     public static final DeferredHolder<StructurePieceType, StructurePieceType> LAIR_PIECE = PIECES.register("lair",
             () -> (StructurePieceType.ContextlessType) LairPiece::new);
 
+    public static final DeferredHolder<StructureType<?>, StructureType<com.epi0.vtm.world.CityStructure>> CITY = TYPES.register("city", () -> () -> com.epi0.vtm.world.CityStructure.CODEC);
+    public static final DeferredHolder<StructurePieceType, StructurePieceType> CITY_PIECE = PIECES.register("city",
+            () -> (StructurePieceType.ContextlessType) com.epi0.vtm.world.CityPiece::new);
+
     private ModStructures() {}
 }

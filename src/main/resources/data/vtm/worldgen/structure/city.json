@@ -1,0 +1,13 @@
+{
+  "type": "vtm:city",
+  "biomes": "#vtm:has_cities",
+  "step": "surface_structures",
+  "spawn_overrides": {},
+  "terrain_adaptation": "none",
+  "factions": [
+    "vtm:camarilla",
+    "vtm:anarch",
+    "vtm:sabbat"
+  ],
+  "max_slope": 3
+}

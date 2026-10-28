@@ -24,11 +24,13 @@ import java.util.Optional;
  * @param join       the player joins the NPC's faction
  * @param leave      the player renounces their faction
  * @param promote    the player advances a rank (only if they have the standing)
+ * @param heat       change to the player's heat (trouble) in the NPC's city
  * @param alarm      the NPC glimpses something frightening in the player and will remember it as a threat
  */
 public record Effect(Optional<Integer> rapport, Optional<String> flag, Optional<String> clearFlag, Optional<Float> blood,
                      Optional<Integer> experience, Optional<Integer> humanity, boolean alarm, Optional<Integer> standing,
-                     boolean join, boolean leave, boolean promote, Optional<NemesisEffect> nemesis) {
+                     boolean join, boolean leave, boolean promote, Optional<NemesisEffect> nemesis,
+                     Optional<Integer> heat) {
     public static final Codec<Effect> CODEC = RecordCodecBuilder.create(i -> i.group(
             Codec.INT.optionalFieldOf("rapport").forGetter(Effect::rapport),
             Codec.STRING.optionalFieldOf("flag").forGetter(Effect::flag),
@@ -41,7 +43,8 @@ public record Effect(Optional<Integer> rapport, Optional<String> flag, Optional<
             Codec.BOOL.optionalFieldOf("join", false).forGetter(Effect::join),
             Codec.BOOL.optionalFieldOf("leave", false).forGetter(Effect::leave),
             Codec.BOOL.optionalFieldOf("promote", false).forGetter(Effect::promote),
-            NemesisEffect.CODEC.optionalFieldOf("nemesis").forGetter(Effect::nemesis)
+            NemesisEffect.CODEC.optionalFieldOf("nemesis").forGetter(Effect::nemesis),
+            Codec.INT.optionalFieldOf("heat").forGetter(Effect::heat)
     ).apply(i, Effect::new));
 
     public void apply(ServerPlayer player, VtmNpc npc) {
@@ -55,6 +58,17 @@ public record Effect(Optional<Integer> rapport, Optional<String> flag, Optional<
         }
 
         nemesis.ifPresent(n -> n.apply(player, npc));
+        heat.ifPresent(delta -> {
+            com.epi0.vtm.city.City city = DialogueCity.of(npc);
+            if (city != null) {
+                if (delta > 0) {
+                    com.epi0.vtm.city.CityLife.crime(player, city, delta);
+                } else {
+                    city.addHeat(player.getUUID(), delta);
+                    com.epi0.vtm.city.CityData.get(player.getServer()).setDirty();
+                }
+            }
+        });
         VampireData data = VampireData.of(player);
         if (!data.isVampire()) {
             return;

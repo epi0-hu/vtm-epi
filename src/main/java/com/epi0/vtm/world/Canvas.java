@@ -58,6 +58,10 @@ public final class Canvas {
         return true;
     }
 
+    public BlockEntity blockEntity(int x, int y, int z) {
+        return box.isInside(x, y, z) ? level.getBlockEntity(new BlockPos(x, y, z)) : null;
+    }
+
     public BlockState at(int x, int y, int z) {
         return box.isInside(x, y, z) ? level.getBlockState(new BlockPos(x, y, z)) : Blocks.AIR.defaultBlockState();
     }

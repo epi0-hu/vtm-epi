@@ -24,6 +24,13 @@ public final class ModBlocks {
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<CoffinBlockEntity>> COFFIN_ENTITY =
             BLOCK_ENTITIES.register("coffin", () -> BlockEntityType.Builder.of(CoffinBlockEntity::new, COFFIN.get()).build(null));
 
+    public static final DeferredBlock<com.epi0.vtm.block.CityHeartBlock> CITY_HEART = BLOCKS.register("city_heart",
+            () -> new com.epi0.vtm.block.CityHeartBlock(BlockBehaviour.Properties.of().strength(-1.0F, 3600000.0F)
+                    .sound(SoundType.STONE).noLootTable().lightLevel(state -> 7)));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.epi0.vtm.block.CityHeartBlockEntity>> CITY_HEART_ENTITY =
+            BLOCK_ENTITIES.register("city_heart", () -> BlockEntityType.Builder.of(com.epi0.vtm.block.CityHeartBlockEntity::new, CITY_HEART.get()).build(null));
+
     public static void registerItems() {
         ModItems.ITEMS.register("coffin", () -> new BlockItem(COFFIN.get(), new Item.Properties()));
     }

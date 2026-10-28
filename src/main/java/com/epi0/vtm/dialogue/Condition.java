@@ -20,7 +20,7 @@ import java.util.Optional;
  * Fields about the NPC, the player, their sects and their shared memory are described on {@link CoreCondition}; those
  * about a named vampire (a "nemesis") are in {@code nemesis}.
  */
-public record Condition(CoreCondition core, Optional<NemesisReq> nemesis) {
+public record Condition(CoreCondition core, Optional<NemesisReq> nemesis, Optional<PlaceReq> place) {
 
     /**
      * Requirements on the NPC as a named vampire and on its history with this player.
@@ -87,18 +87,53 @@ public record Condition(CoreCondition core, Optional<NemesisReq> nemesis) {
         }
     }
 
+    /**
+     * Requirements on where the conversation happens and what the NPC does there.
+     *
+     * @param job      the NPC's trade: resident, shopkeeper, bartender or watchman
+     * @param inCity   whether the NPC is in a city
+     * @param minHeat  how much trouble the player has caused in the city (bounds)
+     * @param maxHeat  see {@code minHeat}
+     * @param owner    the faction that rules the city the NPC is in
+     */
+    public record PlaceReq(Optional<String> job, Optional<Boolean> inCity, Optional<Integer> minHeat, Optional<Integer> maxHeat,
+                           Optional<net.minecraft.resources.ResourceLocation> owner) {
+        public static final Codec<PlaceReq> CODEC = RecordCodecBuilder.create(i -> i.group(
+                Codec.STRING.optionalFieldOf("job").forGetter(PlaceReq::job),
+                Codec.BOOL.optionalFieldOf("in_city").forGetter(PlaceReq::inCity),
+                Codec.INT.optionalFieldOf("min_heat").forGetter(PlaceReq::minHeat),
+                Codec.INT.optionalFieldOf("max_heat").forGetter(PlaceReq::maxHeat),
+                net.minecraft.resources.ResourceLocation.CODEC.optionalFieldOf("owner").forGetter(PlaceReq::owner)
+        ).apply(i, PlaceReq::new));
+
+        boolean test(ServerPlayer player, VtmNpc npc) {
+            com.epi0.vtm.city.City city = DialogueCity.of(npc);
+            if (inCity.isPresent() && inCity.get() != (city != null)) {
+                return false;
+            }
+            if (job.isPresent() && !(npc instanceof com.epi0.vtm.npc.CivilianNpc civilian && civilian.job().id().equals(job.get()))) {
+                return false;
+            }
+            int heat = city == null ? 0 : city.heatOf(player.getUUID());
+            return minHeat.map(v -> heat >= v).orElse(true) && maxHeat.map(v -> heat <= v).orElse(true)
+                    && owner.map(v -> city != null && city.owner.equals(v)).orElse(true);
+        }
+    }
+
     public static final MapCodec<Condition> MAP = RecordCodecBuilder.mapCodec(i -> i.group(
             CoreCondition.MAP.forGetter(Condition::core),
-            NemesisReq.CODEC.optionalFieldOf("nemesis").forGetter(Condition::nemesis)
+            NemesisReq.CODEC.optionalFieldOf("nemesis").forGetter(Condition::nemesis),
+            PlaceReq.CODEC.optionalFieldOf("place").forGetter(Condition::place)
     ).apply(i, Condition::new));
 
     public static final Codec<Condition> CODEC = MAP.codec();
 
-    public static final Condition ANY = new Condition(CoreCondition.NONE, Optional.empty());
+    public static final Condition ANY = new Condition(CoreCondition.NONE, Optional.empty(), Optional.empty());
 
     public static final MapCodec<Condition> WHEN = CODEC.optionalFieldOf("when", ANY);
 
     public boolean test(ServerPlayer player, VtmNpc npc) {
-        return core.test(player, npc) && nemesis.map(n -> n.test(player, npc)).orElse(true);
+        return core.test(player, npc) && nemesis.map(n -> n.test(player, npc)).orElse(true)
+                && place.map(p -> p.test(player, npc)).orElse(true);
     }
 }

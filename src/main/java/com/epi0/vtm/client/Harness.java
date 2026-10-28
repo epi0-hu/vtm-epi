@@ -49,7 +49,9 @@ public final class Harness {
             return;
         }
         if (STEPS.isEmpty()) {
-            if (SCENARIO.equals("lairs")) {
+            if (SCENARIO.equals("city")) {
+                cityScript(mc);
+            } else if (SCENARIO.equals("lairs")) {
                 lairScript(mc);
             } else if (SCENARIO.equals("nemesis")) {
                 nemesisScript(mc);
@@ -125,6 +127,58 @@ public final class Harness {
                 }
             }
             VtmMod.LOGGER.info("HARNESS option {} not in {}", textKey, session.node());
+        });
+    }
+
+    private static com.epi0.vtm.city.City harnessCity;
+
+    private static void look(Minecraft mc, int delay, java.util.function.Function<com.epi0.vtm.city.City, double[]> view) {
+        server(mc, delay, p -> {
+            double[] v = view.apply(harnessCity);
+            p.getServer().getCommands().performPrefixedCommand(p.createCommandSourceStack().withPermission(4),
+                    "tp @s " + v[0] + " " + v[1] + " " + v[2] + " facing " + v[3] + " " + v[4] + " " + v[5]);
+        });
+    }
+
+    /** Generates a city, lets its people move in, and photographs it by day and by night. */
+    private static void cityScript(Minecraft mc) {
+        mc.options.pauseOnLostFocus = false;
+        for (String c : new String[]{"gamerule sendCommandFeedback false", "time set 3000", "gamerule doDaylightCycle false",
+                "gamerule doMobSpawning false", "weather clear", "gamemode creative", "vtm embrace @s toreador",
+                "effect give @s minecraft:night_vision infinite 0 true"}) {
+            cmd(mc, 3, c);
+        }
+        server(mc, 10, p -> p.teleportTo(p.serverLevel(), 400, -52, 0, 0F, 0F));
+        then(80, () -> {});
+        server(mc, 5, p -> {
+            net.minecraft.core.BlockPos at = new net.minecraft.core.BlockPos(400, -55, 0);
+            p.getServer().getCommands().performPrefixedCommand(p.createCommandSourceStack().withPermission(4)
+                    .withPosition(net.minecraft.world.phys.Vec3.atCenterOf(at)), "place structure vtm:city 400 -55 0");
+        });
+        then(120, () -> {});
+        server(mc, 5, p -> {
+            var data = com.epi0.vtm.city.CityData.get(p.getServer());
+            harnessCity = data.all().stream().filter(c -> c.center.distSqr(new net.minecraft.core.BlockPos(432, -53, 32)) < 2500).findFirst().orElse(null);
+            VtmMod.LOGGER.info("HARNESS city {}", harnessCity == null ? null : harnessCity.name + " homes=" + harnessCity.homes.size());
+            for (int i = 0; i < 6 && harnessCity != null; i++) {
+                com.epi0.vtm.city.CityLife.populate(p.serverLevel(), harnessCity);
+            }
+        });
+        then(40, () -> {});
+        look(mc, 5, c -> new double[]{c.center.getX() - 2, c.center.getY() + 34, c.center.getZ() - 40, c.center.getX(), c.center.getY(), c.center.getZ()});
+        shotAfter(mc, 50, "city_aerial");
+        look(mc, 5, c -> new double[]{c.center.getX() + 0.5, c.center.getY() + 0, c.center.getZ() - 28.5, c.center.getX(), c.center.getY() + 2, c.center.getZ()});
+        shotAfter(mc, 40, "city_street");
+        look(mc, 5, c -> new double[]{c.center.getX() + 7.5, c.center.getY() - 1, c.center.getZ() - 8.5, c.center.getX(), c.center.getY(), c.center.getZ()});
+        shotAfter(mc, 40, "city_plaza");
+        cmd(mc, 5, "time set 14000");
+        look(mc, 5, c -> new double[]{c.club.getX() + 0.5, c.club.getY() + 1, c.club.getZ() + 3.5, c.club.getX() + 0.5, c.club.getY() + 1.5, c.club.getZ() - 5});
+        shotAfter(mc, 50, "city_club");
+        look(mc, 5, c -> new double[]{c.center.getX() + 0.5, c.center.getY() + 2, c.center.getZ() - 20.5, c.center.getX(), c.center.getY() + 1, c.center.getZ()});
+        shotAfter(mc, 50, "city_night");
+        then(10, () -> {
+            VtmMod.LOGGER.info("HARNESS DONE");
+            mc.stop();
         });
     }
 

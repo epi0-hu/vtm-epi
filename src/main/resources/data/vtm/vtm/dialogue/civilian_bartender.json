@@ -1,0 +1,181 @@
+{
+  "when": {
+    "npc": "civilian",
+    "attitude": "neutral",
+    "place": {
+      "job": "bartender"
+    }
+  },
+  "priority": 12,
+  "start": "hub",
+  "nodes": {
+    "hub": {
+      "text": "dialogue.vtm.bartender.greet",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.b_order",
+          "show": {
+            "no_flag": "ordered"
+          },
+          "effects": [
+            {
+              "flag": "ordered",
+              "rapport": 1
+            }
+          ],
+          "next": "order"
+        },
+        {
+          "text": "dialogue.vtm.opt.b_regulars",
+          "show": {
+            "no_flag": "regulars",
+            "min_rapport": 1
+          },
+          "effects": [
+            {
+              "flag": "regulars",
+              "nemesis": {
+                "intel": "any",
+                "count": 2
+              }
+            }
+          ],
+          "next": "regulars"
+        },
+        {
+          "text": "dialogue.vtm.opt.b_rulers",
+          "next": "rulers"
+        },
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
+    },
+    "order": {
+      "text": "dialogue.vtm.bartender.order",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.b_order",
+          "show": {
+            "no_flag": "ordered"
+          },
+          "effects": [
+            {
+              "flag": "ordered",
+              "rapport": 1
+            }
+          ],
+          "next": "order"
+        },
+        {
+          "text": "dialogue.vtm.opt.b_regulars",
+          "show": {
+            "no_flag": "regulars",
+            "min_rapport": 1
+          },
+          "effects": [
+            {
+              "flag": "regulars",
+              "nemesis": {
+                "intel": "any",
+                "count": 2
+              }
+            }
+          ],
+          "next": "regulars"
+        },
+        {
+          "text": "dialogue.vtm.opt.b_rulers",
+          "next": "rulers"
+        },
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
+    },
+    "regulars": {
+      "text": "dialogue.vtm.bartender.regulars",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.b_order",
+          "show": {
+            "no_flag": "ordered"
+          },
+          "effects": [
+            {
+              "flag": "ordered",
+              "rapport": 1
+            }
+          ],
+          "next": "order"
+        },
+        {
+          "text": "dialogue.vtm.opt.b_regulars",
+          "show": {
+            "no_flag": "regulars",
+            "min_rapport": 1
+          },
+          "effects": [
+            {
+              "flag": "regulars",
+              "nemesis": {
+                "intel": "any",
+                "count": 2
+              }
+            }
+          ],
+          "next": "regulars"
+        },
+        {
+          "text": "dialogue.vtm.opt.b_rulers",
+          "next": "rulers"
+        },
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
+    },
+    "rulers": {
+      "text": "dialogue.vtm.bartender.rulers",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.b_order",
+          "show": {
+            "no_flag": "ordered"
+          },
+          "effects": [
+            {
+              "flag": "ordered",
+              "rapport": 1
+            }
+          ],
+          "next": "order"
+        },
+        {
+          "text": "dialogue.vtm.opt.b_regulars",
+          "show": {
+            "no_flag": "regulars",
+            "min_rapport": 1
+          },
+          "effects": [
+            {
+              "flag": "regulars",
+              "nemesis": {
+                "intel": "any",
+                "count": 2
+              }
+            }
+          ],
+          "next": "regulars"
+        },
+        {
+          "text": "dialogue.vtm.opt.b_rulers",
+          "next": "rulers"
+        },
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
+    }
+  }
+}

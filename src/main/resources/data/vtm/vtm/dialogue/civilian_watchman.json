@@ -1,0 +1,115 @@
+{
+  "when": {
+    "npc": "civilian",
+    "place": {
+      "job": "watchman"
+    }
+  },
+  "priority": 25,
+  "start": "hub",
+  "nodes": {
+    "hub": {
+      "text": [
+        {
+          "when": {
+            "place": {
+              "min_heat": 30
+            }
+          },
+          "key": "dialogue.vtm.watchman.suspicious"
+        },
+        {
+          "key": "dialogue.vtm.watchman.greet"
+        }
+      ],
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.w_trouble",
+          "show": {
+            "no_flag": "asked_trouble"
+          },
+          "effects": [
+            {
+              "flag": "asked_trouble",
+              "nemesis": {
+                "intel": "any"
+              }
+            }
+          ],
+          "next": "trouble"
+        },
+        {
+          "text": "dialogue.vtm.opt.w_rulers",
+          "next": "rulers"
+        },
+        {
+          "text": "dialogue.vtm.opt.w_calm",
+          "show": {
+            "place": {
+              "min_heat": 20
+            }
+          },
+          "check": {
+            "pool": 4,
+            "discipline": "vtm:presence",
+            "difficulty": 3,
+            "fail": "unconvinced"
+          },
+          "effects": [
+            {
+              "heat": -25
+            }
+          ],
+          "fail_effects": [
+            {
+              "heat": 8
+            }
+          ],
+          "next": "calmed"
+        },
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
+    },
+    "trouble": {
+      "text": "dialogue.vtm.watchman.trouble",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.w_back",
+          "next": "hub"
+        },
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
+    },
+    "rulers": {
+      "text": "dialogue.vtm.watchman.rulers",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.w_back",
+          "next": "hub"
+        },
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
+    },
+    "calmed": {
+      "text": "dialogue.vtm.watchman.calmed",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.w_back",
+          "next": "hub"
+        },
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
+    },
+    "unconvinced": {
+      "text": "dialogue.vtm.watchman.unconvinced"
+    }
+  }
+}

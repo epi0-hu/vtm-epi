@@ -77,7 +77,7 @@ public class LairPiece extends StructurePiece {
         int z0 = boundingBox.minZ();
         switch (theme) {
             case CRYPT -> crypt(c, x0, groundY, z0, random);
-            case MANOR -> manor(c, x0, groundY, z0, random);
+            case MANOR -> manor(c, x0, groundY, z0, faction, random);
             case WAREHOUSE -> warehouse(c, x0, groundY, z0, random);
         }
     }
@@ -182,7 +182,7 @@ public class LairPiece extends StructurePiece {
     // ---------------------------------------------------------------- manor
 
     /** A ruined townhouse with a cellar, where the family silver is buried and the family is not. */
-    private void manor(Canvas c, int x0, int y0, int z0, RandomSource random) {
+    public static void manor(Canvas c, int x0, int y0, int z0, ResourceLocation faction, RandomSource random) {
         int x1 = x0 + 14;
         int z1 = z0 + 10;
         c.clear(x0, y0, z0, x1, y0 + 12, z1);

@@ -21,7 +21,7 @@ public class HomeStrollGoal extends WaterAvoidingRandomStrollGoal {
     @Nullable
     @Override
     protected Vec3 getPosition() {
-        BlockPos home = npc.home();
+        BlockPos home = npc.strollCentre();
         if (home != null && npc.distanceToSqr(Vec3.atBottomCenterOf(home)) > RADIUS * RADIUS * 0.5) {
             Vec3 back = LandRandomPos.getPosTowards(npc, 8, 4, Vec3.atBottomCenterOf(home));
             if (back != null) {

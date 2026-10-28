@@ -1,0 +1,145 @@
+{
+  "when": {
+    "npc": "civilian",
+    "attitude": "neutral",
+    "place": {
+      "job": "shopkeeper"
+    }
+  },
+  "priority": 12,
+  "start": "hub",
+  "nodes": {
+    "hub": {
+      "text": "dialogue.vtm.shopkeeper.greet",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.s_browse",
+          "next": "browse"
+        },
+        {
+          "text": "dialogue.vtm.opt.s_gossip",
+          "show": {
+            "no_flag": "gossiped"
+          },
+          "effects": [
+            {
+              "flag": "gossiped",
+              "rapport": 1,
+              "nemesis": {
+                "intel": "any",
+                "count": 2
+              }
+            }
+          ],
+          "next": "gossip"
+        },
+        {
+          "text": "dialogue.vtm.opt.s_rulers",
+          "next": "rulers"
+        },
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
+    },
+    "browse": {
+      "text": "dialogue.vtm.shopkeeper.browse",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.s_browse",
+          "next": "browse"
+        },
+        {
+          "text": "dialogue.vtm.opt.s_gossip",
+          "show": {
+            "no_flag": "gossiped"
+          },
+          "effects": [
+            {
+              "flag": "gossiped",
+              "rapport": 1,
+              "nemesis": {
+                "intel": "any",
+                "count": 2
+              }
+            }
+          ],
+          "next": "gossip"
+        },
+        {
+          "text": "dialogue.vtm.opt.s_rulers",
+          "next": "rulers"
+        },
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
+    },
+    "gossip": {
+      "text": "dialogue.vtm.shopkeeper.gossip",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.s_browse",
+          "next": "browse"
+        },
+        {
+          "text": "dialogue.vtm.opt.s_gossip",
+          "show": {
+            "no_flag": "gossiped"
+          },
+          "effects": [
+            {
+              "flag": "gossiped",
+              "rapport": 1,
+              "nemesis": {
+                "intel": "any",
+                "count": 2
+              }
+            }
+          ],
+          "next": "gossip"
+        },
+        {
+          "text": "dialogue.vtm.opt.s_rulers",
+          "next": "rulers"
+        },
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
+    },
+    "rulers": {
+      "text": "dialogue.vtm.shopkeeper.rulers",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.s_browse",
+          "next": "browse"
+        },
+        {
+          "text": "dialogue.vtm.opt.s_gossip",
+          "show": {
+            "no_flag": "gossiped"
+          },
+          "effects": [
+            {
+              "flag": "gossiped",
+              "rapport": 1,
+              "nemesis": {
+                "intel": "any",
+                "count": 2
+              }
+            }
+          ],
+          "next": "gossip"
+        },
+        {
+          "text": "dialogue.vtm.opt.s_rulers",
+          "next": "rulers"
+        },
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
+    }
+  }
+}
