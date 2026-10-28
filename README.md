@@ -104,6 +104,12 @@ nightclub in a derelict sanatorium: a forecourt and marquee, a chequered dance f
 gallery railed over the floor, padded cells below and the owner's quarters behind them. Each is one entry of the
 `lairs` / `sewers` structure sets.
 
+**Metropolis** (`world/MetropolisPiece`, `world/CityPlan`, `world/CityKit`; plan in `docs/huge-cities.md`): a 228 x 228 city of
+districts, avenues, towers of up to 13 floors, a church, markets, parks, depots, a wall with eight gates and The Asylum
+as a landmark. It is drawn from a plan that is a pure function of its seed, one chunk at a time; a city has its own
+`radius`, and its population, patrols and active range scale with it. `-Pharness=metropolis` draws one onto a levelled
+site and photographs it. It is rare (`structure_set/metropolises.json`) and needs flat-ish ground in a city biome.
+
 **Cities** (`world/CityPiece`, `city/`): a 64x64 flat plateau of nine plots: a plaza with a fountain and the **Domain
 Stone**, four houses, a shop, a nightclub, a watch station and the ruler's haven, joined by lamplit streets. The Domain
 Stone registers the city (beds, workplaces, places) once live. People move in: residents take the beds, and the shop,

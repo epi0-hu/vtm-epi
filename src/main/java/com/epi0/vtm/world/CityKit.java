@@ -149,11 +149,12 @@ final class CityKit {
             f.walls(1, h, 2, 12, h + 2, 12, s(brick));
             f.fill(1, h + 3, 2, 12, h + 3, 12, s(Blocks.SPRUCE_PLANKS));
             for (int u = 3; u <= 10; u += 3) {
-                if (k > 0) {
+                if (k > 0 || u != 9) { // (the ground floor keeps its door and shopfront clear)
                     f.set(u, h + 1, 12, Blocks.GLASS_PANE);
-                    f.set(u, h + 1, 2, Blocks.GLASS_PANE);
+                    f.set(u, h + 2, 12, Blocks.GLASS_PANE);
                 }
-                f.set(u, h + 1, 12, k > 0 ? s(Blocks.GLASS_PANE) : s(Blocks.GLASS_PANE));
+                f.set(u, h + 1, 2, Blocks.GLASS_PANE);
+                f.set(u, h + 2, 2, Blocks.GLASS_PANE);
             }
             for (int v : new int[]{5, 9}) {
                 f.set(1, h + 1, v, Blocks.GLASS_PANE);
