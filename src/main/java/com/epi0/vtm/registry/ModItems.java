@@ -27,6 +27,7 @@ public final class ModItems {
                     .displayItems((params, output) -> {
                         output.accept(CIVILIAN_SPAWN_EGG.get());
                         output.accept(VAMPIRE_SPAWN_EGG.get());
+                        output.accept(ModBlocks.COFFIN.get());
                     })
                     .build());
 

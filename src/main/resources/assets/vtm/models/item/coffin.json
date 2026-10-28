@@ -1,0 +1,7 @@
+{
+  "parent": "vtm:block/coffin",
+  "display": {
+    "gui": {"rotation": [30, 45, 0], "scale": [0.7, 0.7, 0.7]},
+    "fixed": {"scale": [0.7, 0.7, 0.7]}
+  }
+}

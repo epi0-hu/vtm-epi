@@ -1,0 +1,22 @@
+{
+  "structures": [
+    {
+      "structure": "vtm:crypt_lair",
+      "weight": 3
+    },
+    {
+      "structure": "vtm:manor_haven",
+      "weight": 2
+    },
+    {
+      "structure": "vtm:warehouse_squat",
+      "weight": 2
+    }
+  ],
+  "placement": {
+    "type": "minecraft:random_spread",
+    "spacing": 22,
+    "separation": 9,
+    "salt": 84160311
+  }
+}

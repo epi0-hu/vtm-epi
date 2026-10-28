@@ -93,7 +93,7 @@ public final class NemesisGameTests {
         return data.chronicle().stream().anyMatch(c -> c.key().equals(key));
     }
 
-    private static ServerPlayer player(GameTestHelper helper) {
+    static ServerPlayer player(GameTestHelper helper) {
         ServerPlayer player = VtmGameTests.vampire(helper, "gangrel");
         player.moveTo(VtmGameTests.at(helper, 4.5, 2, 4.5));
         return player;
@@ -717,6 +717,78 @@ public final class NemesisGameTests {
         com.epi0.vtm.nemesis.NemesisEvents.manifestLairs(player);
         helper.assertTrue(helper.getLevel().getEntitiesOfClass(VampireNpc.class, player.getBoundingBox().inflate(40)).size() == before,
                 "and it is not duplicated");
+        helper.succeed();
+    }
+
+    // ---------------------------------------------------------------- lairs
+
+    /** Generates a structure around the test arena and returns the coffins it contains. */
+    private static List<com.epi0.vtm.block.CoffinBlockEntity> generate(GameTestHelper helper, String structure) {
+        BlockPos centre = helper.absolutePos(new BlockPos(4, 2, 4));
+        var level = helper.getLevel();
+        var source = server(helper).createCommandSourceStack().withLevel(level).withPosition(net.minecraft.world.phys.Vec3.atCenterOf(centre)).withPermission(4);
+        server(helper).getCommands().performPrefixedCommand(source,
+                "place structure vtm:" + structure + " " + centre.getX() + " " + centre.getY() + " " + centre.getZ());
+        List<com.epi0.vtm.block.CoffinBlockEntity> coffins = new java.util.ArrayList<>();
+        for (int cx = -1; cx <= 1; cx++) {
+            for (int cz = -1; cz <= 1; cz++) {
+                var chunk = level.getChunk((centre.getX() >> 4) + cx, (centre.getZ() >> 4) + cz);
+                chunk.getBlockEntities().values().forEach(be -> {
+                    if (be instanceof com.epi0.vtm.block.CoffinBlockEntity coffin) {
+                        coffins.add(coffin);
+                    }
+                });
+            }
+        }
+        return coffins;
+    }
+
+    private static void lairTest(GameTestHelper helper, String structure, ResourceLocation faction) {
+        NemesisData data = fresh(helper);
+        var coffins = generate(helper, structure);
+        var occupied = coffins.stream().filter(c -> faction.equals(c.faction())).toList();
+        helper.assertTrue(!occupied.isEmpty(), structure + " builds a coffin that belongs to " + faction + " (coffins found: " + coffins.size() + ")");
+        var coffin = occupied.get(0);
+        helper.succeedWhen(() -> {
+            helper.assertTrue(coffin.claimed() != null, "the lair claims a vampire once it is live");
+            NemesisRecord tenant = data.get(coffin.claimed());
+            helper.assertTrue(tenant != null && tenant.faction.equals(faction), "of the lair's faction");
+            helper.assertTrue(tenant.lair != null && tenant.lair.equals(coffin.getBlockPos().above())
+                    && tenant.lairDimension == helper.getLevel().dimension(), "whose lair is the coffin");
+        });
+    }
+
+    @GameTest(template = "empty", batch = "lair_crypt", timeoutTicks = 300)
+    public static void cryptsHoldASabbatVampire(GameTestHelper helper) {
+        lairTest(helper, "crypt_lair", SABBAT);
+    }
+
+    @GameTest(template = "empty", batch = "lair_manor", timeoutTicks = 300)
+    public static void manorsHoldACamarillaVampire(GameTestHelper helper) {
+        lairTest(helper, "manor_haven", CAMARILLA);
+    }
+
+    @GameTest(template = "empty", batch = "lair_warehouse", timeoutTicks = 300)
+    public static void warehousesHoldAnAnarch(GameTestHelper helper) {
+        lairTest(helper, "warehouse_squat", ANARCH);
+    }
+
+    @GameTest(template = "empty", batch = "lair_rest")
+    public static void coffinsLetVampiresSleepThroughTheDay(GameTestHelper helper) {
+        fresh(helper);
+        ServerPlayer player = player(helper);
+        BlockPos pos = helper.absolutePos(new BlockPos(2, 2, 2));
+        helper.getLevel().setBlock(pos, com.epi0.vtm.registry.ModBlocks.COFFIN.get().defaultBlockState(), 3);
+        helper.setDayTime(6000);
+        var hit = new net.minecraft.world.phys.BlockHitResult(net.minecraft.world.phys.Vec3.atCenterOf(pos), net.minecraft.core.Direction.UP, pos, false);
+        helper.getLevel().getBlockState(pos).useWithoutItem(helper.getLevel(), player, hit);
+        long time = helper.getLevel().getDayTime() % 24000L;
+        helper.assertTrue(time == 12500L, "sleeping in a coffin by day skips to dusk, got " + time);
+        helper.assertTrue(player.getRespawnPosition() != null && player.getRespawnPosition().equals(pos), "and sets the haven");
+        ServerPlayer mortal = VtmGameTests.survivalPlayer(helper);
+        helper.setDayTime(6000);
+        helper.getLevel().getBlockState(pos).useWithoutItem(helper.getLevel(), mortal, hit);
+        helper.assertTrue(helper.getLevel().getDayTime() % 24000L == 6000L, "mortals will not");
         helper.succeed();
     }
 }

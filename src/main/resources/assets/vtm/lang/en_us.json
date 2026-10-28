@@ -638,5 +638,10 @@
   "commands.vtm.nemesis.unknown": "No named vampire called %s",
   "commands.vtm.nemesis.stepped": "Ran %s simulation step(s)",
   "commands.vtm.nemesis.done": "Done: %s",
-  "commands.vtm.nemesis.line": "%1$s | %2$s | %3$s | level %4$s | %5$s"
+  "commands.vtm.nemesis.line": "%1$s | %2$s | %3$s | level %4$s | %5$s",
+  "block.vtm.coffin": "Coffin",
+  "message.vtm.coffin.mortal": "You would rather not lie down in a coffin.",
+  "message.vtm.coffin.night": "The night is young. Your haven is set here.",
+  "message.vtm.coffin.unsafe": "You cannot rest with enemies so close.",
+  "message.vtm.coffin.slept": "You sleep through the day, and wake at dusk."
 }

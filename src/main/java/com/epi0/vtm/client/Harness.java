@@ -49,7 +49,9 @@ public final class Harness {
             return;
         }
         if (STEPS.isEmpty()) {
-            if (SCENARIO.equals("nemesis")) {
+            if (SCENARIO.equals("lairs")) {
+                lairScript(mc);
+            } else if (SCENARIO.equals("nemesis")) {
                 nemesisScript(mc);
             } else if (SCENARIO.equals("sect")) {
                 sectScript(mc);
@@ -123,6 +125,99 @@ public final class Harness {
                 }
             }
             VtmMod.LOGGER.info("HARNESS option {} not in {}", textKey, session.node());
+        });
+    }
+
+    private static final List<net.minecraft.core.BlockPos> LAIRS = new ArrayList<>();
+
+    /** Places each lair on a raised lawn (the harness world is flat and low) and photographs it from outside and in. */
+    private static void lairScript(Minecraft mc) {
+        mc.options.pauseOnLostFocus = false;
+        for (String c : new String[]{"gamerule sendCommandFeedback false", "time set 6000", "gamerule doDaylightCycle false",
+                "gamerule doMobSpawning false", "weather clear", "gamemode creative", "vtm embrace @s ventrue",
+                "effect give @s minecraft:night_vision infinite 0 true"}) {
+            cmd(mc, 3, c);
+        }
+        String[] structures = {"crypt_lair", "manor_haven", "warehouse_squat"};
+        // Where the occupied coffin sits relative to the structure origin (x0, y0 = ground, z0), and where to look from.
+        int[][] coffin = {{6, -5, 1}, {8, -4, 4}, {13, 4, 8}};
+        int[][] centre = {{6, 3, 6}, {7, 5, 5}, {8, 3, 5}};
+        int[][] camera = {{-9, 7, -9}, {-9, 9, -10}, {-9, 7, -10}};
+        int[][] stand = {{6, -5, 8}, {8, -4, 6}, {13, 4, 4}};
+        for (int n = 0; n < structures.length; n++) {
+            String name = structures[n];
+            int index = n;
+            server(mc, 10, p -> {
+                net.minecraft.core.BlockPos base = new net.minecraft.core.BlockPos(160 * (index + 1), -55, 0);
+                p.teleportTo(p.serverLevel(), base.getX(), base.getY() + 3, base.getZ(), 0F, 0F);
+            });
+            then(60, () -> {});
+            server(mc, 5, p -> {
+                net.minecraft.core.BlockPos base = p.blockPosition().atY(-55);
+                var level = p.serverLevel();
+                for (int dx = -40; dx <= 40; dx++) {
+                    for (int dz = -40; dz <= 40; dz++) {
+                        level.setBlock(base.offset(dx, -1, dz), net.minecraft.world.level.block.Blocks.GRASS_BLOCK.defaultBlockState(), 2);
+                        level.setBlock(base.offset(dx, -2, dz), net.minecraft.world.level.block.Blocks.DIRT.defaultBlockState(), 2);
+                        for (int dy = 0; dy < 20; dy++) {
+                            level.setBlock(base.offset(dx, dy, dz), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 2);
+                        }
+                    }
+                }
+                p.getServer().getCommands().performPrefixedCommand(p.createCommandSourceStack().withPermission(4)
+                        .withPosition(net.minecraft.world.phys.Vec3.atCenterOf(base)),
+                        "place structure vtm:" + name + " " + base.getX() + " " + base.getY() + " " + base.getZ());
+                net.minecraft.core.BlockPos found = null;
+                for (int dx = -1; dx <= 1; dx++) {
+                    for (int dz = -1; dz <= 1; dz++) {
+                        var chunk = level.getChunk((base.getX() >> 4) + dx, (base.getZ() >> 4) + dz);
+                        for (var be : chunk.getBlockEntities().values()) {
+                            if (be instanceof com.epi0.vtm.block.CoffinBlockEntity c && c.faction() != null) {
+                                found = c.getBlockPos();
+                            }
+                        }
+                    }
+                }
+                LAIRS.add(found);
+                VtmMod.LOGGER.info("HARNESS lair {} coffin at {}", name, found);
+            });
+        }
+        for (int n = 0; n < structures.length; n++) {
+            int index = n;
+            String name = structures[n];
+            server(mc, 20, p -> {
+                var c = LAIRS.get(index);
+                int[] k = coffin[index];
+                int x0 = c.getX() - k[0];
+                int y0 = c.getY() - k[1];
+                int z0 = c.getZ() - k[2];
+                int[] cam = camera[index];
+                int[] mid = centre[index];
+                p.getServer().getCommands().performPrefixedCommand(p.createCommandSourceStack().withPermission(4),
+                        "tp @s " + (x0 + cam[0]) + " " + (y0 + cam[1]) + " " + (z0 + cam[2]) + " facing "
+                                + (x0 + mid[0]) + " " + (y0 + mid[1]) + " " + (z0 + mid[2]));
+            });
+            shotAfter(mc, 50, "lair_" + name + "_outside");
+        }
+        for (int n = 0; n < structures.length; n++) {
+            int index = n;
+            String name = structures[n];
+            server(mc, 10, p -> {
+                var c = LAIRS.get(index);
+                int[] k = coffin[index];
+                int x0 = c.getX() - k[0];
+                int y0 = c.getY() - k[1];
+                int z0 = c.getZ() - k[2];
+                int[] at = stand[index];
+                p.getServer().getCommands().performPrefixedCommand(p.createCommandSourceStack().withPermission(4),
+                        "tp @s " + (x0 + at[0] + 0.5) + " " + (y0 + at[1] + 1) + " " + (z0 + at[2] + 0.5) + " facing "
+                                + (c.getX() + 0.5) + " " + (c.getY() + 0.8) + " " + (c.getZ() + 0.5));
+            });
+            shotAfter(mc, 40, "lair_" + name + "_inside");
+        }
+        then(10, () -> {
+            VtmMod.LOGGER.info("HARNESS DONE");
+            mc.stop();
         });
     }
 

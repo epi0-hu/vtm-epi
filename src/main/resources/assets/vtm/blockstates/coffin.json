@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "vtm:block/coffin"
+    },
+    "facing=east": {
+      "model": "vtm:block/coffin",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "vtm:block/coffin",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "vtm:block/coffin",
+      "y": 270
+    }
+  }
+}
