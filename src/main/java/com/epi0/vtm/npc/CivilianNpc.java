@@ -120,6 +120,8 @@ public class CivilianNpc extends VtmNpc {
         if (getMainHandItem().isEmpty()) {
             setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.IRON_SWORD));
             setItemSlot(EquipmentSlot.CHEST, new ItemStack(com.epi0.vtm.registry.ModItems.WARD_VEST.get()));
+            setItemSlot(EquipmentSlot.OFFHAND, new ItemStack(com.epi0.vtm.registry.ModItems.STAKE_CROSSBOW.get()));
+            setDropChance(EquipmentSlot.OFFHAND, 0.08F);
             setDropChance(EquipmentSlot.MAINHAND, 0F);
             setDropChance(EquipmentSlot.CHEST, 0F);
         }
@@ -133,6 +135,8 @@ public class CivilianNpc extends VtmNpc {
         armAsHunter();
         setItemSlot(EquipmentSlot.CHEST, new ItemStack(Items.IRON_CHESTPLATE));
         setItemSlot(EquipmentSlot.HEAD, new ItemStack(Items.IRON_HELMET));
+        setItemSlot(EquipmentSlot.OFFHAND, com.epi0.vtm.item.HunterArms.firearm(getRandom()));
+        setDropChance(EquipmentSlot.OFFHAND, 0.35F);
         setDropChance(EquipmentSlot.HEAD, 0F);
     }
 
@@ -252,6 +256,7 @@ public class CivilianNpc extends VtmNpc {
         });
         goalSelector.addGoal(1, new AvoidEntityGoal<>(this, Player.class, 12F, 1.0, 1.5,
                 player -> job() != Job.WATCHMAN && attitudeTo(player).compareTo(Attitude.WARY) >= 0));
+        goalSelector.addGoal(2, new com.epi0.vtm.npc.goal.HunterRangedGoal(this));
         goalSelector.addGoal(2, new WatchmanAttackGoal(this, 1.2));
         goalSelector.addGoal(2, new com.epi0.vtm.npc.goal.FollowMasterGoal(this));
         goalSelector.addGoal(3, new ScheduleGoal(this));

@@ -1050,9 +1050,12 @@
   "item.vtm.attire.street.tip": "Three pieces of street clothes or evening wear: the living look through you. Exposure you cause is reduced by 40%.",
   "item.vtm.attire.formal.tip": "Three pieces of evening wear: taken seriously at court. +1 die on conversations. Also counts as street wear.",
   "item.vtm.attire.robe.tip": "Wear the cowl and the robe together: your powers cost 15% less blood.",
-  "item.vtm.attire.ward.tip": "Hunters' blows land a quarter softer on you while you wear this.",
+  "item.vtm.attire.ward.tip": "Hunters' blows land a quarter softer on you, and their bolts and bullets a third softer.",
   "gui.vtm.attire.blending": "Blending in",
   "gui.vtm.attire.formal": "Formal",
   "gui.vtm.attire.robed": "Robed",
-  "gui.vtm.attire.warded": "Warded"
+  "gui.vtm.attire.warded": "Warded",
+  "item.vtm.stake_crossbow": "Stake Crossbow",
+  "item.vtm.hunter_rifle": "Hunter's Rifle",
+  "item.vtm.hunter_weapon.tip": "A hunter's weapon. Needs no ammunition, but wears out."
 }

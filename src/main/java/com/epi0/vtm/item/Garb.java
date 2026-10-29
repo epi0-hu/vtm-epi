@@ -28,6 +28,8 @@ public final class Garb {
     public static final float BLEND_FACTOR = 0.6F;
     /** What a robed vampire's powers cost. */
     public static final float ROBE_COST_FACTOR = 0.85F;
+    /** What hunters' bolts and bullets do against ward gear. */
+    public static final float WARD_SHOT_FACTOR = 0.65F;
     /** What hunters' blows do against ward gear. */
     public static final float WARD_FACTOR = 0.75F;
 
@@ -80,7 +82,7 @@ public final class Garb {
     public static void onDamage(LivingIncomingDamageEvent event) {
         if (event.getSource().getEntity() instanceof CivilianNpc hunter && hunter.job() == Job.HUNTER
                 && event.getEntity() instanceof Player player && wardWorn(player)) {
-            event.setAmount(event.getAmount() * WARD_FACTOR);
+            event.setAmount(event.getAmount() * (event.getSource().is(net.minecraft.tags.DamageTypeTags.IS_PROJECTILE) ? WARD_SHOT_FACTOR : WARD_FACTOR));
         }
     }
 

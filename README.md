@@ -142,6 +142,14 @@ player model. Wearing *enough of a kind* does something, and the Overview page s
 Street, evening and robe pieces (and the duster) are **dyeable** with ordinary dyes in the crafting grid. Hats and cowls shade the face under
 the existing sunlight rule (any head item stops the sun burning you).
 
+**Hunters shoot** (`item/HunterArms`, `npc/goal/HunterRangedGoal`): every armed hunter carries a **stake crossbow** in the off hand and an
+inquisitor a firearm (the **hunter's rifle**). From 5 to 26 blocks (36 for a rifle) with a clear line of sight they stand and fire, and
+only draw the sword when you close. Shots are ordinary arrows with the hunter as owner, so the hunters' bonus against vampires, damage
+scars and resistances all apply; ward gear cuts their bolts and bullets by a third. Both weapons can be crafted and fired by players
+too (no ammunition, they wear out, and a reload delay). Any item in the `vtm:hunter_firearms` item tag counts as a rifle, so a modpack
+can give inquisitors another mod's guns with a datapack tag (`{"replace": false, "values": [{"id": "somegun:rifle", "required": false}]}`);
+the shot itself is always ours, and a gun mod's own firing code is never called.
+
 **Hunters** (`city/Hunters`): mortals who know what is out there. Every time a vampire is seen feeding, in frenzy, or killing a
 citizen, the city's mortals work out a little more of what they are (**exposure**, per player per city, fading slowly; the
 second bar on the HUD plate). At 30 an unarmed stranger starts to watch; at 50 armed hunters come for you and will not talk;

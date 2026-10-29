@@ -60,6 +60,11 @@ public final class ModItems {
     public static final DeferredItem<Garment> WARD_VEST = plain("ward_vest", ModArmor.WARD, ArmorItem.Type.CHESTPLATE, Attire.WARD);
     public static final DeferredItem<Garment> COMBAT_BOOTS = plain("combat_boots", ModArmor.WARD, ArmorItem.Type.BOOTS, Attire.WARD);
 
+    public static final DeferredItem<com.epi0.vtm.item.HunterWeaponItem> STAKE_CROSSBOW = ITEMS.register("stake_crossbow",
+            () -> new com.epi0.vtm.item.HunterWeaponItem(com.epi0.vtm.item.HunterArms.Profile.CROSSBOW, new Item.Properties().durability(240).stacksTo(1)));
+    public static final DeferredItem<com.epi0.vtm.item.HunterWeaponItem> HUNTER_RIFLE = ITEMS.register("hunter_rifle",
+            () -> new com.epi0.vtm.item.HunterWeaponItem(com.epi0.vtm.item.HunterArms.Profile.RIFLE, new Item.Properties().durability(320).stacksTo(1)));
+
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> TAB = TABS.register("vtm",
             () -> CreativeModeTab.builder()
                     .title(Component.translatable("itemGroup.vtm"))
@@ -69,7 +74,7 @@ public final class ModItems {
                         output.accept(VAMPIRE_SPAWN_EGG.get());
                         output.accept(ModBlocks.COFFIN.get());
                         for (var garment : new DeferredItem<?>[]{CAP, JACKET, TROUSERS, SHOES, DUSTER, TOP_HAT, TAILCOAT, DRESS_TROUSERS, DRESS_SHOES,
-                                COWL, ROBE, WARD_VEST, COMBAT_BOOTS}) {
+                                COWL, ROBE, WARD_VEST, COMBAT_BOOTS, STAKE_CROSSBOW, HUNTER_RIFLE}) {
                             output.accept(garment.get());
                         }
                     })
