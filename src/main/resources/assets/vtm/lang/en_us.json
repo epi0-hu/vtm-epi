@@ -986,5 +986,20 @@
   "gui.vtm.potency_raise.tip": "Spend %s experience to raise Blood Potency to %s.",
   "gui.vtm.potency_raise.capped": "Your generation allows no more Blood Potency.",
   "gui.vtm.potency_raise.cannot": "You need %s experience.",
-  "gui.vtm.nemesis.generation": "%s generation"
+  "gui.vtm.nemesis.generation": "%s generation",
+  "gui.vtm.page.lineage": "Lineage",
+  "gui.vtm.hint.lineage": "Older blood is stronger; the eldest are rarely met.",
+  "gui.vtm.lineage.yours": "Your blood",
+  "gui.vtm.lineage.mortal": "You carry no vampire blood, so no generation. The Embrace gives you one.",
+  "gui.vtm.lineage.ladder": "1st (eldest) to 13th",
+  "gui.vtm.lineage.potency": "Blood Potency cap",
+  "gui.vtm.lineage.pool": "Blood pool",
+  "gui.vtm.lineage.cost": "Power blood cost",
+  "gui.vtm.lineage.cooldown": "Power cooldown",
+  "gui.vtm.lineage.dice": "Dice on social checks",
+  "gui.vtm.lineage.elders": "Elders you know of",
+  "gui.vtm.lineage.none": "You have met no vampire whose generation you know. Elders do not announce themselves.",
+  "gui.vtm.lineage.older": "Your elder by %s",
+  "gui.vtm.lineage.younger": "Your junior by %s",
+  "gui.vtm.lineage.peer": "Your peer in blood"
 }

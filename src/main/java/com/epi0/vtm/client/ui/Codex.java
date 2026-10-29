@@ -11,6 +11,7 @@ import com.epi0.vtm.client.ui.page.DomainsPage;
 import com.epi0.vtm.client.ui.page.DossiersPage;
 import com.epi0.vtm.client.ui.page.HerdPage;
 import com.epi0.vtm.client.ui.page.HuntersPage;
+import com.epi0.vtm.client.ui.page.LineagePage;
 import com.epi0.vtm.client.ui.page.OverviewPage;
 import com.epi0.vtm.client.ui.page.PowersPage;
 import com.epi0.vtm.client.ui.page.SectPage;
@@ -55,6 +56,7 @@ public class Codex extends Screen implements Page.Hub {
         pages.put(PageId.DOMAINS, new DomainsPage());
         pages.put(PageId.HUNTERS, new HuntersPage());
         pages.put(PageId.HERD, new HerdPage());
+        pages.put(PageId.LINEAGE, new LineagePage());
         pages.put(PageId.COURT, new CourtPage());
         pages.put(PageId.CHRONICLE, new ChroniclePage());
         pages.put(PageId.COTERIE, new CoteriePage());

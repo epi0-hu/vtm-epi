@@ -820,6 +820,19 @@ public final class Harness {
         then(5, () -> mc.setScreen(new com.epi0.vtm.client.ui.Codex(com.epi0.vtm.client.ui.PageId.HERD)));
         then(25, fake);
         shotAfter(mc, 10, "codex_herd");
+        then(5, () -> mc.setScreen(new com.epi0.vtm.client.ui.Codex(com.epi0.vtm.client.ui.PageId.LINEAGE)));
+        then(25, () -> {
+            java.util.function.BiFunction<String, Integer, com.epi0.vtm.nemesis.NemesisViews.Entry> elder = (name, gen) ->
+                    new com.epi0.vtm.nemesis.NemesisViews.Entry(new com.epi0.vtm.nemesis.NemesisViews.Core(java.util.UUID.randomUUID(), name,
+                            VtmMod.id(gen > 6 ? "camarilla" : "sabbat"), 1, java.util.Optional.empty(), java.util.Optional.empty(), 3, "alive",
+                            java.util.List.of(), 0, java.util.List.of(), java.util.Optional.empty(), java.util.Optional.empty(), gen),
+                            new com.epi0.vtm.nemesis.NemesisViews.History(0, 0, 0, 0, 0, false),
+                            new com.epi0.vtm.nemesis.NemesisViews.Bond(-1, java.util.Optional.empty(), 0, 0), java.util.List.of());
+            ClientWorld.receive(new com.epi0.vtm.nemesis.NemesisViews.Snapshot(java.util.List.of(elder.apply("Hardestadt", 3), elder.apply("Lucita", 7),
+                    elder.apply("Marcus Vane", 10), elder.apply("Jonas Reed", 13)), java.util.List.of(), java.util.List.of(), java.util.List.of(),
+                    java.util.Optional.empty(), java.util.List.of(), java.util.List.of(), 0L));
+        });
+        shotAfter(mc, 10, "codex_lineage");
         then(5, () -> mc.setScreen(new com.epi0.vtm.client.ui.Codex(com.epi0.vtm.client.ui.PageId.OVERVIEW)));
         shotAfter(mc, 30, "codex_rail");
         then(10, () -> {

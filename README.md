@@ -25,7 +25,7 @@ Phases 1 (core vampire data), 2 (character sheet GUI) and discipline powers are 
 - **Rules** live in `vampire/VampireRules` (our spin on V5). Tunables are in the server config (`vtm-server.toml`).
 - **Loop**: passive blood loss, sunlight, blood healing (no food), starvation penalties, passive XP, biting
   (sneak + empty hand on a creature), humanity stains for killing innocents.
-- **GUI**: the **Vampire Codex**, one tabbed screen built on a small shared UI toolkit (`client/ui`: `Theme`, `Draw`, `Ui`, `Scroll`, pages). `V` opens it on the character pages (Overview, Disciplines with XP spending, Powers, Clan, Sect) and `N` on the world pages (Dossiers, Courts, Domains, Hunters, Your court, Chronicle, Coterie, Herd); each remembers where you left off. `Q` / `E` (or Page Up / Down) change page, `Tab` / `Shift+Tab` move keyboard focus, `Enter` or `Space` activates it, the mouse wheel scrolls, and Up / Down browse dossiers. Narrow windows collapse the side rail to icons. The HUD's blood bar is segmented with hunger pips and the armed power beside it, and replaces the food bar; entering a city shows a banner and, while you are wanted there, a heat plate. Conversations use the same look: click or `Space` skips the typing, `1`-`9` pick an answer.
+- **GUI**: the **Vampire Codex**, one tabbed screen built on a small shared UI toolkit (`client/ui`: `Theme`, `Draw`, `Ui`, `Scroll`, pages). `V` opens it on the character pages (Overview, Disciplines with XP spending, Powers, Clan, Sect) and `N` on the world pages (Dossiers, Courts, Domains, Hunters, Your court, Chronicle, Coterie, Herd, Lineage); each remembers where you left off. `Q` / `E` (or Page Up / Down) change page, `Tab` / `Shift+Tab` move keyboard focus, `Enter` or `Space` activates it, the mouse wheel scrolls, and Up / Down browse dossiers. Narrow windows collapse the side rail to icons. The HUD's blood bar is segmented with hunger pips and the armed power beside it, and replaces the food bar; entering a city shows a banner and, while you are wanted there, a heat plate. Conversations use the same look: click or `Space` skips the typing, `1`-`9` pick an answer.
 - **Commands** (op): `/vtm embrace|mortal|set|discipline|info`.
 
 ## Discipline powers
@@ -112,6 +112,8 @@ on dialogue checks. Potency is bought with experience (`+ cost xp` beside the po
 Every named vampire NPC has a generation too, set by its seat (leaders 5th–8th, lieutenants 8th–10th, enforcers 10th–12th,
 agents 11th–13th), shown on dossiers and adding to a Nemesis's power. Vampires of a much older or younger generation than you
 open different dialogue: the young pay tribute and offer intel, the old teach, condescend, or can be defied.
+The **Lineage** page shows your generation on a 1st-to-13th ladder with what it grants, then every vampire whose generation
+you have learned (met or studied), oldest first, with how far above or below you they stand.
 
 **Hunters** (`city/Hunters`): mortals who know what is out there. Every time a vampire is seen feeding, in frenzy, or killing a
 citizen, the city's mortals work out a little more of what they are (**exposure**, per player per city, fading slowly; the
