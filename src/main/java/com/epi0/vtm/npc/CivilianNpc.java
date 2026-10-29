@@ -55,6 +55,9 @@ public class CivilianNpc extends VtmNpc {
     private Persona persona;
     @Nullable
     private UUID ghoulOwner;
+    /** The hunters' lodge this person belongs to, if they are a hunter of one. */
+    @Nullable
+    private UUID lodgeId;
 
     private static final EntityDataAccessor<Integer> DATA_JOB = SynchedEntityData.defineId(CivilianNpc.class, EntityDataSerializers.INT);
 
@@ -95,6 +98,21 @@ public class CivilianNpc extends VtmNpc {
     /** Gives this person a particular personality (tests and tools; it is not saved). */
     public void usePersona(Persona persona) {
         this.persona = persona;
+    }
+
+    @Nullable
+    public UUID lodgeId() {
+        return lodgeId;
+    }
+
+    /** Makes this person a hunter of a lodge: it is where they live, and it is who they answer to. */
+    public void settleAtLodge(BlockPos standard, UUID lodge) {
+        this.lodgeId = lodge;
+        entityData.set(DATA_JOB, Job.HUNTER.ordinal());
+        setHome(standard);
+        getAttribute(Attributes.FOLLOW_RANGE).setBaseValue(48);
+        getAttribute(Attributes.MAX_HEALTH).setBaseValue(26);
+        setHealth(26F);
     }
 
     /** Hunters dress as anyone until they are sure; then they arm themselves. */
@@ -284,6 +302,7 @@ public class CivilianNpc extends VtmNpc {
         super.die(source);
         if (!level().isClientSide && source.getEntity() instanceof net.minecraft.server.level.ServerPlayer slayer && job() == Job.HUNTER) {
             com.epi0.vtm.city.Hunters.onHunterKilled(this, slayer);
+            com.epi0.vtm.city.Lodges.onHunterKilled(this, slayer);
         }
         if (!level().isClientSide && source.getEntity() instanceof net.minecraft.server.level.ServerPlayer player) {
             long now = level().getGameTime();
@@ -331,7 +350,9 @@ public class CivilianNpc extends VtmNpc {
             int heat = city == null ? 0 : city.heatOf(player.getUUID());
             if (job() == Job.HUNTER) {
                 // Hunters care about one thing: whether you are what they hunt, and whether they know it.
-                int exposure = city == null ? 0 : city.exposureOf(player.getUUID());
+                MinecraftServer server = level().getServer();
+                int exposure = city != null ? city.exposureOf(player.getUUID())
+                        : lodgeId != null && server != null ? com.epi0.vtm.city.Lodges.notoriety(server, level().dimension(), blockPosition(), player.getUUID()) : 0;
                 if (com.epi0.vtm.vampire.VampireData.of(player).isVampire()) {
                     if (exposure >= com.epi0.vtm.city.Hunters.HUNTED) {
                         return Attitude.HOSTILE;
@@ -394,6 +415,9 @@ public class CivilianNpc extends VtmNpc {
         if (ghoulOwner != null) {
             tag.putUUID("GhoulOwner", ghoulOwner);
         }
+        if (lodgeId != null) {
+            tag.putUUID("Lodge", lodgeId);
+        }
     }
 
     @Override
@@ -404,5 +428,6 @@ public class CivilianNpc extends VtmNpc {
         work = tag.contains("Work") ? BlockPos.of(tag.getLong("Work")) : null;
         expireAt = tag.getLong("ExpireAt");
         ghoulOwner = tag.hasUUID("GhoulOwner") ? tag.getUUID("GhoulOwner") : null;
+        lodgeId = tag.hasUUID("Lodge") ? tag.getUUID("Lodge") : null;
     }
 }

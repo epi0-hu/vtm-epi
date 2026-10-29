@@ -925,5 +925,11 @@
   "dialogue.vtm.hunter.opt.hunt": "Ask what they are hunting.",
   "dialogue.vtm.hunter.hunt": "Things that are not supposed to be. We don't have a name for them we'd say aloud. We have a list, and it is getting longer.",
   "dialogue.vtm.hunter.opt.watching": "Ask who they have been watching.",
-  "dialogue.vtm.hunter.watching": "I shouldn't. But you look like someone who can be trusted. Two names: they keep odd hours, and they are not ageing as they should."
+  "dialogue.vtm.hunter.watching": "I shouldn't. But you look like someone who can be trusted. Two names: they keep odd hours, and they are not ageing as they should.",
+  "message.vtm.power_seen": "Mortals saw that.",
+  "block.vtm.hunter_standard": "Hunters' Standard",
+  "message.vtm.lodge.standing": "The standard of a hunters' lodge. While it flies, every city within reach is more dangerous to be exposed in.",
+  "message.vtm.lodge.broken": "The standard hangs limp. The lodge is broken, and will not raise its garrison for %s more days.",
+  "message.vtm.lodge.unknown": "A hunters' standard.",
+  "message.vtm.lodge.master_fell": "The master of the lodge is dead. The hunters lose heart."
 }

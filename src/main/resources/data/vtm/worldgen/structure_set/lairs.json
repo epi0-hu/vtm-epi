@@ -15,6 +15,10 @@
     {
       "structure": "vtm:the_asylum",
       "weight": 1
+    },
+    {
+      "structure": "vtm:hunter_lodge",
+      "weight": 2
     }
   ],
   "placement": {

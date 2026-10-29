@@ -77,6 +77,9 @@ public final class Harness {
             } else if (SCENARIO.equals("sewer")) {
                 structureScript(mc, "nosferatu_sewer", "nosferatu", new int[]{3, 1, 6}, new int[][]{
                         {17, 1, 4, 9, 1, 6}, {12, 1, 6, 3, 1, 6}, {7, 2, 3, 3, 0, 7}, {14, 1, 8, 14, 1, 13}, {18, 1, 4, 18, 9, 3}}, 0, "sewer");
+            } else if (SCENARIO.equals("lodge")) {
+                structureScript(mc, "hunter_lodge", "", new int[]{11, 3, 12}, new int[][]{
+                        {11, 9, 33, 11, 3, 8}, {-10, 12, 30, 11, 3, 9}, {11, 1, 6, 11, 1, 1}, {11, 2, 17, 11, 4, 12}, {19, 1, 6, 8, 1, 3}}, 2, "lodge");
             } else if (SCENARIO.equals("asylum")) {
                 structureScript(mc, "the_asylum", "malkavian", new int[]{10, -4, 13}, new int[][]{
                         {10, 7, 33, 10, 2, 17}, {30, 9, 30, 10, 3, 14}, {10, 1, 15, 10, 1, 0}, {6, 7, 15, 12, 1, 3}, {16, 8, 14, 9, 1, 4},
@@ -543,7 +546,8 @@ public final class Harness {
                 for (int cx = (x >> 4) - 2; cx <= (x >> 4) + 2 && !found; cx++) {
                     for (int cz = (z >> 4) - 2; cz <= (z >> 4) + 2 && !found; cz++) {
                         for (var be : level.getChunk(cx, cz).getBlockEntities().values()) {
-                            if (be instanceof com.epi0.vtm.block.CoffinBlockEntity coffin && coffin.clan() != null && coffin.clan().getPath().equals(clan)) {
+                            if (clan.isEmpty() ? be instanceof com.epi0.vtm.block.HunterStandardBlockEntity
+                                    : be instanceof com.epi0.vtm.block.CoffinBlockEntity coffin && coffin.clan() != null && coffin.clan().getPath().equals(clan)) {
                                 structureOrigin = new int[]{be.getBlockPos().getX() - coffinAt[0], be.getBlockPos().getY() - coffinAt[1], be.getBlockPos().getZ() - coffinAt[2]};
                                 found = true;
                                 break;

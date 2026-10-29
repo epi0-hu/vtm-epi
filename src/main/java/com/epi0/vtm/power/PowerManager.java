@@ -67,6 +67,9 @@ public final class PowerManager {
             mine.put(powerId, now + power.cooldownTicks());
         }
         player.displayClientMessage(Component.translatable("message.vtm.power_used", power.name()), true);
+        if (!releasing) {
+            PowerExposure.cast(player, powerId);
+        }
         return true;
     }
 

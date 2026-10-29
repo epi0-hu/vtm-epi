@@ -113,6 +113,15 @@ suspicious hunter who is not yet sure can be talked round (Presence) or slipped 
 is a source of rumours. While nobody watches, hunters also raid the havens of the city's own vampires and may put one into
 torpor or destroy them (chronicle `hunters_raid_*`). NPCs now draw the item in their right hand. `-Pharness=hunters` shows a team.
 
+**Power exposure** (`power/PowerExposure`): using a power where mortals can see you teaches them what you are. Each power has a
+noise (Blood Bolt 12, shapechange 15, Blink 8, a quiet Auspex power 0); the witnesses are mortals within 24 blocks with line of
+sight, more than two doubles it, invisibility halves it. Obfuscate and Dominate's Cloud Memory go the other way and lower your
+exposure. **Hunters' lodges** (`world/HunterLodge`, `city/Lodges`, the Hunters' Standard block): a palisaded yard with a hall, a
+watchtower, a training ground and a standard on a post. A lodge keeps a master and three hunters whenever someone is near; they
+are hostile to any vampire the cities within 600 blocks have exposed (50+). While a lodge stands, every city within reach sends
+two more hunters and an inquisitor at 60 exposure rather than 75. Kill the master and the lodge is broken for a week: no garrison,
+no backing, -40 exposure and +6 XP. `-Pharness=lodge` shows one.
+
 **People** (`npc/Persona`, `Household`, `Gossip`): every mortal has a temperament (cheerful, nervous, brave, suspicious,
 lonely, devout, curious) and an age, worked out from their identity. Temperament sets how much trouble frightens them,
 how much rapport makes a friend, and whether they take offence easily; the devout can feel a soul that has slipped far.
@@ -222,6 +231,6 @@ dilation for Celerity) remain options if NPC navigation or Celerity ever need th
 ## Tests and dev tools
 - `./gradlew runGameTestServer`: GameTests in `gametest/VtmGameTests` (data, embrace/learn, passives, feeding, every
   power, mob control, every bane, frenzy, forms, sense link, NPC behaviour, conversations, sects, the nemesis simulation and its combat rules, lairs, cities, territory, courts).
-- `./gradlew runClient -Pharness=player|npc|dialogue|sect|nemesis|people|hunters|lairs|sewer|asylum|city|domains|court`: scripted walkthrough of the real client that writes screenshots to
+- `./gradlew runClient -Pharness=player|npc|dialogue|sect|nemesis|people|hunters|lodge|lairs|sewer|asylum|city|domains|court`: scripted walkthrough of the real client that writes screenshots to
   `run/screenshots/` (player: every Codex page, HUD, city banner, forms, sense link, frenzy; npc: a lineup in every animation; dialogue: a conversation with a civilian and a vampire; sect: the Sect tab and a member's conversation; nemesis: the Nemesis tabs and a verdict conversation; lairs, city, domains, court: the world and the Court tab). Needs a
   world at `run/saves/harness` and, on a headless machine, `xvfb-run`. Inert without the property.

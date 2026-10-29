@@ -31,6 +31,13 @@ public final class ModBlocks {
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.epi0.vtm.block.CityHeartBlockEntity>> CITY_HEART_ENTITY =
             BLOCK_ENTITIES.register("city_heart", () -> BlockEntityType.Builder.of(com.epi0.vtm.block.CityHeartBlockEntity::new, CITY_HEART.get()).build(null));
 
+    public static final DeferredBlock<com.epi0.vtm.block.HunterStandardBlock> HUNTER_STANDARD = BLOCKS.register("hunter_standard",
+            () -> new com.epi0.vtm.block.HunterStandardBlock(BlockBehaviour.Properties.of().strength(-1.0F, 3600000.0F)
+                    .sound(SoundType.WOOD).noLootTable().lightLevel(state -> 5)));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.epi0.vtm.block.HunterStandardBlockEntity>> HUNTER_STANDARD_ENTITY =
+            BLOCK_ENTITIES.register("hunter_standard", () -> BlockEntityType.Builder.of(com.epi0.vtm.block.HunterStandardBlockEntity::new, HUNTER_STANDARD.get()).build(null));
+
     public static void registerItems() {
         ModItems.ITEMS.register("coffin", () -> new BlockItem(COFFIN.get(), new Item.Properties()));
     }

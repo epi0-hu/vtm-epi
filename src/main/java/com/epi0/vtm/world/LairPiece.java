@@ -29,7 +29,8 @@ public class LairPiece extends StructurePiece {
         CRYPT(13, 13, 6), MANOR(15, 11, 9), WAREHOUSE(17, 11, 7),
         /** Set into the cave system, not on the surface. */
         SEWER(SewerLair.WIDTH, SewerLair.DEPTH, 6, true),
-        ASYLUM(AsylumClub.WIDTH, AsylumClub.DEPTH + AsylumClub.FORECOURT + 1, 12);
+        ASYLUM(AsylumClub.WIDTH, AsylumClub.DEPTH + AsylumClub.FORECOURT + 1, 12),
+        HUNTER_LODGE(HunterLodge.WIDTH, HunterLodge.DEPTH, 14);
 
         final int width;
         final int depth;
@@ -105,6 +106,7 @@ public class LairPiece extends StructurePiece {
             case MANOR -> manor(c, x0, groundY, z0, faction, random);
             case WAREHOUSE -> warehouse(c, x0, groundY, z0, random);
             case SEWER -> SewerLair.build(c, x0, groundY, z0, surfaceY, faction, clan, random);
+            case HUNTER_LODGE -> HunterLodge.build(c, x0, groundY, z0, random);
             case ASYLUM -> AsylumClub.build(c, x0, groundY, z0, faction, clan, random);
         }
     }

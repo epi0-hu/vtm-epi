@@ -71,10 +71,16 @@ public final class Hunters {
 
     /** How many hunters a given exposure brings (the inquisitor is extra). */
     public static int wanted(int exposure) {
+        return wanted(exposure, false);
+    }
+
+    /** As above; a city within reach of a standing lodge is sent two more. */
+    public static int wanted(int exposure, boolean backed) {
         if (exposure < WATCHED) {
             return 0;
         }
-        return exposure < HUNTED ? 1 : exposure < 65 ? 2 : exposure < ASSAULT ? 3 : exposure < 90 ? 4 : 6;
+        int base = exposure < HUNTED ? 1 : exposure < 65 ? 2 : exposure < ASSAULT ? 3 : exposure < 90 ? 4 : 6;
+        return base + (backed ? 2 : 0);
     }
 
     // ---------------------------------------------------------------- the pass
@@ -83,6 +89,9 @@ public final class Hunters {
     public static int tick(ServerLevel level, City city) {
         long now = level.getGameTime();
         int spawned = 0;
+        boolean backed = Lodges.supports(level.getServer(), city);
+        int assault = backed ? ASSAULT - 15 : ASSAULT;
+        long gap = backed ? SPAWN_GAP / 2 : SPAWN_GAP;
         for (ServerPlayer player : level.players()) {
             int exposure = city.exposureOf(player.getUUID());
             if (player.isSpectator() || exposure < WATCHED || !city.contains(level, player.blockPosition())) {
@@ -91,7 +100,7 @@ public final class Hunters {
             AABB area = player.getBoundingBox().inflate(70, 40, 70);
             List<CivilianNpc> present = level.getEntitiesOfClass(CivilianNpc.class, area,
                     c -> c.job() == Job.HUNTER && c.isAlive() && city.id.equals(c.cityId()));
-            if (present.size() < wanted(exposure) && now - city.lastHunt >= SPAWN_GAP) {
+            if (present.size() < wanted(exposure, backed) && now - city.lastHunt >= gap) {
                 Vec3 spot = Placement.spot(level, player.position(), 16, 28, level.random);
                 if (spot != null) {
                     spawn(level, city, spot, false);
@@ -100,7 +109,7 @@ public final class Hunters {
                 }
             }
             boolean inquisitorAlive = city.inquisitor != null && level.getEntity(city.inquisitor) != null;
-            if (exposure >= ASSAULT && !inquisitorAlive && present.size() >= 2) {
+            if (exposure >= assault && !inquisitorAlive && present.size() >= 2) {
                 Vec3 spot = Placement.spot(level, player.position(), 18, 30, level.random);
                 if (spot != null) {
                     city.inquisitor = spawn(level, city, spot, true).getUUID();
