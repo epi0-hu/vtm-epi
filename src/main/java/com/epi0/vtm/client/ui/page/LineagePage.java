@@ -92,8 +92,14 @@ public final class LineagePage implements Page {
                     : c.generation() > me.generation()
                     ? Component.translatable("gui.vtm.lineage.younger", c.generation() - me.generation())
                     : Component.translatable("gui.vtm.lineage.peer");
-            ui.clipped(Component.empty().append(Common.factionName(c.faction())).append("  ").append(stand), card.x() + 8, card.y() + 17, card.w() - 16, Theme.DIM);
-            ui.clipped(whereabouts(c), card.x() + 8, card.y() + 29, card.w() - 16, c.place().isPresent() ? Theme.TEXT : Theme.DIM);
+            ui.clipped(Component.empty().append(Common.factionName(c.faction())).append("  ").append(stand), card.x() + 8, card.y() + 17, card.w() - 90, Theme.DIM);
+            ui.clipped(whereabouts(c), card.x() + 8, card.y() + 29, card.w() - 16, c.stale() ? Theme.BAD : c.place().isPresent() ? Theme.TEXT : Theme.DIM);
+            c.agenda().ifPresent(a -> {
+                Component name = Component.translatable("gui.vtm.lineage.agenda." + a);
+                ui.chip(name, card.right() - ui.font().width(name) - 14, card.y() + 16, Theme.GOLD);
+                ui.tooltip(new Rect(card.right() - ui.font().width(name) - 14, card.y() + 15, ui.font().width(name) + 8, 12),
+                        Component.translatable("gui.vtm.lineage.agenda." + a + ".tip"));
+            });
             y += CARD + 4;
         }
         scroll.end(ui);
@@ -107,7 +113,7 @@ public final class LineagePage implements Page {
         var player = Minecraft.getInstance().player;
         String distance = player != null && player.level().dimension().equals(p.dimension())
                 ? ", " + (int) Math.sqrt(player.distanceToSqr(p.pos().getX(), player.getY(), p.pos().getZ())) + " blocks away" : "";
-        return Component.translatable("gui.vtm.lineage.whereabouts", p.pos().getX() + ", " + p.pos().getZ() + distance);
+        return Component.translatable(c.stale() ? "gui.vtm.lineage.whereabouts_stale" : "gui.vtm.lineage.whereabouts", p.pos().getX() + ", " + p.pos().getZ() + distance);
     }
 
     private static int row(Ui ui, Rect in, int y, String key, String value) {

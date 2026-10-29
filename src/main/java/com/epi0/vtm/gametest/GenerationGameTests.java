@@ -252,4 +252,54 @@ public final class GenerationGameTests {
         DialogueManager.end(player);
         helper.succeed();
     }
+
+    @GameTest(template = "empty", batch = "gen_elders")
+    public static void eldersMoveBetweenHavensAndTheTrailGoesCold(GameTestHelper helper) {
+        ServerPlayer player = VtmGameTests.vampire(helper, "gangrel");
+        var server = helper.getLevel().getServer();
+        var data = NemesisManager.data(server);
+        var dim = helper.getLevel().dimension();
+        com.epi0.vtm.nemesis.NemesisRecord elder = null;
+        for (int seed = 0; elder == null; seed++) {
+            var r = NemesisManager.create(server, VtmMod.id("camarilla"), Role.AGENT, RandomSource.create(seed));
+            if (com.epi0.vtm.nemesis.Elders.agenda(r) == com.epi0.vtm.nemesis.Elders.Agenda.WANDERER) {
+                elder = r;
+            } else {
+                NemesisManager.destroy(server, r, null, null);
+            }
+        }
+        elder.generation = 3;
+        elder.lair = new net.minecraft.core.BlockPos(0, 64, 0);
+        elder.lairDimension = dim;
+        var host = NemesisManager.create(server, VtmMod.id("camarilla"), Role.AGENT, RandomSource.create(99));
+        host.generation = 13;
+        host.lair = new net.minecraft.core.BlockPos(900, 64, 900);
+        host.lairDimension = dim;
+        elder.lastSeen = elder.lair;
+        elder.seenDimension = dim;
+        com.epi0.vtm.nemesis.Intel.meet(player, elder);
+
+        helper.assertTrue(com.epi0.vtm.nemesis.Elders.trail(player, data).isEmpty(), "nothing has changed yet");
+        helper.assertTrue(com.epi0.vtm.nemesis.Elders.move(server, data, elder, RandomSource.create(5)), "the elder goes to another haven");
+        var finalElder = elder;
+        var moved = elder.lair;
+        helper.assertTrue(!moved.equals(new net.minecraft.core.BlockPos(0, 64, 0)) && data.all().stream().anyMatch(o -> o.id != finalElder.id && moved.equals(o.lair)), "to one that exists");
+        helper.assertTrue(elder.lastSeen.equals(moved), "and is seen there");
+        var known = com.epi0.vtm.nemesis.NemesisKnowledge.of(player).about(elder.id).orElseThrow();
+        helper.assertTrue(com.epi0.vtm.nemesis.Elders.stale(known, elder), "what the player was told is out of date");
+        helper.assertTrue(com.epi0.vtm.nemesis.Elders.trail(player, data).isPresent(), "someone can tell them where the elder went");
+        known = com.epi0.vtm.nemesis.NemesisKnowledge.of(player).about(elder.id).orElseThrow();
+        helper.assertTrue(!com.epi0.vtm.nemesis.Elders.stale(known, elder), "and then they know");
+
+        // The young stay where they are.
+        host.status = com.epi0.vtm.nemesis.Status.ACTIVE;
+        var before = host.lair;
+        for (int i = 0; i < 200; i++) {
+            com.epi0.vtm.nemesis.Elders.step(server, data, RandomSource.create(i));
+        }
+        helper.assertTrue(host.lair.equals(before), "a thirteenth-generation vampire is not an elder");
+        NemesisManager.destroy(server, elder, null, null);
+        NemesisManager.destroy(server, host, null, null);
+        helper.succeed();
+    }
 }

@@ -75,6 +75,9 @@ public record NemesisEffect(boolean execute, boolean spare, boolean humiliate, b
             List<NemesisRecord> pool = pool(target, npc, r, data, player);
             for (int i = 0; i < count; i++) {
                 Optional<Component> learned = Intel.revealAbout(player, pool, player.getRandom());
+                if (learned.isEmpty() && target.equals("elder")) {
+                    learned = com.epi0.vtm.nemesis.Elders.trail(player, data);
+                }
                 player.displayClientMessage(learned.orElse(Component.translatable("message.vtm.nemesis.nothing_new")), false);
                 if (learned.isEmpty()) {
                     break;

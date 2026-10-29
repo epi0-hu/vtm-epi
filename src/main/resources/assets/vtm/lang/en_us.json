@@ -1023,5 +1023,15 @@
   "message.vtm.lineage.ascended": "The elder's blood settles into yours. You are now of the %s generation.",
   "gui.vtm.lineage.rumour": "Rumour",
   "gui.vtm.lineage.whereabouts": "Last known near %s",
-  "gui.vtm.lineage.whereabouts_unknown": "Nobody can say where they sleep."
+  "gui.vtm.lineage.whereabouts_unknown": "Nobody can say where they sleep.",
+  "gui.vtm.lineage.agenda.wanderer": "Wanderer",
+  "gui.vtm.lineage.agenda.wanderer.tip": "Drifts between every haven there is. Hard to pin down.",
+  "gui.vtm.lineage.agenda.patron": "Patron",
+  "gui.vtm.lineage.agenda.patron.tip": "Visits the weakest city of their own sect and shores it up.",
+  "gui.vtm.lineage.agenda.recluse": "Recluse",
+  "gui.vtm.lineage.agenda.recluse.tip": "Almost never leaves their haven. What you learn stays true for a long time.",
+  "gui.vtm.lineage.whereabouts_stale": "Was near %s (they have since moved on; ask again)",
+  "message.vtm.nemesis.elder_trail": "Word reaches you of where %s sleeps now.",
+  "chronicle.vtm.elder_moved": "%1$s has taken up a new haven.",
+  "chronicle.vtm.elder_patron": "%1$s has taken up residence in %2$s, and the city feels it."
 }

@@ -44,6 +44,7 @@ public final class NemesisSimulator {
         resolveMissions(server, data, now, random);
         loyalty(server, data, random);
         succession(server, data);
+        Elders.step(server, data, random);
         challenges(server, data, random);
         raids(server, data, random);
         com.epi0.vtm.city.Hunters.raids(server, data, random);

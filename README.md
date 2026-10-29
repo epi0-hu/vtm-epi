@@ -122,6 +122,13 @@ least two generations older than you): tribute (3 blood) wins regard, regard buy
 elders, and at high regard a Presence check asks for **a measure of their blood**, which lowers your generation by one, once
 per elder and never to their own. Each elder you win over makes you stronger, so the ancients are worth the journey.
 
+**Elder agendas** (`nemesis/Elders`): elders do not sit still. Every simulation step an elder who is not on screen may take up a new
+haven (a city's haven or another vampire's lair), by agenda: **wanderers** (half of them) drift between every haven, **patrons**
+move to the weakest city of their own sect and add strength to it, and **recluses** almost never stir. The agenda is fixed
+for each elder and shown on the Lineage page once you have met them. When an elder moves, what you were told about where they
+sleep goes stale (the page marks it in red); asking another vampire about the ancients again, or an elder about the others, brings
+you word of where they have gone, and moves are written to the chronicle.
+
 **Hunters** (`city/Hunters`): mortals who know what is out there. Every time a vampire is seen feeding, in frenzy, or killing a
 citizen, the city's mortals work out a little more of what they are (**exposure**, per player per city, fading slowly; the
 second bar on the HUD plate). At 30 an unarmed stranger starts to watch; at 50 armed hunters come for you and will not talk;

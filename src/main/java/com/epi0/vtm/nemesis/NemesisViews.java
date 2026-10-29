@@ -27,7 +27,8 @@ public final class NemesisViews {
      */
     public record Core(UUID id, String name, ResourceLocation faction, int tier, Optional<ResourceLocation> clan,
                        Optional<String> role, int level, String status, List<String> traits, int unknownTraits,
-                       List<String> scars, Optional<GlobalPos> place, Optional<String> epithet, int generation) {
+                       List<String> scars, Optional<GlobalPos> place, Optional<String> epithet, int generation,
+                       Optional<String> agenda, boolean stale) {
         static final Codec<Core> CODEC = RecordCodecBuilder.create(i -> i.group(
                 UUIDUtil.CODEC.fieldOf("id").forGetter(Core::id),
                 Codec.STRING.fieldOf("name").forGetter(Core::name),
@@ -42,7 +43,9 @@ public final class NemesisViews {
                 Codec.STRING.listOf().fieldOf("scars").forGetter(Core::scars),
                 GlobalPos.CODEC.optionalFieldOf("place").forGetter(Core::place),
                 Codec.STRING.optionalFieldOf("epithet").forGetter(Core::epithet),
-                Codec.INT.optionalFieldOf("generation", 0).forGetter(Core::generation)
+                Codec.INT.optionalFieldOf("generation", 0).forGetter(Core::generation),
+                Codec.STRING.optionalFieldOf("agenda").forGetter(Core::agenda),
+                Codec.BOOL.optionalFieldOf("stale", false).forGetter(Core::stale)
         ).apply(i, Core::new));
     }
 
@@ -245,7 +248,8 @@ public final class NemesisViews {
                 met ? Optional.of(r.role.id()) : Optional.empty(),
                 met ? r.level : 0, r.status.id(), traits, r.traits.size() - traits.size(),
                 met ? r.scars.stream().map(Scar::id).toList() : List.of(),
-                known.place(), met ? NemesisManager.epithet(r) : Optional.empty(), met || r.generation <= com.epi0.vtm.vampire.VampireRules.ELDER_MAX ? r.generation : 0);
+                known.place(), met ? NemesisManager.epithet(r) : Optional.empty(), met || r.generation <= com.epi0.vtm.vampire.VampireRules.ELDER_MAX ? r.generation : 0,
+                met && Elders.isElder(r) ? Optional.of(Elders.agenda(r).id()) : Optional.empty(), Elders.isElder(r) && Elders.stale(known, r));
 
         Feud feud = r.feudOrNull(player.getUUID());
         History history = feud == null ? History.NONE
