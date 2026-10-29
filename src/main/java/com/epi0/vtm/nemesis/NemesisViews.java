@@ -125,18 +125,54 @@ public final class NemesisViews {
         ).apply(i, Domain::new));
     }
 
+    /**
+     * How much the hunters know of the player in one city.
+     *
+     * @param exposure   0 to 100
+     * @param backed     a lodge that still stands reinforces the hunters here
+     * @param inquisitor the hunters' inquisitor is in the field
+     */
+    public record Hunting(UUID id, String name, ResourceLocation owner, int exposure, int heat, boolean backed, boolean inquisitor) {
+        static final Codec<Hunting> CODEC = RecordCodecBuilder.create(i -> i.group(
+                UUIDUtil.CODEC.fieldOf("id").forGetter(Hunting::id),
+                Codec.STRING.fieldOf("name").forGetter(Hunting::name),
+                ResourceLocation.CODEC.fieldOf("owner").forGetter(Hunting::owner),
+                Codec.INT.fieldOf("exposure").forGetter(Hunting::exposure),
+                Codec.INT.fieldOf("heat").forGetter(Hunting::heat),
+                Codec.BOOL.fieldOf("backed").forGetter(Hunting::backed),
+                Codec.BOOL.fieldOf("inquisitor").forGetter(Hunting::inquisitor)
+        ).apply(i, Hunting::new));
+    }
+
+    /** A vessel or ghoul of the player, as they were last seen. {@code drankDay} is -1 if the player never has. */
+    public record Retainer(UUID id, String name, boolean ghoul, boolean dead, int rapport, long drankDay,
+                           Optional<GlobalPos> place, String city) {
+        static final Codec<Retainer> CODEC = RecordCodecBuilder.create(i -> i.group(
+                UUIDUtil.CODEC.fieldOf("id").forGetter(Retainer::id),
+                Codec.STRING.fieldOf("name").forGetter(Retainer::name),
+                Codec.BOOL.fieldOf("ghoul").forGetter(Retainer::ghoul),
+                Codec.BOOL.fieldOf("dead").forGetter(Retainer::dead),
+                Codec.INT.fieldOf("rapport").forGetter(Retainer::rapport),
+                Codec.LONG.fieldOf("drank_day").forGetter(Retainer::drankDay),
+                GlobalPos.CODEC.optionalFieldOf("place").forGetter(Retainer::place),
+                Codec.STRING.fieldOf("city").forGetter(Retainer::city)
+        ).apply(i, Retainer::new));
+    }
+
     public record Snapshot(List<Entry> entries, List<Court> courts, List<ChronicleEntry> chronicle, List<Domain> domains,
-                           Optional<com.epi0.vtm.court.CourtView> court, long now) {
+                           Optional<com.epi0.vtm.court.CourtView> court, List<Hunting> hunting, List<Retainer> herd, long now) {
         public static final Codec<Snapshot> CODEC = RecordCodecBuilder.create(i -> i.group(
                 Entry.CODEC.listOf().fieldOf("entries").forGetter(Snapshot::entries),
                 Court.CODEC.listOf().fieldOf("courts").forGetter(Snapshot::courts),
                 ChronicleEntry.CODEC.listOf().fieldOf("chronicle").forGetter(Snapshot::chronicle),
                 Domain.CODEC.listOf().fieldOf("domains").forGetter(Snapshot::domains),
                 com.epi0.vtm.court.CourtView.CODEC.optionalFieldOf("court").forGetter(Snapshot::court),
+                Hunting.CODEC.listOf().optionalFieldOf("hunting", List.of()).forGetter(Snapshot::hunting),
+                Retainer.CODEC.listOf().optionalFieldOf("herd", List.of()).forGetter(Snapshot::herd),
                 Codec.LONG.fieldOf("now").forGetter(Snapshot::now)
         ).apply(i, Snapshot::new));
 
-        public static final Snapshot EMPTY = new Snapshot(List.of(), List.of(), List.of(), List.of(), Optional.empty(), 0L);
+        public static final Snapshot EMPTY = new Snapshot(List.of(), List.of(), List.of(), List.of(), Optional.empty(), List.of(), List.of(), 0L);
     }
 
     public static Snapshot build(MinecraftServer server, ServerPlayer player) {
@@ -181,7 +217,23 @@ public final class NemesisViews {
                         com.epi0.vtm.city.Territory.where(city), city.heatOf(player.getUUID())));
             }
         }
-        return new Snapshot(entries, courts, news, domains, Optional.of(com.epi0.vtm.court.Court.view(server, player)), server.overworld().getGameTime());
+        List<Hunting> hunting = new ArrayList<>();
+        long now = server.overworld().getGameTime();
+        for (com.epi0.vtm.city.City city : com.epi0.vtm.city.CityData.get(server).all()) {
+            int exposure = city.exposureOf(player.getUUID());
+            if (cityKnowledge.knows(city.id) || exposure > 0) {
+                boolean field = city.inquisitor != null && server.getLevel(city.dimension) != null
+                        && server.getLevel(city.dimension).getEntity(city.inquisitor) != null;
+                hunting.add(new Hunting(city.id, city.name, city.owner, exposure, city.heatOf(player.getUUID()),
+                        com.epi0.vtm.city.Lodges.supports(server, city), field));
+            }
+        }
+        hunting.sort(java.util.Comparator.comparingInt(Hunting::exposure).reversed());
+        List<Retainer> herd = new ArrayList<>();
+        for (com.epi0.vtm.city.HerdData.Retainer r : com.epi0.vtm.city.HerdData.get(server).of(player.getUUID())) {
+            herd.add(new Retainer(r.npc, r.name, r.ghoul, r.dead, r.rapport, r.drankDay, Optional.ofNullable(r.place), r.city));
+        }
+        return new Snapshot(entries, courts, news, domains, Optional.of(com.epi0.vtm.court.Court.view(server, player)), hunting, herd, now);
     }
 
     private static Entry entry(NemesisData data, ServerPlayer player, NemesisRecord r, NemesisKnowledge.Known known, NemesisKnowledge knowledge) {

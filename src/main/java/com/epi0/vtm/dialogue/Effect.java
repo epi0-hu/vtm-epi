@@ -70,6 +70,9 @@ public record Effect(Optional<Integer> rapport, Optional<String> flag, Optional<
         if (alarm) {
             npc.witness(player, NpcMemory.Event.WITNESSED_FRENZY);
         }
+        if (npc instanceof com.epi0.vtm.npc.CivilianNpc civilian && (ghoul || flag.filter("vessel"::equals).isPresent() || flagToday.filter("drank"::equals).isPresent())) {
+            com.epi0.vtm.city.Herd.touch(player, civilian);
+        }
 
         nemesis.ifPresent(n -> n.apply(player, npc));
         exposure.ifPresent(delta -> {

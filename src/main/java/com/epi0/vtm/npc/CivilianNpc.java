@@ -300,6 +300,9 @@ public class CivilianNpc extends VtmNpc {
     @Override
     public void die(net.minecraft.world.damagesource.DamageSource source) {
         super.die(source);
+        if (!level().isClientSide) {
+            com.epi0.vtm.city.Herd.died(this);
+        }
         if (!level().isClientSide && source.getEntity() instanceof net.minecraft.server.level.ServerPlayer slayer && job() == Job.HUNTER) {
             com.epi0.vtm.city.Hunters.onHunterKilled(this, slayer);
             com.epi0.vtm.city.Lodges.onHunterKilled(this, slayer);
@@ -332,6 +335,9 @@ public class CivilianNpc extends VtmNpc {
     protected void serverSecond() {
         super.serverSecond();
         Gossip.tick(this);
+        if (tickCount % 200 == 0) {
+            com.epi0.vtm.city.Herd.sync(this);
+        }
         if (job() == Job.HUNTER) {
             hunt();
         }

@@ -9,6 +9,8 @@ import com.epi0.vtm.client.ui.page.CoteriePage;
 import com.epi0.vtm.client.ui.page.DisciplinesPage;
 import com.epi0.vtm.client.ui.page.DomainsPage;
 import com.epi0.vtm.client.ui.page.DossiersPage;
+import com.epi0.vtm.client.ui.page.HerdPage;
+import com.epi0.vtm.client.ui.page.HuntersPage;
 import com.epi0.vtm.client.ui.page.OverviewPage;
 import com.epi0.vtm.client.ui.page.PowersPage;
 import com.epi0.vtm.client.ui.page.SectPage;
@@ -51,6 +53,8 @@ public class Codex extends Screen implements Page.Hub {
         pages.put(PageId.DOSSIERS, new DossiersPage());
         pages.put(PageId.COURTS, new CourtsPage());
         pages.put(PageId.DOMAINS, new DomainsPage());
+        pages.put(PageId.HUNTERS, new HuntersPage());
+        pages.put(PageId.HERD, new HerdPage());
         pages.put(PageId.COURT, new CourtPage());
         pages.put(PageId.CHRONICLE, new ChroniclePage());
         pages.put(PageId.COTERIE, new CoteriePage());
@@ -236,24 +240,26 @@ public class Codex extends Screen implements Page.Hub {
         int y = rail.y();
         PageId.Group group = null;
         boolean vampire = VampireData.of(minecraft.player).isVampire();
+        // With a dozen pages the rail has to squeeze on a small window.
+        int pitch = Math.max(11, Math.min(14, (rail.h() - (compact() ? 6 : 20)) / PageId.values().length));
         for (PageId id : PageId.values()) {
             if (id.group() != group) {
                 group = id.group();
                 if (!compact()) {
                     g.drawString(font, Component.translatable("gui.vtm.group." + group.name().toLowerCase(java.util.Locale.ROOT)), rail.x() + 2, y + 1, Theme.DIM, false);
                 }
-                y += compact() ? 3 : 10;
+                y += compact() ? 3 : pitch < 13 ? 9 : 10;
             }
-            Rect row = new Rect(rail.x(), y, rail.w(), 13);
+            Rect row = new Rect(rail.x(), y, rail.w(), pitch - 1);
             boolean selected = id == current;
             Component name = Component.translatable(id.key());
             boolean enabled = vampire || id == PageId.OVERVIEW || id.group() == PageId.Group.WORLD;
             ui.row(row, selected, () -> show(id), compact() ? name : null);
-            id.icon().draw(g, row.x() + 4, row.y() + 3, selected ? Theme.GOLD : enabled ? Theme.MUTED : Theme.DIM, 1);
+            id.icon().draw(g, row.x() + 4, row.y() + (pitch - 8) / 2, selected ? Theme.GOLD : enabled ? Theme.MUTED : Theme.DIM, 1);
             if (!compact()) {
-                g.drawString(font, name, row.x() + 16, row.y() + 3, selected ? Theme.TEXT : enabled ? Theme.MUTED : Theme.DIM, false);
+                g.drawString(font, name, row.x() + 16, row.y() + (pitch - 8) / 2, selected ? Theme.TEXT : enabled ? Theme.MUTED : Theme.DIM, false);
             }
-            y += 14;
+            y += pitch;
         }
     }
 

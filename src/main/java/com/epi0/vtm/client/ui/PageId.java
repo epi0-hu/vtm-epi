@@ -7,7 +7,8 @@ public enum PageId {
     OVERVIEW(Group.SELF, Icon.DROP), DISCIPLINES(Group.SELF, Icon.BOLT), POWERS(Group.SELF, Icon.FANGS),
     CLAN(Group.SELF, Icon.STAR), SECT(Group.SELF, Icon.BANNER),
     DOSSIERS(Group.WORLD, Icon.SKULL), COURTS(Group.WORLD, Icon.CROWN), DOMAINS(Group.WORLD, Icon.MAP),
-    COURT(Group.WORLD, Icon.THRONE), CHRONICLE(Group.WORLD, Icon.SCROLL), COTERIE(Group.WORLD, Icon.PEOPLE);
+    HUNTERS(Group.WORLD, Icon.EYE), COURT(Group.WORLD, Icon.THRONE), CHRONICLE(Group.WORLD, Icon.SCROLL),
+    COTERIE(Group.WORLD, Icon.PEOPLE), HERD(Group.WORLD, Icon.HEART);
 
     public enum Group { SELF, WORLD }
 

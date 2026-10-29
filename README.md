@@ -25,7 +25,7 @@ Phases 1 (core vampire data), 2 (character sheet GUI) and discipline powers are 
 - **Rules** live in `vampire/VampireRules` (our spin on V5). Tunables are in the server config (`vtm-server.toml`).
 - **Loop**: passive blood loss, sunlight, blood healing (no food), starvation penalties, passive XP, biting
   (sneak + empty hand on a creature), humanity stains for killing innocents.
-- **GUI**: the **Vampire Codex**, one tabbed screen built on a small shared UI toolkit (`client/ui`: `Theme`, `Draw`, `Ui`, `Scroll`, pages). `V` opens it on the character pages (Overview, Disciplines with XP spending, Powers, Clan, Sect) and `N` on the world pages (Dossiers, Courts, Domains, Your court, Chronicle, Coterie); each remembers where you left off. `Q` / `E` (or Page Up / Down) change page, `Tab` / `Shift+Tab` move keyboard focus, `Enter` or `Space` activates it, the mouse wheel scrolls, and Up / Down browse dossiers. Narrow windows collapse the side rail to icons. The HUD's blood bar is segmented with hunger pips and the armed power beside it, and replaces the food bar; entering a city shows a banner and, while you are wanted there, a heat plate. Conversations use the same look: click or `Space` skips the typing, `1`-`9` pick an answer.
+- **GUI**: the **Vampire Codex**, one tabbed screen built on a small shared UI toolkit (`client/ui`: `Theme`, `Draw`, `Ui`, `Scroll`, pages). `V` opens it on the character pages (Overview, Disciplines with XP spending, Powers, Clan, Sect) and `N` on the world pages (Dossiers, Courts, Domains, Hunters, Your court, Chronicle, Coterie, Herd); each remembers where you left off. `Q` / `E` (or Page Up / Down) change page, `Tab` / `Shift+Tab` move keyboard focus, `Enter` or `Space` activates it, the mouse wheel scrolls, and Up / Down browse dossiers. Narrow windows collapse the side rail to icons. The HUD's blood bar is segmented with hunger pips and the armed power beside it, and replaces the food bar; entering a city shows a banner and, while you are wanted there, a heat plate. Conversations use the same look: click or `Space` skips the typing, `1`-`9` pick an answer.
 - **Commands** (op): `/vtm embrace|mortal|set|discipline|info`.
 
 ## Discipline powers
@@ -112,6 +112,11 @@ Killing the inquisitor breaks the cell (-40 exposure, +3 XP); killing an ordinar
 suspicious hunter who is not yet sure can be talked round (Presence) or slipped past (Obfuscate); to a mortal player a hunter
 is a source of rumours. While nobody watches, hunters also raid the havens of the city's own vampires and may put one into
 torpor or destroy them (chronicle `hunters_raid_*`). NPCs now draw the item in their right hand. `-Pharness=hunters` shows a team.
+
+The **Hunters** page lists every city you know (or are exposed in) with your exposure on a bar marked at the watched, hunted and
+strike-team thresholds, whether an inquisitor is in the field or a lodge reinforces the hunters, your heat, and how to lower it.
+The **Herd** page lists your vessels and ghouls (`city/HerdData`, kept as you last saw them): trust, whether they gave blood
+today, where they are, and whether they have been lost. `-Pharness=codex2` shows both.
 
 **Power exposure** (`power/PowerExposure`): using a power where mortals can see you teaches them what you are. Each power has a
 noise (Blood Bolt 12, shapechange 15, Blink 8, a quiet Auspex power 0); the witnesses are mortals within 24 blocks with line of
@@ -231,6 +236,6 @@ dilation for Celerity) remain options if NPC navigation or Celerity ever need th
 ## Tests and dev tools
 - `./gradlew runGameTestServer`: GameTests in `gametest/VtmGameTests` (data, embrace/learn, passives, feeding, every
   power, mob control, every bane, frenzy, forms, sense link, NPC behaviour, conversations, sects, the nemesis simulation and its combat rules, lairs, cities, territory, courts).
-- `./gradlew runClient -Pharness=player|npc|dialogue|sect|nemesis|people|hunters|lodge|lairs|sewer|asylum|city|domains|court`: scripted walkthrough of the real client that writes screenshots to
+- `./gradlew runClient -Pharness=player|npc|dialogue|sect|nemesis|people|hunters|lodge|codex2|lairs|sewer|asylum|city|domains|court`: scripted walkthrough of the real client that writes screenshots to
   `run/screenshots/` (player: every Codex page, HUD, city banner, forms, sense link, frenzy; npc: a lineup in every animation; dialogue: a conversation with a civilian and a vampire; sect: the Sect tab and a member's conversation; nemesis: the Nemesis tabs and a verdict conversation; lairs, city, domains, court: the world and the Court tab). Needs a
   world at `run/saves/harness` and, on a headless machine, `xvfb-run`. Inert without the property.

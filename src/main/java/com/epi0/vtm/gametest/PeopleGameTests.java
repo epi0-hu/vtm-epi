@@ -254,4 +254,54 @@ public final class PeopleGameTests {
         helper.assertTrue(player.getUUID().equals(copy.ghoulOwner()), "and it is remembered");
         helper.succeed();
     }
+
+    // ---------------------------------------------------------------- the codex
+
+    @GameTest(template = "empty", batch = "people_codex")
+    public static void theCodexKnowsYourHerdAndYourExposure(GameTestHelper helper) {
+        var server = helper.getLevel().getServer();
+        City city = makeCity(helper, "Codexford");
+        com.epi0.vtm.city.HerdData.get(server).clear();
+        ServerPlayer player = player(helper);
+        player.setData(ModAttachments.VAMPIRE, VampireData.of(player).withBlood(5F));
+        CivilianNpc friend = settle(helper, city, 0, Job.RESIDENT, ORDINARY);
+        helper.setDayTime(3000);
+        friend.memory().adjustRapport(player.getUUID(), 6, 0);
+
+        helper.assertTrue(com.epi0.vtm.nemesis.NemesisViews.build(server, player).herd().isEmpty(), "no herd yet");
+        DialogueManager.open(player, friend);
+        DialogueManager.choose(player, VtmGameTests.option(player, "dialogue.vtm.opt.vessel_ask"));
+        DialogueManager.end(player);
+        DialogueManager.open(player, friend);
+        DialogueManager.choose(player, VtmGameTests.option(player, "dialogue.vtm.opt.vessel_drink"));
+        DialogueManager.end(player);
+
+        var view = com.epi0.vtm.nemesis.NemesisViews.build(server, player);
+        helper.assertTrue(view.herd().size() == 1, "the vessel is on the roll");
+        var entry = view.herd().get(0);
+        helper.assertTrue(entry.name().equals(friend.getName().getString()) && !entry.ghoul() && !entry.dead() && entry.rapport() >= 6
+                && entry.drankDay() == helper.getLevel().getDayTime() / 24000L && entry.place().isPresent() && entry.city().equals("Codexford"),
+                "with their name, trust, the day you last drank, and where they are: " + entry);
+
+        friend.memory().adjustRapport(player.getUUID(), 4, 0);
+        DialogueManager.open(player, friend);
+        DialogueManager.choose(player, VtmGameTests.option(player, "dialogue.vtm.opt.ghoul_offer"));
+        DialogueManager.end(player);
+        helper.assertTrue(com.epi0.vtm.nemesis.NemesisViews.build(server, player).herd().get(0).ghoul(), "a ghoul is listed as one");
+
+        city.addExposure(player.getUUID(), 55);
+        city.inquisitor = UUID.randomUUID();
+        var hunting = com.epi0.vtm.nemesis.NemesisViews.build(server, player).hunting();
+        helper.assertTrue(hunting.stream().anyMatch(h -> h.name().equals("Codexford") && h.exposure() == 55), "the city appears with its exposure: " + hunting);
+
+        var codec = com.epi0.vtm.nemesis.NemesisViews.Snapshot.CODEC;
+        var snapshot = com.epi0.vtm.nemesis.NemesisViews.build(server, player);
+        var round = codec.parse(net.minecraft.nbt.NbtOps.INSTANCE, codec.encodeStart(net.minecraft.nbt.NbtOps.INSTANCE, snapshot).getOrThrow()).getOrThrow();
+        helper.assertTrue(round.herd().equals(snapshot.herd()) && round.hunting().equals(snapshot.hunting()), "and both survive the trip to the client");
+
+        friend.die(helper.getLevel().damageSources().generic());
+        helper.assertTrue(com.epi0.vtm.nemesis.NemesisViews.build(server, player).herd().get(0).dead(), "and when they die, the roll says so");
+        com.epi0.vtm.city.HerdData.get(server).clear();
+        helper.succeed();
+    }
 }

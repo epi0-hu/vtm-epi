@@ -1,6 +1,7 @@
 package com.epi0.vtm.client;
 
 import com.epi0.vtm.VtmMod;
+import com.epi0.vtm.client.ui.ClientWorld;
 import com.epi0.vtm.power.PowerManager;
 import com.epi0.vtm.power.Powers;
 import com.epi0.vtm.vampire.Frenzy;
@@ -68,6 +69,8 @@ public final class Harness {
                 domainsScript(mc);
             } else if (SCENARIO.equals("city")) {
                 cityScript(mc);
+            } else if (SCENARIO.equals("codex2")) {
+                codexScript(mc);
             } else if (SCENARIO.equals("hunters")) {
                 huntersScript(mc);
             } else if (SCENARIO.equals("people")) {
@@ -790,6 +793,41 @@ public final class Harness {
     }
 
     /** Opens real conversations with a civilian and a vampire and walks through a few branches. */
+    /** The Hunters and Herd pages, fed a made-up snapshot. */
+    private static void codexScript(Minecraft mc) {
+        mc.options.pauseOnLostFocus = false;
+        cmd(mc, 3, "vtm embrace @s gangrel");
+        Runnable fake = () -> {
+            var id = java.util.UUID.randomUUID();
+            var camarilla = VtmMod.id("camarilla");
+            var here = mc.player.blockPosition();
+            var dim = mc.level.dimension();
+            ClientWorld.receive(new com.epi0.vtm.nemesis.NemesisViews.Snapshot(java.util.List.of(), java.util.List.of(), java.util.List.of(), java.util.List.of(), java.util.Optional.empty(),
+                    java.util.List.of(
+                            new com.epi0.vtm.nemesis.NemesisViews.Hunting(id, "Mournwick", camarilla, 82, 34, true, true),
+                            new com.epi0.vtm.nemesis.NemesisViews.Hunting(java.util.UUID.randomUUID(), "Ashgrove", VtmMod.id("anarch"), 41, 0, false, false),
+                            new com.epi0.vtm.nemesis.NemesisViews.Hunting(java.util.UUID.randomUUID(), "Ironford", VtmMod.id("sabbat"), 12, 0, false, false)),
+                    java.util.List.of(
+                            new com.epi0.vtm.nemesis.NemesisViews.Retainer(id, "Lucia Abbot", true, false, 9, 3, java.util.Optional.of(net.minecraft.core.GlobalPos.of(dim, here.offset(12, 0, 4))), "Mournwick"),
+                            new com.epi0.vtm.nemesis.NemesisViews.Retainer(java.util.UUID.randomUUID(), "Oren Jessop", false, false, 6, 0, java.util.Optional.of(net.minecraft.core.GlobalPos.of(dim, here.offset(-40, 0, 80))), "Mournwick"),
+                            new com.epi0.vtm.nemesis.NemesisViews.Retainer(java.util.UUID.randomUUID(), "Fiona Everhart", false, false, 5, -1, java.util.Optional.empty(), ""),
+                            new com.epi0.vtm.nemesis.NemesisViews.Retainer(java.util.UUID.randomUUID(), "Gideon Ellery", false, true, 7, 1, java.util.Optional.empty(), "Ashgrove")),
+                    0L));
+        };
+        then(20, () -> mc.setScreen(new com.epi0.vtm.client.ui.Codex(com.epi0.vtm.client.ui.PageId.HUNTERS)));
+        then(25, fake);
+        shotAfter(mc, 10, "codex_hunters");
+        then(5, () -> mc.setScreen(new com.epi0.vtm.client.ui.Codex(com.epi0.vtm.client.ui.PageId.HERD)));
+        then(25, fake);
+        shotAfter(mc, 10, "codex_herd");
+        then(5, () -> mc.setScreen(new com.epi0.vtm.client.ui.Codex(com.epi0.vtm.client.ui.PageId.OVERVIEW)));
+        shotAfter(mc, 30, "codex_rail");
+        then(10, () -> {
+            VtmMod.LOGGER.info("HARNESS DONE");
+            mc.stop();
+        });
+    }
+
     /** A strike team and its inquisitor, and the plate that says how much the hunters know. */
     private static void huntersScript(Minecraft mc) {
         mc.options.pauseOnLostFocus = false;
