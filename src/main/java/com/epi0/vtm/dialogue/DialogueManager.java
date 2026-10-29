@@ -175,7 +175,7 @@ public final class DialogueManager {
 
     private static Roll roll(ServerPlayer player, Check check) {
         VampireData data = VampireData.of(player);
-        int pool = check.pool() + check.discipline().map(data::disciplineLevel).orElse(0);
+        int pool = check.pool() + check.discipline().map(data::disciplineLevel).orElse(0) + (data.isVampire() ? com.epi0.vtm.vampire.VampireRules.poolBonus(data.generation()) : 0);
         int hunger = data.isVampire() ? data.hunger() : 0;
         return Roll.make(player.getRandom(), pool, hunger, check.difficulty());
     }
@@ -224,7 +224,7 @@ public final class DialogueManager {
                 : npc.getDisplayName();
     }
 
-    /** {@code %1$s} NPC name, {@code %2$s} player, {@code %3$s} clan, {@code %4$s} faction, {@code %5$s} clan description, {@code %6$s} city, {@code %7$s} the city's ruling faction, {@code %8$s} a housemate's first name, {@code %9$s} what they are to the NPC. */
+    /** {@code %1$s} NPC name, {@code %2$s} player, {@code %3$s} clan, {@code %4$s} faction, {@code %5$s} clan description, {@code %6$s} city, {@code %7$s} the city's ruling faction, {@code %8$s} a housemate's first name, {@code %9$s} what they are to the NPC, {@code %10$s} a vampire's generation ("8th"). */
     private static Object[] args(ServerPlayer player, VtmNpc npc) {
         Component clan = Component.translatable("dialogue.vtm.no_clan");
         Component description = Component.empty();
@@ -246,7 +246,8 @@ public final class DialogueManager {
                 VtmRegistries.name("faction", npc.factionId()), description,
                 city == null ? Component.translatable("dialogue.vtm.no_city") : Component.literal(city.name),
                 city == null ? Component.translatable("dialogue.vtm.no_city") : VtmRegistries.name("faction", city.owner),
-                relative, relation};
+                relative, relation,
+                Component.literal(npc instanceof VampireNpc vampire ? com.epi0.vtm.vampire.VampireRules.ordinal(vampire.generation()) : "")};
     }
 
     // ---------------------------------------------------------------- housekeeping

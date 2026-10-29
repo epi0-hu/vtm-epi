@@ -42,5 +42,12 @@ public final class ModAttachments {
                     .copyOnDeath()
                     .build());
 
+    /** The generation the player was born to; used if they are ever Embraced. */
+    public static final Supplier<AttachmentType<com.epi0.vtm.vampire.Lineage>> LINEAGE = ATTACHMENTS.register("lineage",
+            () -> AttachmentType.builder(() -> com.epi0.vtm.vampire.Lineage.UNROLLED)
+                    .serialize(com.epi0.vtm.vampire.Lineage.CODEC)
+                    .copyOnDeath()
+                    .build());
+
     private ModAttachments() {}
 }

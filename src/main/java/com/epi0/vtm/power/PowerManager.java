@@ -43,7 +43,7 @@ public final class PowerManager {
                         power.name(), (ready - now + 19) / 20), true);
                 return false;
             }
-            if (data.blood() < power.bloodCost()) {
+            if (data.blood() < scaledCost(data, power)) {
                 fail(player, "message.vtm.power_no_blood");
                 return false;
             }
@@ -57,20 +57,28 @@ public final class PowerManager {
 
         // The power may have changed the caster's data (e.g. stolen blood), so re-read before charging.
         VampireData fresh = VampireData.of(player);
-        float cost = ctx.waived() ? 0F : power.bloodCost();
+        float cost = ctx.waived() ? 0F : scaledCost(fresh, power);
         float blood = Mth.clamp(fresh.blood() - cost + ctx.bloodGain(), 0F, fresh.maxBlood());
         int stains = Mth.clamp(fresh.stains() + ctx.stainChange(), 0, VampireRules.MAX_STAINS);
         int features = Math.max(0, fresh.bestialFeatures() + ctx.featureChange());
         VampireManager.set(player, fresh.withBlood(blood).withStains(stains).withBestialFeatures(features));
         // Toggles start their cooldown when released, so they can always be switched off.
         if (power.isToggle() ? releasing : !ctx.waived()) {
-            mine.put(powerId, now + power.cooldownTicks());
+            mine.put(powerId, now + Math.round(power.cooldownTicks() * VampireRules.cooldownFactor(fresh.generation())));
         }
         player.displayClientMessage(Component.translatable("message.vtm.power_used", power.name()), true);
         if (!releasing) {
             PowerExposure.cast(player, powerId);
         }
         return true;
+    }
+
+    /** What a power costs this vampire: older blood spends less (never less than half a point, never free). */
+    public static float scaledCost(VampireData data, Power power) {
+        if (power.bloodCost() <= 0) {
+            return 0F;
+        }
+        return Math.max(0.5F, Math.round(power.bloodCost() * VampireRules.costFactor(data.generation()) * 2F) / 2F);
     }
 
     public static void forget(UUID player) {

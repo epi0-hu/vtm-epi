@@ -33,6 +33,8 @@ public final class NemesisRecord {
     public Role role = Role.AGENT;
     public Status status = Status.ACTIVE;
     public int level = 1;
+    /** Which generation of the blood they are: 1st is the oldest. */
+    public int generation = 13;
     public int xp;
     /** 0 to 100: how badly they want the seat above theirs. */
     public int ambition;
@@ -98,7 +100,8 @@ public final class NemesisRecord {
                 case QUIRK -> 0;
             };
         }
-        return Math.max(1, power + deaths);
+        // Older blood is stronger: a point for every two generations below the 13th.
+        return Math.max(1, power + deaths + Math.max(-1, (13 - generation) / 2));
     }
 
     /** Defeats they can survive before the next one is final. */
@@ -138,6 +141,7 @@ public final class NemesisRecord {
         tag.putString("Role", role.id());
         tag.putString("Status", status.id());
         tag.putInt("Level", level);
+        tag.putInt("Generation", generation);
         tag.putInt("Xp", xp);
         tag.putInt("Ambition", ambition);
         tag.putInt("Deaths", deaths);
@@ -191,6 +195,7 @@ public final class NemesisRecord {
         r.role = Role.byId(tag.getString("Role")).orElse(Role.AGENT);
         r.status = Status.byId(tag.getString("Status"));
         r.level = Math.max(1, tag.getInt("Level"));
+        r.generation = tag.contains("Generation") ? Math.max(1, Math.min(16, tag.getInt("Generation"))) : 13;
         r.xp = tag.getInt("Xp");
         r.ambition = tag.getInt("Ambition");
         r.deaths = tag.getInt("Deaths");

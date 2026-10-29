@@ -58,6 +58,7 @@ public class VampireNpc extends VtmNpc {
     public static final int HOSTILE_RAPPORT = -5;
 
     private static final EntityDataAccessor<String> DATA_NEMESIS = SynchedEntityData.defineId(VampireNpc.class, EntityDataSerializers.STRING);
+    private static final EntityDataAccessor<Integer> DATA_GENERATION = SynchedEntityData.defineId(VampireNpc.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<String> DATA_CLAN = SynchedEntityData.defineId(VampireNpc.class, EntityDataSerializers.STRING);
 
     private float blood = 8F;
@@ -91,6 +92,7 @@ public class VampireNpc extends VtmNpc {
     protected void defineSynchedData(SynchedEntityData.Builder builder) {
         super.defineSynchedData(builder);
         builder.define(DATA_CLAN, "");
+        builder.define(DATA_GENERATION, 13);
         builder.define(DATA_NEMESIS, "");
     }
 
@@ -198,6 +200,15 @@ public class VampireNpc extends VtmNpc {
         entityData.set(DATA_CLAN, clan.toString());
         clanDefinition().ifPresent(def -> setFaction(def.faction()));
         applyClanBonuses();
+    }
+
+    /** Which generation of the blood this vampire is. */
+    public int generation() {
+        return entityData.get(DATA_GENERATION);
+    }
+
+    public void setGeneration(int generation) {
+        entityData.set(DATA_GENERATION, Math.max(1, Math.min(16, generation)));
     }
 
     public java.util.Optional<Clan> clanDefinition() {
@@ -431,6 +442,7 @@ public class VampireNpc extends VtmNpc {
             }
         }
         setBlood(5F + random.nextInt(5));
+        setGeneration(clanId() != null && clanId().getPath().equals("thin_blood") ? 14 + random.nextInt(3) : 11 + random.nextInt(3));
         int roll = random.nextInt(10);
         setRank(roll < 6 ? 0 : roll < 9 ? 1 : 2);
         if (spawnType == MobSpawnType.NATURAL) {
@@ -443,6 +455,7 @@ public class VampireNpc extends VtmNpc {
     public void addAdditionalSaveData(CompoundTag tag) {
         super.addAdditionalSaveData(tag);
         tag.putString("Clan", entityData.get(DATA_CLAN));
+        tag.putInt("Generation", generation());
         tag.putFloat("Blood", blood);
         tag.putInt("Rank", rank);
         tag.putLong("ExpireAt", expireAt);
@@ -459,6 +472,9 @@ public class VampireNpc extends VtmNpc {
     public void readAdditionalSaveData(CompoundTag tag) {
         super.readAdditionalSaveData(tag);
         entityData.set(DATA_CLAN, tag.getString("Clan"));
+        if (tag.contains("Generation")) {
+            setGeneration(tag.getInt("Generation"));
+        }
         rank = tag.getInt("Rank");
         expireAt = tag.getLong("ExpireAt");
         patrolCity = tag.hasUUID("Patrol") ? tag.getUUID("Patrol") : null;

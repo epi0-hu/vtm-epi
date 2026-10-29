@@ -1,0 +1,119 @@
+{
+  "when": {
+    "npc": "vampire",
+    "player_vampire": true,
+    "person": {
+      "older_than_npc": 5
+    }
+  },
+  "priority": 7,
+  "start": "hub",
+  "nodes": {
+    "hub": {
+      "text": [
+        {
+          "when": {
+            "person": {
+              "max_generation": 3
+            }
+          },
+          "key": "dialogue.vtm.junior.greet.ancient"
+        },
+        {
+          "key": "dialogue.vtm.junior.greet"
+        }
+      ],
+      "options": [
+        {
+          "text": "dialogue.vtm.junior.opt.tribute",
+          "require": {
+            "person": {
+              "no_flag_today": "tribute"
+            }
+          },
+          "locked": "dialogue.vtm.junior.locked.tribute",
+          "effects": [
+            {
+              "blood": 3.0,
+              "flag_today": "tribute",
+              "rapport": -1
+            }
+          ],
+          "next": "tribute"
+        },
+        {
+          "text": "dialogue.vtm.junior.opt.heard",
+          "require": {
+            "person": {
+              "no_flag_today": "heard"
+            }
+          },
+          "locked": "dialogue.vtm.junior.locked.heard",
+          "effects": [
+            {
+              "flag_today": "heard",
+              "nemesis": {
+                "intel": "any",
+                "count": 2
+              }
+            }
+          ],
+          "next": "heard"
+        },
+        {
+          "text": "dialogue.vtm.junior.opt.pledge",
+          "show": {
+            "no_flag": "pledged"
+          },
+          "effects": [
+            {
+              "flag": "pledged",
+              "standing": 3,
+              "rapport": 2
+            }
+          ],
+          "next": "pledged"
+        },
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
+    },
+    "tribute": {
+      "text": "dialogue.vtm.junior.tribute",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.else",
+          "next": "hub"
+        },
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
+    },
+    "heard": {
+      "text": "dialogue.vtm.junior.heard",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.else",
+          "next": "hub"
+        },
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
+    },
+    "pledged": {
+      "text": "dialogue.vtm.junior.pledged",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.else",
+          "next": "hub"
+        },
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
+    }
+  }
+}

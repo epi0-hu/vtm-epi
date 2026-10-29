@@ -134,19 +134,39 @@ public record Condition(CoreCondition core, Optional<NemesisReq> nemesis, Option
      * @param age          young, adult or elder
      * @param family       whether they live with other people
      * @param noFlagToday  a flag the pair has not set yet today (see {@code flag_today} in effects)
+     * @param olderThanNpc the player's blood is at least this many generations older than the NPC's
+     * @param youngerThanNpc the NPC's blood is at least this many generations older than the player's
+     * @param maxGeneration the player's generation is at most this (so: this old or older)
      */
     public record PersonReq(Optional<String> temperament, Optional<String> age, Optional<Boolean> family,
-                            Optional<String> noFlagToday) {
+                            Optional<String> noFlagToday, Optional<Integer> olderThanNpc, Optional<Integer> youngerThanNpc,
+                            Optional<Integer> maxGeneration) {
         public static final Codec<PersonReq> CODEC = RecordCodecBuilder.create(i -> i.group(
                 Codec.STRING.optionalFieldOf("temperament").forGetter(PersonReq::temperament),
                 Codec.STRING.optionalFieldOf("age").forGetter(PersonReq::age),
                 Codec.BOOL.optionalFieldOf("family").forGetter(PersonReq::family),
-                Codec.STRING.optionalFieldOf("no_flag_today").forGetter(PersonReq::noFlagToday)
+                Codec.STRING.optionalFieldOf("no_flag_today").forGetter(PersonReq::noFlagToday),
+                Codec.INT.optionalFieldOf("older_than_npc").forGetter(PersonReq::olderThanNpc),
+                Codec.INT.optionalFieldOf("younger_than_npc").forGetter(PersonReq::youngerThanNpc),
+                Codec.INT.optionalFieldOf("max_generation").forGetter(PersonReq::maxGeneration)
         ).apply(i, PersonReq::new));
 
         boolean test(ServerPlayer player, VtmNpc npc) {
             if (noFlagToday.isPresent() && npc.memory().hasFlag(player.getUUID(), todayFlag(npc, noFlagToday.get()))) {
                 return false;
+            }
+            com.epi0.vtm.vampire.VampireData data = com.epi0.vtm.vampire.VampireData.of(player);
+            if (maxGeneration.isPresent() && !(data.isVampire() && data.generation() <= maxGeneration.get())) {
+                return false;
+            }
+            if (olderThanNpc.isPresent() || youngerThanNpc.isPresent()) {
+                if (!(npc instanceof com.epi0.vtm.npc.VampireNpc vampire) || !data.isVampire()) {
+                    return false;
+                }
+                int gap = vampire.generation() - data.generation(); // positive: the player's blood is older
+                if (olderThanNpc.isPresent() && gap < olderThanNpc.get() || youngerThanNpc.isPresent() && -gap < youngerThanNpc.get()) {
+                    return false;
+                }
             }
             if (!(npc instanceof com.epi0.vtm.npc.CivilianNpc civilian)) {
                 return temperament.isEmpty() && age.isEmpty() && family.isEmpty();

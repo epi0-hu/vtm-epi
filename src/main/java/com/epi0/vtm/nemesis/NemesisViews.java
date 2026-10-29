@@ -27,7 +27,7 @@ public final class NemesisViews {
      */
     public record Core(UUID id, String name, ResourceLocation faction, int tier, Optional<ResourceLocation> clan,
                        Optional<String> role, int level, String status, List<String> traits, int unknownTraits,
-                       List<String> scars, Optional<GlobalPos> place, Optional<String> epithet) {
+                       List<String> scars, Optional<GlobalPos> place, Optional<String> epithet, int generation) {
         static final Codec<Core> CODEC = RecordCodecBuilder.create(i -> i.group(
                 UUIDUtil.CODEC.fieldOf("id").forGetter(Core::id),
                 Codec.STRING.fieldOf("name").forGetter(Core::name),
@@ -41,7 +41,8 @@ public final class NemesisViews {
                 Codec.INT.fieldOf("unknown_traits").forGetter(Core::unknownTraits),
                 Codec.STRING.listOf().fieldOf("scars").forGetter(Core::scars),
                 GlobalPos.CODEC.optionalFieldOf("place").forGetter(Core::place),
-                Codec.STRING.optionalFieldOf("epithet").forGetter(Core::epithet)
+                Codec.STRING.optionalFieldOf("epithet").forGetter(Core::epithet),
+                Codec.INT.optionalFieldOf("generation", 0).forGetter(Core::generation)
         ).apply(i, Core::new));
     }
 
@@ -244,7 +245,7 @@ public final class NemesisViews {
                 met ? Optional.of(r.role.id()) : Optional.empty(),
                 met ? r.level : 0, r.status.id(), traits, r.traits.size() - traits.size(),
                 met ? r.scars.stream().map(Scar::id).toList() : List.of(),
-                known.place(), met ? NemesisManager.epithet(r) : Optional.empty());
+                known.place(), met ? NemesisManager.epithet(r) : Optional.empty(), met ? r.generation : 0);
 
         Feud feud = r.feudOrNull(player.getUUID());
         History history = feud == null ? History.NONE

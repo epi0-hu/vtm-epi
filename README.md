@@ -104,6 +104,15 @@ nightclub in a derelict sanatorium: a forecourt and marquee, a chequered dance f
 gallery railed over the floor, padded cells below and the owner's quarters behind them. Each is one entry of the
 `lairs` / `sewers` structure sets.
 
+**Generation** (`vampire/Lineage`, `VampireRules`): the first time a soul joins a server it rolls its blood once, and the result
+is stored with the player (it survives death and mortality): 0.5% 1st generation, 1% 2nd, 3% 3rd, otherwise 4th–13th with
+the bulk at the young end. Embracing keeps the rolled generation (thin-bloods are 14th or younger). Older blood has a higher
+Blood Potency cap (`15 - generation`, up to 14), a larger blood pool, cheaper and faster-recharging powers, and extra dice
+on dialogue checks. Potency is bought with experience (`+ cost xp` beside the potency row on the Overview page, up to the cap).
+Every named vampire NPC has a generation too, set by its seat (leaders 5th–8th, lieutenants 8th–10th, enforcers 10th–12th,
+agents 11th–13th), shown on dossiers and adding to a Nemesis's power. Vampires of a much older or younger generation than you
+open different dialogue: the young pay tribute and offer intel, the old teach, condescend, or can be defied.
+
 **Hunters** (`city/Hunters`): mortals who know what is out there. Every time a vampire is seen feeding, in frenzy, or killing a
 citizen, the city's mortals work out a little more of what they are (**exposure**, per player per city, fading slowly; the
 second bar on the HUD plate). At 30 an unarmed stranger starts to watch; at 50 armed hunters come for you and will not talk;

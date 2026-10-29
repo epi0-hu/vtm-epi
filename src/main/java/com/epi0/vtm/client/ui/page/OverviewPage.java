@@ -64,8 +64,21 @@ public final class OverviewPage implements Page {
         ui.text(word, in.x(), in.y() + 20, data.hunger() >= 4 ? Theme.BAD : data.hunger() >= 2 ? Theme.WARN : Theme.GOOD);
         Draw.pips(ui.g(), in.x() + 80, in.y() + 19, data.hunger(), VampireRules.MAX_HUNGER, 0xFFC63B3B);
         ui.tooltip(new Rect(in.x(), in.y() + 18, in.w(), 11), Component.translatable("gui.vtm.hunger"));
+        // Blood Potency, up to what the blood allows; experience buys the next point.
+        int cap = VampireRules.maxBloodPotency(data.generation());
         ui.text(Component.translatable("gui.vtm.blood_potency"), in.x(), in.y() + 34, Theme.MUTED);
-        Draw.pips(ui.g(), in.x() + 80, in.y() + 33, data.bloodPotency(), VampireRules.maxBloodPotency(data.generation()), 0xFFD8A5A5);
+        ui.text(Component.literal(data.bloodPotency() + " / " + cap), in.x() + 80, in.y() + 34, Theme.TEXT);
+        if (in.h() >= 52) {
+            boolean capped = data.bloodPotency() >= cap;
+            int cost = VampireRules.potencyCost(data.bloodPotency() + 1);
+            boolean afford = !capped && data.experience() >= cost;
+            Rect raise = new Rect(in.right() - 42, in.y() + 32, 42, 12);
+            ui.button(raise, capped ? Component.literal("max") : Component.translatable("gui.vtm.potency_raise", cost),
+                    afford ? Ui.Style.PRIMARY : Ui.Style.NORMAL, afford,
+                    () -> net.neoforged.neoforge.network.PacketDistributor.sendToServer(new com.epi0.vtm.network.RaisePotencyPayload()),
+                    Component.translatable(capped ? "gui.vtm.potency_raise.capped" : afford ? "gui.vtm.potency_raise.tip" : "gui.vtm.potency_raise.cannot",
+                            capped ? "" : afford ? cost : cost, data.bloodPotency() + 1));
+        }
     }
 
     private void renderSoul(Ui ui, Rect r, VampireData data) {
@@ -119,7 +132,7 @@ public final class OverviewPage implements Page {
         y += 18;
         ui.text(Component.translatable("gui.vtm.armed_label"), in.x(), y, Theme.MUTED);
         if (armed != null) {
-            ui.clipped(Component.empty().append(armed.name()).append(" (" + armed.bloodCost() + ")"), in.x(), y + 11, w, Theme.GOLD);
+            ui.clipped(Component.empty().append(armed.name()).append(" (" + com.epi0.vtm.power.PowerManager.scaledCost(data, armed) + ")"), in.x(), y + 11, w, Theme.GOLD);
         } else {
             ui.text(Component.translatable("gui.vtm.armed_none"), in.x(), y + 11, Theme.DIM);
         }

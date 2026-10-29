@@ -74,6 +74,7 @@ public final class PowersPage implements Page {
     }
 
     private void card(Ui ui, Rect r, Power power, boolean armed) {
+        com.epi0.vtm.vampire.VampireData mine = com.epi0.vtm.vampire.VampireData.of(net.minecraft.client.Minecraft.getInstance().player);
         Draw.inset(ui.g(), r);
         int color = Theme.readable(VtmRegistries.discipline(Common.access(), power.discipline()).map(Discipline::color).orElse(0xAAAAAA));
         ui.g().fill(r.x(), r.y(), r.x() + 3, r.bottom(), color);
@@ -83,9 +84,9 @@ public final class PowersPage implements Page {
         if (power.kind() == PowerKind.PASSIVE) {
             ui.chip(Component.translatable("gui.vtm.passive"), cx, r.y() + 15, Theme.MUTED);
         } else {
-            cx += ui.chip(Component.translatable("gui.vtm.blood_cost", power.bloodCost()), cx, r.y() + 15, Theme.ACCENT) + 3;
+            cx += ui.chip(Component.translatable("gui.vtm.blood_cost", com.epi0.vtm.power.PowerManager.scaledCost(mine, power)), cx, r.y() + 15, Theme.ACCENT) + 3;
             if (power.cooldownTicks() > 0) {
-                ui.chip(Component.translatable("gui.vtm.cooldown", String.format("%.0f", power.cooldownTicks() / 20.0)), cx, r.y() + 15, Theme.DIM);
+                ui.chip(Component.translatable("gui.vtm.cooldown", String.format("%.0f", power.cooldownTicks() * com.epi0.vtm.vampire.VampireRules.cooldownFactor(mine.generation()) / 20.0)), cx, r.y() + 15, Theme.DIM);
             }
         }
         ui.paragraph(power.description(), r.x() + 8, r.y() + 29, r.w() - 14, Theme.MUTED);

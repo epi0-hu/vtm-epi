@@ -91,6 +91,7 @@ public final class NemesisManager {
         }
         NemesisRecord r = new NemesisRecord(UUID.randomUUID(), name, clan, faction);
         r.role = role;
+        r.generation = com.epi0.vtm.vampire.VampireRules.npcGeneration(role, clan.getPath().equals("thin_blood"), random);
         r.level = switch (role) {
             case LEADER -> 8 + random.nextInt(5);
             case LIEUTENANT -> 5 + random.nextInt(5);
@@ -195,6 +196,7 @@ public final class NemesisManager {
     public static void bind(VampireNpc npc, NemesisRecord r) {
         npc.setNemesisId(r.id);
         npc.setClan(r.clan);
+        npc.setGeneration(r.generation);
         npc.setFaction(r.faction);
         npc.setRank(r.role.rank());
         npc.setPersistenceRequired();

@@ -34,6 +34,13 @@ public final class VtmNetwork {
                     }
                 });
 
+        registrar.playToServer(RaisePotencyPayload.TYPE, RaisePotencyPayload.STREAM_CODEC,
+                (payload, ctx) -> {
+                    if (ctx.player() instanceof ServerPlayer player) {
+                        VampireManager.tryRaisePotency(player);
+                    }
+                });
+
         // Lambda (not a method reference) so the client-only class is only resolved when a client runs it.
         registrar.playToClient(SenseLinkPayload.TYPE, SenseLinkPayload.STREAM_CODEC,
                 (payload, ctx) -> com.epi0.vtm.client.SenseLinkClient.apply(payload.entityId()));

@@ -29,7 +29,12 @@ public final class VampireManager {
     }
 
     public static VampireData embraced(ResourceLocation clan) {
+        return embraced(clan, VampireRules.DEFAULT_GENERATION);
+    }
+
+    public static VampireData embraced(ResourceLocation clan, int generation) {
         return VampireData.DEFAULT
+                .withGeneration(generation)
                 .withSpecies(Species.VAMPIRE)
                 .withClan(Optional.of(clan))
                 .withBloodPotency(VampireRules.STARTING_BLOOD_POTENCY)
@@ -38,7 +43,10 @@ public final class VampireManager {
     }
 
     public static void embrace(ServerPlayer player, ResourceLocation clan) {
-        set(player, embraced(clan));
+        int generation = Lineage.embracedAs(player, clan);
+        set(player, embraced(clan, generation));
+        player.displayClientMessage(net.minecraft.network.chat.Component.translatable("message.vtm.lineage.embraced",
+                VampireRules.ordinal(generation)), false);
     }
 
     public static void makeMortal(ServerPlayer player) {
@@ -72,6 +80,20 @@ public final class VampireManager {
             return false;
         }
         set(player, data.withExperience(data.experience() - cost).withDiscipline(disciplineId, current + 1));
+        return true;
+    }
+
+    /** Spends experience to raise Blood Potency by one, if the player's generation allows it. */
+    public static boolean tryRaisePotency(ServerPlayer player) {
+        VampireData data = VampireData.of(player);
+        if (!data.isVampire() || data.bloodPotency() >= VampireRules.maxBloodPotency(data.generation())) {
+            return false;
+        }
+        int cost = VampireRules.potencyCost(data.bloodPotency() + 1);
+        if (data.experience() < cost) {
+            return false;
+        }
+        set(player, data.withExperience(data.experience() - cost).withBloodPotency(data.bloodPotency() + 1));
         return true;
     }
 

@@ -123,6 +123,10 @@ public final class DossiersPage implements Page {
         Component status = c.tier() >= 1 ? Component.translatable("gui.vtm.nemesis.level_status", c.level(), Common.statusName(c.status()))
                 : Common.statusName(c.status());
         ui.text(status, x, y, c.status().equals("destroyed") ? Theme.BAD : Theme.TEXT);
+        if (c.generation() > 0) {
+            ui.right(Component.translatable("gui.vtm.nemesis.generation", com.epi0.vtm.vampire.VampireRules.ordinal(c.generation())), x + w, y,
+                    c.generation() <= 6 ? Theme.GOLD : Theme.MUTED);
+        }
         y += 13;
         if (c.tier() < 1) {
             y += ui.paragraph(Component.translatable("gui.vtm.nemesis.only_heard"), x, y, w, Theme.MUTED) + 4;

@@ -55,7 +55,7 @@ final class BloodHud {
 
         Power power = PowerSelection.current(data);
         if (power != null) {
-            Component armed = Component.literal("\u25B6 ").append(power.name()).append(" " + power.bloodCost());
+            Component armed = Component.literal("\u25B6 ").append(power.name()).append(" " + com.epi0.vtm.power.PowerManager.scaledCost(data, power));
             Draw.chip(g, mc.font, Component.literal(mc.font.plainSubstrByWidth(armed.getString(), WIDTH - 8)), x, y - 24, Theme.GOLD);
         }
     }

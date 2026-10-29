@@ -23,7 +23,7 @@ import net.minecraft.world.entity.player.Player;
  */
 public final class VampireRules {
     public static final int DEFAULT_GENERATION = 13;
-    public static final int MIN_GENERATION = 4;
+    public static final int MIN_GENERATION = 1;
     public static final int MAX_GENERATION = 16;
     public static final int DEFAULT_HUMANITY = 7;
     public static final int MAX_HUMANITY = 10;
@@ -34,9 +34,85 @@ public final class VampireRules {
     public static final float STARTING_BLOOD = 6F;
     public static final float RESPAWN_BLOOD = 3F;
 
-    /** 13th -> 2, 12th -> 3, ... 5th -> 10. */
+    /** 13th -> 2, 12th -> 3, ... 5th -> 10, and past it the ancients: 1st -> 14. */
     public static int maxBloodPotency(int generation) {
-        return Mth.clamp(15 - generation, 1, 10);
+        return Mth.clamp(15 - generation, 1, 14);
+    }
+
+    // ---------------------------------------------------------------- what generation means
+
+    /** Cooldowns of an older vampire's powers run shorter: 4% per generation below the 13th (and longer above). */
+    public static float cooldownFactor(int generation) {
+        return Mth.clamp(1F - 0.04F * (13 - generation), 0.45F, 1.15F);
+    }
+
+    /** Older blood spends less to do the same: 3% per generation below the 13th. */
+    public static float costFactor(int generation) {
+        return Mth.clamp(1F - 0.03F * (13 - generation), 0.5F, 1.1F);
+    }
+
+    /** Extra dice in every roll: one for every three generations below the 13th (a thin-blood loses one). */
+    public static int poolBonus(int generation) {
+        return Math.floorDiv(13 - generation, 3);
+    }
+
+    /** Experience to raise Blood Potency to {@code newLevel}. */
+    public static int potencyCost(int newLevel) {
+        return newLevel * 10;
+    }
+
+    public static String ordinal(int n) {
+        int mod100 = n % 100;
+        if (mod100 >= 11 && mod100 <= 13) {
+            return n + "th";
+        }
+        return n + switch (n % 10) {
+            case 1 -> "st";
+            case 2 -> "nd";
+            case 3 -> "rd";
+            default -> "th";
+        };
+    }
+
+    // ---------------------------------------------------------------- where generations come from
+
+    /**
+     * The generation a new soul is born to: 0.5% are 1st, 1% are 2nd, 3% are 3rd, and the rest thin out from the
+     * young blood of the 13th (the commonest) back towards the 4th.
+     */
+    public static int rollGeneration(net.minecraft.util.RandomSource random) {
+        double roll = random.nextDouble() * 100.0;
+        if (roll < 0.5) {
+            return 1;
+        }
+        if (roll < 1.5) {
+            return 2;
+        }
+        if (roll < 4.5) {
+            return 3;
+        }
+        roll -= 4.5;
+        int[] weights = {20, 30, 40, 50, 60, 80, 100, 120, 150, 305}; // 4th ... 13th, in tenths of a percent
+        for (int i = 0; i < weights.length; i++) {
+            roll -= weights[i] / 10.0;
+            if (roll < 0) {
+                return 4 + i;
+            }
+        }
+        return 13;
+    }
+
+    /** The generation a named vampire is made at, by the seat they hold. */
+    public static int npcGeneration(com.epi0.vtm.nemesis.Role role, boolean thinBlood, net.minecraft.util.RandomSource random) {
+        if (thinBlood) {
+            return 14 + random.nextInt(3);
+        }
+        return switch (role) {
+            case LEADER -> Math.max(3, 5 + random.nextInt(4) - (random.nextInt(16) == 0 ? 2 : 0));
+            case LIEUTENANT -> 8 + random.nextInt(3);
+            case ENFORCER -> 10 + random.nextInt(3);
+            case AGENT -> 11 + random.nextInt(3);
+        };
     }
 
     public static float maxBlood(VampireData data) {

@@ -518,7 +518,7 @@ public final class VtmGameTests {
 
     @GameTest(template = "empty")
     public static void sunlightRules(GameTestHelper helper) {
-        helper.assertTrue(VampireRules.maxBloodPotency(13) == 2 && VampireRules.maxBloodPotency(4) == 10, "bp table");
+        helper.assertTrue(VampireRules.maxBloodPotency(13) == 2 && VampireRules.maxBloodPotency(4) == 11, "bp table");
         helper.assertTrue(VampireRules.learnCost(3, true) == 15 && VampireRules.learnCost(3, false) == 21, "costs");
         helper.assertTrue(VampireRules.hunger(VampireData.DEFAULT.withSpecies(com.epi0.vtm.vampire.Species.VAMPIRE)
                 .withBloodPotency(1).withBlood(0F)) == 5, "empty pool is max hunger");

@@ -1,0 +1,108 @@
+{
+  "when": {
+    "npc": "vampire",
+    "player_vampire": true,
+    "person": {
+      "younger_than_npc": 5
+    }
+  },
+  "priority": 7,
+  "start": "hub",
+  "nodes": {
+    "hub": {
+      "text": "dialogue.vtm.elder.greet",
+      "options": [
+        {
+          "text": "dialogue.vtm.elder.opt.teach",
+          "require": {
+            "person": {
+              "no_flag_today": "taught"
+            }
+          },
+          "locked": "dialogue.vtm.elder.locked.teach",
+          "effects": [
+            {
+              "flag_today": "taught",
+              "experience": 3,
+              "rapport": 1
+            }
+          ],
+          "next": "taught"
+        },
+        {
+          "text": "dialogue.vtm.elder.opt.who",
+          "next": "who"
+        },
+        {
+          "text": "dialogue.vtm.elder.opt.defy",
+          "show": {
+            "no_flag": "defied"
+          },
+          "check": {
+            "pool": 3,
+            "discipline": "vtm:presence",
+            "difficulty": 4,
+            "fail": "crushed"
+          },
+          "effects": [
+            {
+              "flag": "defied",
+              "rapport": 3,
+              "standing": 1
+            }
+          ],
+          "fail_effects": [
+            {
+              "flag": "defied",
+              "rapport": -3
+            }
+          ],
+          "next": "respect"
+        },
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
+    },
+    "taught": {
+      "text": "dialogue.vtm.elder.taught",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.else",
+          "next": "hub"
+        },
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
+    },
+    "who": {
+      "text": "dialogue.vtm.elder.who",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.else",
+          "next": "hub"
+        },
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
+    },
+    "respect": {
+      "text": "dialogue.vtm.elder.respect",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.else",
+          "next": "hub"
+        },
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
+    },
+    "crushed": {
+      "text": "dialogue.vtm.elder.crushed",
+      "options": []
+    }
+  }
+}
