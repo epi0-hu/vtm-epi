@@ -119,7 +119,7 @@ public class CivilianNpc extends VtmNpc {
     public void armAsHunter() {
         if (getMainHandItem().isEmpty()) {
             setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.IRON_SWORD));
-            setItemSlot(EquipmentSlot.CHEST, new ItemStack(Items.CHAINMAIL_CHESTPLATE));
+            setItemSlot(EquipmentSlot.CHEST, new ItemStack(com.epi0.vtm.registry.ModItems.WARD_VEST.get()));
             setDropChance(EquipmentSlot.MAINHAND, 0F);
             setDropChance(EquipmentSlot.CHEST, 0F);
         }

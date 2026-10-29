@@ -84,7 +84,7 @@ public final class PowersPage implements Page {
         if (power.kind() == PowerKind.PASSIVE) {
             ui.chip(Component.translatable("gui.vtm.passive"), cx, r.y() + 15, Theme.MUTED);
         } else {
-            cx += ui.chip(Component.translatable("gui.vtm.blood_cost", com.epi0.vtm.power.PowerManager.scaledCost(mine, power)), cx, r.y() + 15, Theme.ACCENT) + 3;
+            cx += ui.chip(Component.translatable("gui.vtm.blood_cost", com.epi0.vtm.power.PowerManager.scaledCost(net.minecraft.client.Minecraft.getInstance().player, mine, power)), cx, r.y() + 15, Theme.ACCENT) + 3;
             if (power.cooldownTicks() > 0) {
                 ui.chip(Component.translatable("gui.vtm.cooldown", String.format("%.0f", power.cooldownTicks() * com.epi0.vtm.vampire.VampireRules.cooldownFactor(mine.generation()) / 20.0)), cx, r.y() + 15, Theme.DIM);
             }

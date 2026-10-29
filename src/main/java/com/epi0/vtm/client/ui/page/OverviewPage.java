@@ -130,14 +130,35 @@ public final class OverviewPage implements Page {
         }
         Power armed = PowerSelection.current(data);
         y += 18;
+        int attireX = in.x();
+        boolean dressed = false;
+        if (com.epi0.vtm.item.Garb.blendsIn(player)) {
+            attireX += ui.chip(Component.translatable("gui.vtm.attire.blending"), attireX, y, Theme.GOOD) + 3;
+            dressed = true;
+        }
+        if (com.epi0.vtm.item.Garb.formal(player)) {
+            attireX += ui.chip(Component.translatable("gui.vtm.attire.formal"), attireX, y, Theme.GOLD) + 3;
+            dressed = true;
+        }
+        if (com.epi0.vtm.item.Garb.robed(player)) {
+            attireX += ui.chip(Component.translatable("gui.vtm.attire.robed"), attireX, y, 0xFFB07AD0) + 3;
+            dressed = true;
+        }
+        if (com.epi0.vtm.item.Garb.pieces(player, com.epi0.vtm.item.Attire.WARD) > 0) {
+            ui.chip(Component.translatable("gui.vtm.attire.warded"), attireX, y, Theme.WARN);
+            dressed = true;
+        }
+        y += dressed ? 18 : 0;
         ui.text(Component.translatable("gui.vtm.armed_label"), in.x(), y, Theme.MUTED);
         if (armed != null) {
-            ui.clipped(Component.empty().append(armed.name()).append(" (" + com.epi0.vtm.power.PowerManager.scaledCost(data, armed) + ")"), in.x(), y + 11, w, Theme.GOLD);
+            ui.clipped(Component.empty().append(armed.name()).append(" (" + com.epi0.vtm.power.PowerManager.scaledCost(player, data, armed) + ")"), in.x(), y + 11, w, Theme.GOLD);
         } else {
             ui.text(Component.translatable("gui.vtm.armed_none"), in.x(), y + 11, Theme.DIM);
         }
-        ui.paragraph(Component.translatable("gui.vtm.power_keys", ClientModEvents.PREVIOUS_POWER.getTranslatedKeyMessage(),
+        if (y + 36 <= in.bottom()) {
+            ui.paragraph(Component.translatable("gui.vtm.power_keys", ClientModEvents.PREVIOUS_POWER.getTranslatedKeyMessage(),
                 ClientModEvents.NEXT_POWER.getTranslatedKeyMessage(), ClientModEvents.USE_POWER.getTranslatedKeyMessage()),
                 in.x(), y + 26, w, Theme.DIM);
+        }
     }
 }

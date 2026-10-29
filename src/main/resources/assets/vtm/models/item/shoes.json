@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "vtm:item/shoes",
+    "layer1": "vtm:item/shoes_overlay"
+  }
+}

@@ -175,7 +175,8 @@ public final class DialogueManager {
 
     private static Roll roll(ServerPlayer player, Check check) {
         VampireData data = VampireData.of(player);
-        int pool = check.pool() + check.discipline().map(data::disciplineLevel).orElse(0) + (data.isVampire() ? com.epi0.vtm.vampire.VampireRules.poolBonus(data.generation()) : 0);
+        int pool = check.pool() + check.discipline().map(data::disciplineLevel).orElse(0) + (data.isVampire() ? com.epi0.vtm.vampire.VampireRules.poolBonus(data.generation()) : 0)
+                + com.epi0.vtm.item.Garb.socialDice(player);
         int hunger = data.isVampire() ? data.hunger() : 0;
         return Roll.make(player.getRandom(), pool, hunger, check.difficulty());
     }

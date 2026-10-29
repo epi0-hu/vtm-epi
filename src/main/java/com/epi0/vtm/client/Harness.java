@@ -836,6 +836,26 @@ public final class Harness {
         shotAfter(mc, 10, "codex_lineage");
         then(5, () -> mc.setScreen(new com.epi0.vtm.client.ui.Codex(com.epi0.vtm.client.ui.PageId.OVERVIEW)));
         shotAfter(mc, 30, "codex_rail");
+        cmd(mc, 3, "gamemode survival");
+        cmd(mc, 3, "time set midnight");
+        for (String[] set : new String[][]{
+                {"vtm:top_hat", "vtm:tailcoat", "vtm:dress_trousers", "vtm:dress_shoes", "attire_formal"},
+                {"vtm:cowl", "vtm:robe", "minecraft:air", "minecraft:air", "attire_robe"},
+                {"vtm:cap", "vtm:jacket", "vtm:trousers", "vtm:shoes", "attire_street"},
+                {"minecraft:air", "vtm:ward_vest", "minecraft:air", "vtm:combat_boots", "attire_ward"}}) {
+            then(5, () -> mc.setScreen(null));
+            cmd(mc, 3, "item replace entity @s armor.head with " + set[0]);
+            cmd(mc, 3, "item replace entity @s armor.chest with " + set[1]);
+            cmd(mc, 3, "item replace entity @s armor.legs with " + set[2]);
+            cmd(mc, 3, "item replace entity @s armor.feet with " + set[3]);
+            then(10, () -> mc.setScreen(new net.minecraft.client.gui.screens.inventory.InventoryScreen(mc.player)));
+            shotAfter(mc, 15, set[4]);
+        }
+        then(5, () -> mc.setScreen(new com.epi0.vtm.client.ui.Codex(com.epi0.vtm.client.ui.PageId.OVERVIEW)));
+        cmd(mc, 3, "item replace entity @s armor.head with vtm:cap");
+        cmd(mc, 3, "item replace entity @s armor.chest with vtm:jacket");
+        cmd(mc, 3, "item replace entity @s armor.legs with vtm:trousers");
+        shotAfter(mc, 15, "codex_attire");
         then(10, () -> {
             VtmMod.LOGGER.info("HARNESS DONE");
             mc.stop();

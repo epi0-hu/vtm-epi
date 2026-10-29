@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "vtm:item/cowl",
+    "layer1": "vtm:item/cowl_overlay"
+  }
+}

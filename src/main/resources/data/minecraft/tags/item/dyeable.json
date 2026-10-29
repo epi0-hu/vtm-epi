@@ -1,0 +1,15 @@
+{
+  "values": [
+    "vtm:cap",
+    "vtm:jacket",
+    "vtm:trousers",
+    "vtm:shoes",
+    "vtm:duster",
+    "vtm:top_hat",
+    "vtm:tailcoat",
+    "vtm:dress_trousers",
+    "vtm:dress_shoes",
+    "vtm:cowl",
+    "vtm:robe"
+  ]
+}

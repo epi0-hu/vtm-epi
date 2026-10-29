@@ -129,6 +129,19 @@ for each elder and shown on the Lineage page once you have met them. When an eld
 sleep goes stale (the page marks it in red); asking another vampire about the ancients again, or an elder about the others, brings
 you word of where they have gone, and moves are written to the chronicle.
 
+**Clothes, robes and armor** (`item/Garb`, `registry/ModItems`): thirteen wearable pieces, all craftable, with textures drawn for the
+player model. Wearing *enough of a kind* does something, and the Overview page shows what is active:
+
+| Kind | Pieces | Worn | Effect |
+|---|---|---|---|
+| Street | flat cap, jacket, trousers, shoes, long duster | any 3 street or formal pieces | **Blending in**: exposure you cause is cut by 40% (never to nothing; getting cleaned up is unaffected) |
+| Evening wear | top hat, tailcoat, dress trousers, dress shoes | 3 formal pieces | **Formal**: +1 die on every conversation check |
+| Robes | ritual cowl, ritual robe | both | **Robed**: powers cost 15% less blood |
+| Ward gear | ward vest, combat boots | any | **Warded**: hunters' blows land a quarter softer; hunters now wear the vest, and sometimes drop the vest or boots (inquisitors half the time) |
+
+Street, evening and robe pieces (and the duster) are **dyeable** with ordinary dyes in the crafting grid. Hats and cowls shade the face under
+the existing sunlight rule (any head item stops the sun burning you).
+
 **Hunters** (`city/Hunters`): mortals who know what is out there. Every time a vampire is seen feeding, in frenzy, or killing a
 citizen, the city's mortals work out a little more of what they are (**exposure**, per player per city, fading slowly; the
 second bar on the HUD plate). At 30 an unarmed stranger starts to watch; at 50 armed hunters come for you and will not talk;

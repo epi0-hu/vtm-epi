@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "vtm:item/robe",
+    "layer1": "vtm:item/robe_overlay"
+  }
+}

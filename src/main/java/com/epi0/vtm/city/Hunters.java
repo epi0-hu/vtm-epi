@@ -48,6 +48,7 @@ public final class Hunters {
         if (!VampireData.of(player).isVampire()) {
             return;
         }
+        amount = com.epi0.vtm.item.Garb.exposure(player, amount);
         int before = city.exposureOf(player.getUUID());
         city.addExposure(player.getUUID(), amount);
         int after = city.exposureOf(player.getUUID());

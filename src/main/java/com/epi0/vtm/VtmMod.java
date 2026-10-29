@@ -28,6 +28,7 @@ public class VtmMod {
         ModBlocks.registerItems();
         ModStructures.TYPES.register(modBus);
         ModStructures.PIECES.register(modBus);
+        com.epi0.vtm.registry.ModArmor.MATERIALS.register(modBus);
         ModItems.ITEMS.register(modBus);
         ModItems.TABS.register(modBus);
         container.registerConfig(ModConfig.Type.SERVER, VtmConfig.SPEC);

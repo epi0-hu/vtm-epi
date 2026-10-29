@@ -43,7 +43,7 @@ public final class PowerManager {
                         power.name(), (ready - now + 19) / 20), true);
                 return false;
             }
-            if (data.blood() < scaledCost(data, power)) {
+            if (data.blood() < scaledCost(player, data, power)) {
                 fail(player, "message.vtm.power_no_blood");
                 return false;
             }
@@ -57,7 +57,7 @@ public final class PowerManager {
 
         // The power may have changed the caster's data (e.g. stolen blood), so re-read before charging.
         VampireData fresh = VampireData.of(player);
-        float cost = ctx.waived() ? 0F : scaledCost(fresh, power);
+        float cost = ctx.waived() ? 0F : scaledCost(player, fresh, power);
         float blood = Mth.clamp(fresh.blood() - cost + ctx.bloodGain(), 0F, fresh.maxBlood());
         int stains = Mth.clamp(fresh.stains() + ctx.stainChange(), 0, VampireRules.MAX_STAINS);
         int features = Math.max(0, fresh.bestialFeatures() + ctx.featureChange());
@@ -75,10 +75,16 @@ public final class PowerManager {
 
     /** What a power costs this vampire: older blood spends less (never less than half a point, never free). */
     public static float scaledCost(VampireData data, Power power) {
+        return scaledCost(null, data, power);
+    }
+
+    /** As above, for a caster whose robes (if any) steady the hand. */
+    public static float scaledCost(@org.jetbrains.annotations.Nullable net.minecraft.world.entity.LivingEntity caster, VampireData data, Power power) {
         if (power.bloodCost() <= 0) {
             return 0F;
         }
-        return Math.max(0.5F, Math.round(power.bloodCost() * VampireRules.costFactor(data.generation()) * 2F) / 2F);
+        float wear = caster == null ? 1F : com.epi0.vtm.item.Garb.powerCostFactor(caster);
+        return Math.max(0.5F, Math.round(power.bloodCost() * VampireRules.costFactor(data.generation()) * wear * 2F) / 2F);
     }
 
     public static void forget(UUID player) {

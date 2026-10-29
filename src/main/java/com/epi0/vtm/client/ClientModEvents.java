@@ -30,6 +30,16 @@ public final class ClientModEvents {
     public static final KeyMapping PREVIOUS_POWER = new KeyMapping(
             "key.vtm.previous_power", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_Z, "key.categories.vtm");
 
+    /** Dyeable garments are drawn in grayscale and tinted by their dye. */
+    @SubscribeEvent
+    public static void registerItemColors(net.neoforged.neoforge.client.event.RegisterColorHandlersEvent.Item event) {
+        com.epi0.vtm.registry.ModItems.DEFAULT_DYE.forEach((name, dye) -> {
+            var item = net.minecraft.core.registries.BuiltInRegistries.ITEM.get(VtmMod.id(name));
+            event.register((stack, tint) -> tint == 0
+                    ? net.minecraft.util.FastColor.ARGB32.opaque(net.minecraft.world.item.component.DyedItemColor.getOrDefault(stack, dye)) : -1, item);
+        });
+    }
+
     @SubscribeEvent
     public static void registerKeys(RegisterKeyMappingsEvent event) {
         event.register(OPEN_MENU);
