@@ -97,6 +97,27 @@ public class CivilianNpc extends VtmNpc {
         this.persona = persona;
     }
 
+    /** Hunters dress as anyone until they are sure; then they arm themselves. */
+    public void armAsHunter() {
+        if (getMainHandItem().isEmpty()) {
+            setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.IRON_SWORD));
+            setItemSlot(EquipmentSlot.CHEST, new ItemStack(Items.CHAINMAIL_CHESTPLATE));
+            setDropChance(EquipmentSlot.MAINHAND, 0F);
+            setDropChance(EquipmentSlot.CHEST, 0F);
+        }
+    }
+
+    /** The hunters' leader in a city: tougher, in iron from head to chest, and already armed. */
+    public void makeInquisitor() {
+        getAttribute(Attributes.MAX_HEALTH).setBaseValue(44);
+        setHealth(44F);
+        getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(6);
+        armAsHunter();
+        setItemSlot(EquipmentSlot.CHEST, new ItemStack(Items.IRON_CHESTPLATE));
+        setItemSlot(EquipmentSlot.HEAD, new ItemStack(Items.IRON_HELMET));
+        setDropChance(EquipmentSlot.HEAD, 0F);
+    }
+
     /** Who this person is. */
     public Persona persona() {
         if (persona == null) {
@@ -126,6 +147,11 @@ public class CivilianNpc extends VtmNpc {
         entityData.set(DATA_JOB, job.ordinal());
         setHome(bed);
         Household.takeFamilyName(this);
+        if (job == Job.HUNTER) {
+            getAttribute(Attributes.FOLLOW_RANGE).setBaseValue(48);
+            getAttribute(Attributes.MAX_HEALTH).setBaseValue(26);
+            setHealth(26F);
+        }
         if (job == Job.WATCHMAN) {
             setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.IRON_SWORD));
             setItemSlot(EquipmentSlot.HEAD, new ItemStack(Items.IRON_HELMET));
@@ -216,6 +242,8 @@ public class CivilianNpc extends VtmNpc {
                 player -> job() == Job.WATCHMAN && attitudeTo(player) == Attitude.HOSTILE));
         targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, Monster.class, 10, true, false,
                 monster -> job() == Job.WATCHMAN || ghoulOwner != null));
+        targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, 10, false, false,
+                player -> job() == Job.HUNTER && attitudeTo(player) == Attitude.HOSTILE));
         goalSelector.addGoal(1, new AvoidEntityGoal<>(this, VampireNpc.class, 14F, 1.0, 1.5,
                 vampire -> attitudeTo(vampire).compareTo(Attitude.WARY) >= 0));
         goalSelector.addGoal(1, new AvoidEntityGoal<>(this, LivingEntity.class, 8F, 1.0, 1.4,
@@ -254,6 +282,9 @@ public class CivilianNpc extends VtmNpc {
     @Override
     public void die(net.minecraft.world.damagesource.DamageSource source) {
         super.die(source);
+        if (!level().isClientSide && source.getEntity() instanceof net.minecraft.server.level.ServerPlayer slayer && job() == Job.HUNTER) {
+            com.epi0.vtm.city.Hunters.onHunterKilled(this, slayer);
+        }
         if (!level().isClientSide && source.getEntity() instanceof net.minecraft.server.level.ServerPlayer player) {
             long now = level().getGameTime();
             for (CivilianNpc kin : Household.members(this)) {
@@ -264,10 +295,27 @@ public class CivilianNpc extends VtmNpc {
         }
     }
 
+    /** A hunter who knows what a player is goes after them, wherever in earshot they are. */
+    private void hunt() {
+        if (getTarget() != null && getTarget().isAlive()) {
+            return;
+        }
+        for (Player player : level().getEntitiesOfClass(Player.class, getBoundingBox().inflate(48), p -> !p.isSpectator() && !p.isCreative())) {
+            if (attitudeTo(player) == Attitude.HOSTILE) {
+                armAsHunter();
+                setTarget(player);
+                return;
+            }
+        }
+    }
+
     @Override
     protected void serverSecond() {
         super.serverSecond();
         Gossip.tick(this);
+        if (job() == Job.HUNTER) {
+            hunt();
+        }
         if (expireAt > 0 && level().getGameTime() > expireAt && getTarget() == null) {
             discard();
         }
@@ -281,6 +329,19 @@ public class CivilianNpc extends VtmNpc {
             }
             City city = city();
             int heat = city == null ? 0 : city.heatOf(player.getUUID());
+            if (job() == Job.HUNTER) {
+                // Hunters care about one thing: whether you are what they hunt, and whether they know it.
+                int exposure = city == null ? 0 : city.exposureOf(player.getUUID());
+                if (com.epi0.vtm.vampire.VampireData.of(player).isVampire()) {
+                    if (exposure >= com.epi0.vtm.city.Hunters.HUNTED) {
+                        return Attitude.HOSTILE;
+                    }
+                    if (exposure >= 25) {
+                        return Attitude.WARY;
+                    }
+                }
+                return memory().rapport(player.getUUID()) >= persona().friendRapport() ? Attitude.FRIENDLY : Attitude.NEUTRAL;
+            }
             if (job() == Job.WATCHMAN) {
                 if (heat >= HOT) {
                     return Attitude.HOSTILE;

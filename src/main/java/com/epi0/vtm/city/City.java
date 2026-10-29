@@ -49,6 +49,12 @@ public final class City {
     public BlockPos haven;
     /** Heat per player: how wanted they are here, 0 to 100. */
     public final Map<UUID, Integer> heat = new HashMap<>();
+    /** Per vampire: how much of what they are the city's mortals have worked out, 0 to 100. Hunters act on it. */
+    public final Map<UUID, Integer> exposure = new HashMap<>();
+    /** The hunters' inquisitor in this city, while one is in the field. */
+    @Nullable
+    public UUID inquisitor;
+    public long lastHunt = -100000L;
     /** The named vampire who holds the city for its ruler, if anyone does. */
     @Nullable
     public UUID warden;
@@ -72,6 +78,21 @@ public final class City {
 
     public int heatOf(UUID player) {
         return heat.getOrDefault(player, 0);
+    }
+
+    public int exposureOf(UUID player) {
+        return exposure.getOrDefault(player, 0);
+    }
+
+    public void addExposure(UUID player, int amount) {
+        exposure.merge(player, amount, Integer::sum);
+        exposure.computeIfPresent(player, (p, v) -> Math.max(0, Math.min(MAX_HEAT, v)));
+        exposure.values().removeIf(v -> v <= 0);
+    }
+
+    /** How alarmed the hunters are: the worst exposure of anyone in the city. */
+    public int alert() {
+        return exposure.values().stream().mapToInt(Integer::intValue).max().orElse(0);
     }
 
     public void addHeat(UUID player, int amount) {
@@ -106,6 +127,13 @@ public final class City {
         CompoundTag heatTag = new CompoundTag();
         heat.forEach((player, value) -> heatTag.putInt(player.toString(), value));
         tag.put("Heat", heatTag);
+        CompoundTag exposureTag = new CompoundTag();
+        exposure.forEach((player, value) -> exposureTag.putInt(player.toString(), value));
+        tag.put("Exposure", exposureTag);
+        if (inquisitor != null) {
+            tag.putUUID("Inquisitor", inquisitor);
+        }
+        tag.putLong("LastHunt", lastHunt);
         if (warden != null) {
             tag.putUUID("Warden", warden);
         }
@@ -139,6 +167,16 @@ public final class City {
                 // corrupt key
             }
         }
+        CompoundTag exposureTag = tag.getCompound("Exposure");
+        for (String key : exposureTag.getAllKeys()) {
+            try {
+                city.exposure.put(UUID.fromString(key), exposureTag.getInt(key));
+            } catch (IllegalArgumentException ignored) {
+                // corrupt key
+            }
+        }
+        city.inquisitor = tag.hasUUID("Inquisitor") ? tag.getUUID("Inquisitor") : null;
+        city.lastHunt = tag.contains("LastHunt") ? tag.getLong("LastHunt") : -100000L;
         city.warden = tag.hasUUID("Warden") ? tag.getUUID("Warden") : null;
         city.lastReinforcement = tag.getLong("Reinforced");
         city.founded = tag.getLong("Founded");

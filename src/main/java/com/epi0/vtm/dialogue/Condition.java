@@ -95,15 +95,20 @@ public record Condition(CoreCondition core, Optional<NemesisReq> nemesis, Option
      * @param minHeat  how much trouble the player has caused in the city (bounds)
      * @param maxHeat  see {@code minHeat}
      * @param owner    the faction that rules the city the NPC is in
+     * @param minExposure how much of what the player is the city's mortals have worked out (bounds)
+     * @param maxExposure see {@code minExposure}
      */
     public record PlaceReq(Optional<String> job, Optional<Boolean> inCity, Optional<Integer> minHeat, Optional<Integer> maxHeat,
-                           Optional<net.minecraft.resources.ResourceLocation> owner) {
+                           Optional<net.minecraft.resources.ResourceLocation> owner, Optional<Integer> minExposure,
+                           Optional<Integer> maxExposure) {
         public static final Codec<PlaceReq> CODEC = RecordCodecBuilder.create(i -> i.group(
                 Codec.STRING.optionalFieldOf("job").forGetter(PlaceReq::job),
                 Codec.BOOL.optionalFieldOf("in_city").forGetter(PlaceReq::inCity),
                 Codec.INT.optionalFieldOf("min_heat").forGetter(PlaceReq::minHeat),
                 Codec.INT.optionalFieldOf("max_heat").forGetter(PlaceReq::maxHeat),
-                net.minecraft.resources.ResourceLocation.CODEC.optionalFieldOf("owner").forGetter(PlaceReq::owner)
+                net.minecraft.resources.ResourceLocation.CODEC.optionalFieldOf("owner").forGetter(PlaceReq::owner),
+                Codec.INT.optionalFieldOf("min_exposure").forGetter(PlaceReq::minExposure),
+                Codec.INT.optionalFieldOf("max_exposure").forGetter(PlaceReq::maxExposure)
         ).apply(i, PlaceReq::new));
 
         boolean test(ServerPlayer player, VtmNpc npc) {
@@ -115,7 +120,9 @@ public record Condition(CoreCondition core, Optional<NemesisReq> nemesis, Option
                 return false;
             }
             int heat = city == null ? 0 : city.heatOf(player.getUUID());
+            int exposure = city == null ? 0 : city.exposureOf(player.getUUID());
             return minHeat.map(v -> heat >= v).orElse(true) && maxHeat.map(v -> heat <= v).orElse(true)
+                    && minExposure.map(v -> exposure >= v).orElse(true) && maxExposure.map(v -> exposure <= v).orElse(true)
                     && owner.map(v -> city != null && city.owner.equals(v)).orElse(true);
         }
     }

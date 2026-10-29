@@ -68,6 +68,8 @@ public final class Harness {
                 domainsScript(mc);
             } else if (SCENARIO.equals("city")) {
                 cityScript(mc);
+            } else if (SCENARIO.equals("hunters")) {
+                huntersScript(mc);
             } else if (SCENARIO.equals("people")) {
                 peopleScript(mc);
             } else if (SCENARIO.equals("metropolis")) {
@@ -784,6 +786,46 @@ public final class Harness {
     }
 
     /** Opens real conversations with a civilian and a vampire and walks through a few branches. */
+    /** A strike team and its inquisitor, and the plate that says how much the hunters know. */
+    private static void huntersScript(Minecraft mc) {
+        mc.options.pauseOnLostFocus = false;
+        server(mc, 3, p -> com.epi0.vtm.city.CityData.get(p.getServer()).all().forEach(c -> c.heat.clear()));
+        cmd(mc, 3, "forceload add 0 0");
+        then(40, () -> {});
+        cmd(mc, 3, "fill -14 199 -14 14 199 14 minecraft:smooth_stone");
+        cmd(mc, 3, "tp @s 0.5 200 0.5");
+        then(20, () -> {});
+        for (String c : new String[]{"gamerule sendCommandFeedback false", "time set 18000", "gamerule doDaylightCycle false",
+                "gamerule doMobSpawning false", "weather clear", "effect give @s minecraft:night_vision infinite 0 true",
+                "execute at @s run fill ~-12 ~-1 ~-12 ~12 ~-1 ~12 minecraft:smooth_stone",
+                "execute at @s run fill ~-12 ~ ~-12 ~12 ~8 ~12 minecraft:air", "tp @s ~ ~ ~ 0 8",
+                "vtm embrace @s gangrel"}) {
+            cmd(mc, 3, c);
+        }
+        server(mc, 10, p -> {
+            var city = new com.epi0.vtm.city.City(java.util.UUID.nameUUIDFromBytes("hunters".getBytes()), "Huntsville", net.minecraft.world.level.Level.OVERWORLD,
+                    p.blockPosition(), VtmMod.id("camarilla"));
+            double[][] spots = {{0, 4}, {-3, 6}, {3, 6}, {-1.5, 8}, {1.5, 8}};
+            for (int i = 0; i < spots.length; i++) {
+                var hunter = com.epi0.vtm.city.Hunters.spawn(p.serverLevel(), city, p.position().add(spots[i][0], 0, spots[i][1]), i == 0);
+                hunter.setNoAi(true);
+                hunter.setYRot(180F);
+                hunter.yHeadRot = 180F;
+                hunter.yBodyRot = 180F;
+                hunter.armAsHunter();
+                if (i == 0) {
+                    hunter.makeInquisitor();
+                }
+            }
+        });
+        then(5, () -> CityNotice.receive(new com.epi0.vtm.network.CityNoticePayload(java.util.Optional.of("Huntsville"), VtmMod.id("camarilla"), 20, 82)));
+        shotAfter(mc, 60, "hunters_team");
+        then(10, () -> {
+            VtmMod.LOGGER.info("HARNESS DONE");
+            mc.stop();
+        });
+    }
+
     /** Conversations that show off the human side: housemates, a priest, a detective, a friend who might become a vessel. */
     private static void peopleScript(Minecraft mc) {
         mc.options.pauseOnLostFocus = false;
@@ -992,7 +1034,7 @@ public final class Harness {
         then(10, () -> mc.setScreen(null));
         cmd(mc, 3, "gamemode survival");
         shot(mc, "hud");
-        then(5, () -> CityNotice.receive(new com.epi0.vtm.network.CityNoticePayload(java.util.Optional.of("Ashgrove"), VtmMod.id("camarilla"), 72)));
+        then(5, () -> CityNotice.receive(new com.epi0.vtm.network.CityNoticePayload(java.util.Optional.of("Ashgrove"), VtmMod.id("camarilla"), 72, 58)));
         shotAfter(mc, 25, "hud_city");
         shotAfter(mc, 120, "hud_city_later");
 

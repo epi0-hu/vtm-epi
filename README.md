@@ -104,6 +104,15 @@ nightclub in a derelict sanatorium: a forecourt and marquee, a chequered dance f
 gallery railed over the floor, padded cells below and the owner's quarters behind them. Each is one entry of the
 `lairs` / `sewers` structure sets.
 
+**Hunters** (`city/Hunters`): mortals who know what is out there. Every time a vampire is seen feeding, in frenzy, or killing a
+citizen, the city's mortals work out a little more of what they are (**exposure**, per player per city, fading slowly; the
+second bar on the HUD plate). At 30 an unarmed stranger starts to watch; at 50 armed hunters come for you and will not talk;
+at 75 a strike team arrives with an **inquisitor** (tougher, iron-clad) at its head. Hunters hit vampires half again as hard.
+Killing the inquisitor breaks the cell (-40 exposure, +3 XP); killing an ordinary hunter makes the others angrier. A
+suspicious hunter who is not yet sure can be talked round (Presence) or slipped past (Obfuscate); to a mortal player a hunter
+is a source of rumours. While nobody watches, hunters also raid the havens of the city's own vampires and may put one into
+torpor or destroy them (chronicle `hunters_raid_*`). NPCs now draw the item in their right hand. `-Pharness=hunters` shows a team.
+
 **People** (`npc/Persona`, `Household`, `Gossip`): every mortal has a temperament (cheerful, nervous, brave, suspicious,
 lonely, devout, curious) and an age, worked out from their identity. Temperament sets how much trouble frightens them,
 how much rapport makes a friend, and whether they take offence easily; the devout can feel a soul that has slipped far.
@@ -213,6 +222,6 @@ dilation for Celerity) remain options if NPC navigation or Celerity ever need th
 ## Tests and dev tools
 - `./gradlew runGameTestServer`: GameTests in `gametest/VtmGameTests` (data, embrace/learn, passives, feeding, every
   power, mob control, every bane, frenzy, forms, sense link, NPC behaviour, conversations, sects, the nemesis simulation and its combat rules, lairs, cities, territory, courts).
-- `./gradlew runClient -Pharness=player|npc|dialogue|sect|nemesis|people|lairs|sewer|asylum|city|domains|court`: scripted walkthrough of the real client that writes screenshots to
+- `./gradlew runClient -Pharness=player|npc|dialogue|sect|nemesis|people|hunters|lairs|sewer|asylum|city|domains|court`: scripted walkthrough of the real client that writes screenshots to
   `run/screenshots/` (player: every Codex page, HUD, city banner, forms, sense link, frenzy; npc: a lineup in every animation; dialogue: a conversation with a civilian and a vampire; sect: the Sect tab and a member's conversation; nemesis: the Nemesis tabs and a verdict conversation; lairs, city, domains, court: the world and the Court tab). Needs a
   world at `run/saves/harness` and, on a headless machine, `xvfb-run`. Inert without the property.

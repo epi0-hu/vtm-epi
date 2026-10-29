@@ -103,6 +103,8 @@ public final class CityLife {
                 continue;
             }
             cool(city);
+            Hunters.cool(level, city);
+            Hunters.tick(level, city);
             populate(level, city);
             if (VtmNpc.isNight(level)) {
                 patrol(level, city);

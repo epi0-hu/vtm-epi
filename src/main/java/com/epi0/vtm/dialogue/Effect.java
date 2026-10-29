@@ -27,12 +27,13 @@ import java.util.Optional;
  * @param heat       change to the player's heat (trouble) in the NPC's city
  * @param flagToday  a flag that lasts until dawn (clears the previous days' ones)
  * @param ghoul      the NPC, a mortal, drinks the player's blood and becomes their retainer
+ * @param exposure   change to how much the city's mortals know of what the player is
  * @param alarm      the NPC glimpses something frightening in the player and will remember it as a threat
  */
 public record Effect(Optional<Integer> rapport, Optional<String> flag, Optional<String> clearFlag, Optional<Float> blood,
                      Optional<Integer> experience, Optional<Integer> humanity, boolean alarm, Optional<Integer> standing,
                      boolean join, boolean leave, boolean promote, Optional<NemesisEffect> nemesis,
-                     Optional<Integer> heat, Optional<String> flagToday, boolean ghoul) {
+                     Optional<Integer> heat, Optional<String> flagToday, boolean ghoul, Optional<Integer> exposure) {
     public static final Codec<Effect> CODEC = RecordCodecBuilder.create(i -> i.group(
             Codec.INT.optionalFieldOf("rapport").forGetter(Effect::rapport),
             Codec.STRING.optionalFieldOf("flag").forGetter(Effect::flag),
@@ -48,7 +49,8 @@ public record Effect(Optional<Integer> rapport, Optional<String> flag, Optional<
             NemesisEffect.CODEC.optionalFieldOf("nemesis").forGetter(Effect::nemesis),
             Codec.INT.optionalFieldOf("heat").forGetter(Effect::heat),
             Codec.STRING.optionalFieldOf("flag_today").forGetter(Effect::flagToday),
-            Codec.BOOL.optionalFieldOf("ghoul", false).forGetter(Effect::ghoul)
+            Codec.BOOL.optionalFieldOf("ghoul", false).forGetter(Effect::ghoul),
+            Codec.INT.optionalFieldOf("exposure").forGetter(Effect::exposure)
     ).apply(i, Effect::new));
 
     public void apply(ServerPlayer player, VtmNpc npc) {
@@ -70,6 +72,13 @@ public record Effect(Optional<Integer> rapport, Optional<String> flag, Optional<
         }
 
         nemesis.ifPresent(n -> n.apply(player, npc));
+        exposure.ifPresent(delta -> {
+            com.epi0.vtm.city.City city = DialogueCity.of(npc);
+            if (city != null) {
+                city.addExposure(player.getUUID(), delta);
+                com.epi0.vtm.city.CityData.get(player.getServer()).setDirty();
+            }
+        });
         heat.ifPresent(delta -> {
             com.epi0.vtm.city.City city = DialogueCity.of(npc);
             if (city != null) {

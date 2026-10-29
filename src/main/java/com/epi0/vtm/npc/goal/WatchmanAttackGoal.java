@@ -14,7 +14,7 @@ public class WatchmanAttackGoal extends MeleeAttackGoal {
     }
 
     private boolean fights() {
-        return npc.job() == Job.WATCHMAN || npc.ghoulOwner() != null;
+        return npc.job() == Job.WATCHMAN || npc.job() == Job.HUNTER || npc.ghoulOwner() != null;
     }
 
     @Override

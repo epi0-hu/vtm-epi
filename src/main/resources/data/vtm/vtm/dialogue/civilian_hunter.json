@@ -1,0 +1,162 @@
+{
+  "when": {
+    "npc": "civilian",
+    "place": {
+      "job": "hunter"
+    }
+  },
+  "priority": 60,
+  "start": "hub",
+  "nodes": {
+    "hub": {
+      "text": [
+        {
+          "when": {
+            "player_vampire": true,
+            "place": {
+              "min_exposure": 25
+            }
+          },
+          "key": "dialogue.vtm.hunter.greet.suspicious"
+        },
+        {
+          "when": {
+            "player_vampire": true
+          },
+          "key": "dialogue.vtm.hunter.greet.oblivious"
+        },
+        {
+          "key": "dialogue.vtm.hunter.greet.mortal"
+        }
+      ],
+      "options": [
+        {
+          "text": "dialogue.vtm.hunter.opt.explain",
+          "show": {
+            "player_vampire": true,
+            "place": {
+              "min_exposure": 25
+            }
+          },
+          "check": {
+            "pool": 3,
+            "discipline": "vtm:presence",
+            "difficulty": 3,
+            "fail": "exposed"
+          },
+          "effects": [
+            {
+              "exposure": -20,
+              "rapport": 1
+            }
+          ],
+          "fail_effects": [
+            {
+              "exposure": 15,
+              "alarm": true
+            }
+          ],
+          "next": "calmed"
+        },
+        {
+          "text": "dialogue.vtm.hunter.opt.slip",
+          "show": {
+            "player_vampire": true,
+            "place": {
+              "min_exposure": 25
+            }
+          },
+          "require": {
+            "discipline": {
+              "id": "vtm:obfuscate",
+              "level": 1
+            }
+          },
+          "locked": "dialogue.vtm.hunter.locked.obfuscate",
+          "check": {
+            "pool": 3,
+            "discipline": "vtm:obfuscate",
+            "difficulty": 2,
+            "fail": "exposed"
+          },
+          "effects": [
+            {
+              "exposure": -30
+            }
+          ],
+          "fail_effects": [
+            {
+              "exposure": 10
+            }
+          ],
+          "next": "slipped"
+        },
+        {
+          "text": "dialogue.vtm.hunter.opt.hunt",
+          "next": "hunt"
+        },
+        {
+          "text": "dialogue.vtm.hunter.opt.watching",
+          "show": {
+            "player_vampire": false,
+            "no_flag": "told_watching"
+          },
+          "effects": [
+            {
+              "flag": "told_watching",
+              "rapport": 1,
+              "nemesis": {
+                "intel": "any",
+                "count": 2
+              }
+            }
+          ],
+          "next": "watching"
+        },
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
+    },
+    "calmed": {
+      "text": "dialogue.vtm.hunter.calmed",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
+    },
+    "slipped": {
+      "text": "dialogue.vtm.hunter.slipped",
+      "options": []
+    },
+    "exposed": {
+      "text": "dialogue.vtm.hunter.exposed",
+      "options": []
+    },
+    "hunt": {
+      "text": "dialogue.vtm.hunter.hunt",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.else",
+          "next": "hub"
+        },
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
+    },
+    "watching": {
+      "text": "dialogue.vtm.hunter.watching",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.else",
+          "next": "hub"
+        },
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
+    }
+  }
+}

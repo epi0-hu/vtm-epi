@@ -5,7 +5,7 @@ import java.util.Optional;
 
 /** What a civilian does for a living. Titles are the lang keys {@code job.vtm.<id>}. */
 public enum Job {
-    RESIDENT, SHOPKEEPER, BARTENDER, WATCHMAN, PRIEST, CLERK, DETECTIVE;
+    RESIDENT, SHOPKEEPER, BARTENDER, WATCHMAN, PRIEST, CLERK, DETECTIVE, HUNTER;
 
     public String id() {
         return name().toLowerCase(Locale.ROOT);

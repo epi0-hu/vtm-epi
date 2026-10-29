@@ -50,12 +50,14 @@ public final class CityEvents {
         boolean changed = !java.util.Objects.equals(now, before);
         if (city != null) {
             int heat = city.heatOf(player.getUUID());
-            if (changed || !java.util.Objects.equals(HEAT_SENT.put(player.getUUID(), heat), heat)) {
-                VtmNetwork.send(player, new CityNoticePayload(java.util.Optional.of(city.name), city.owner, heat));
+            int exposure = city.exposureOf(player.getUUID());
+            int summary = heat * 1000 + exposure; // (either changing is worth telling the client about)
+            if (changed || !java.util.Objects.equals(HEAT_SENT.put(player.getUUID(), summary), summary)) {
+                VtmNetwork.send(player, new CityNoticePayload(java.util.Optional.of(city.name), city.owner, heat, exposure));
             }
         } else if (changed) {
             HEAT_SENT.remove(player.getUUID());
-            VtmNetwork.send(player, new CityNoticePayload(java.util.Optional.empty(), VtmMod.id("none"), 0));
+            VtmNetwork.send(player, new CityNoticePayload(java.util.Optional.empty(), VtmMod.id("none"), 0, 0));
         }
         if (!changed) {
             return;
@@ -74,11 +76,12 @@ public final class CityEvents {
 
     @SubscribeEvent
     public static void onKill(LivingDeathEvent event) {
-        if (event.getEntity() instanceof CivilianNpc victim && victim.cityId() != null
+        if (event.getEntity() instanceof CivilianNpc victim && victim.cityId() != null && victim.job() != com.epi0.vtm.npc.Job.HUNTER
                 && event.getSource().getEntity() instanceof ServerPlayer killer) {
             City city = victim.city();
             if (city != null) {
                 CityLife.crime(killer, city, 30);
+                Hunters.expose(killer, city, 10);
             }
         }
     }

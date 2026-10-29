@@ -46,6 +46,7 @@ public final class NemesisSimulator {
         succession(server, data);
         challenges(server, data, random);
         raids(server, data, random);
+        com.epi0.vtm.city.Hunters.raids(server, data, random);
         com.epi0.vtm.city.Territory.step(server, data, random);
         com.epi0.vtm.court.Court.step(server, random);
         grudges(server, data, now, random);

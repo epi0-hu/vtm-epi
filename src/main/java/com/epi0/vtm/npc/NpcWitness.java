@@ -22,6 +22,7 @@ public final class NpcWitness {
             com.epi0.vtm.city.City city = com.epi0.vtm.city.CityLife.at(player);
             if (city != null) {
                 com.epi0.vtm.city.CityLife.crime(player, city, event == NpcMemory.Event.WITNESSED_FRENZY ? 18 : 12);
+                com.epi0.vtm.city.Hunters.expose(player, city, event == NpcMemory.Event.WITNESSED_FRENZY ? 18 : 12);
                 com.epi0.vtm.city.Territory.masqueradeBreach(player, city);
             }
         }

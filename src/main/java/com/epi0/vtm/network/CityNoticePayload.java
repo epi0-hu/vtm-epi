@@ -9,14 +9,15 @@ import net.minecraft.resources.ResourceLocation;
 
 import java.util.Optional;
 
-/** Server -> client: the city the player is standing in (empty when in the wilds), who holds it, and how hot they are there. */
-public record CityNoticePayload(Optional<String> city, ResourceLocation owner, int heat) implements CustomPacketPayload {
+/** Server -> client: the city the player is standing in (empty when in the wilds), who holds it, how hot they are there, and how much of what they are the hunters know. */
+public record CityNoticePayload(Optional<String> city, ResourceLocation owner, int heat, int exposure) implements CustomPacketPayload {
     public static final Type<CityNoticePayload> TYPE = new Type<>(VtmMod.id("city_notice"));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, CityNoticePayload> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.optional(ByteBufCodecs.STRING_UTF8), CityNoticePayload::city,
             ResourceLocation.STREAM_CODEC, CityNoticePayload::owner,
             ByteBufCodecs.VAR_INT, CityNoticePayload::heat,
+            ByteBufCodecs.VAR_INT, CityNoticePayload::exposure,
             CityNoticePayload::new);
 
     @Override

@@ -18,6 +18,7 @@ public final class CityNotice {
     private static String city;
     private static ResourceLocation owner;
     private static int heat;
+    private static int exposure;
     private static long arrived = Long.MIN_VALUE;
 
     public static void receive(CityNoticePayload payload) {
@@ -29,6 +30,7 @@ public final class CityNotice {
         city = fresh;
         owner = payload.owner();
         heat = payload.heat();
+        exposure = payload.exposure();
     }
 
     static void clear() {
@@ -67,15 +69,25 @@ public final class CityNotice {
             }
         }
 
-        // Heat plate
-        if (heat > 0) {
+        // The plate: how much trouble you are in with the city, and how much of what you are the hunters know.
+        if (heat > 0 || exposure > 0) {
             boolean hot = heat >= 60;
             boolean pulse = hot && (mc.level.getGameTime() / 6) % 2 == 0;
-            int w = 70;
-            Rect plate = new Rect(cx - w / 2, 4, w, 14);
+            int rows = (heat > 0 ? 1 : 0) + (exposure > 0 ? 1 : 0);
+            int w = 92;
+            Rect plate = new Rect(cx - w / 2, 4, w, 4 + rows * 10);
             Draw.panel(g, plate, Theme.alpha(0x120A0E, 0xB0));
-            g.drawString(font, Component.translatable("gui.vtm.city.heat"), plate.x() + 4, plate.y() + 3, hot ? Theme.BAD : Theme.WARN, false);
-            Draw.bar(g, new Rect(plate.x() + 30, plate.y() + 4, 36, 6), heat / 100F, pulse ? 0xFFFF5A4D : hot ? Theme.BAD : Theme.WARN);
+            int y = plate.y() + 3;
+            if (heat > 0) {
+                g.drawString(font, Component.translatable("gui.vtm.city.heat"), plate.x() + 4, y, hot ? Theme.BAD : Theme.WARN, false);
+                Draw.bar(g, new Rect(plate.x() + 46, y + 1, 40, 6), heat / 100F, pulse ? 0xFFFF5A4D : hot ? Theme.BAD : Theme.WARN);
+                y += 10;
+            }
+            if (exposure > 0) {
+                boolean hunted = exposure >= 50;
+                g.drawString(font, Component.translatable("gui.vtm.city.hunters"), plate.x() + 4, y, hunted ? 0xFF6FB6F0 : 0xFF5A8DB8, false);
+                Draw.bar(g, new Rect(plate.x() + 46, y + 1, 40, 6), exposure / 100F, hunted ? 0xFF2E86C1 : 0xFF3F6F96);
+            }
         }
     }
 
