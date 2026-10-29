@@ -19,7 +19,7 @@ import java.util.List;
 
 /** Your generation and what it grants, and the elders you have heard of, oldest first. */
 public final class LineagePage implements Page {
-    private static final int CARD = 30;
+    private static final int CARD = 42;
     private static final int ELDER = 6;
     private final Scroll scroll = new Scroll();
 
@@ -83,6 +83,9 @@ public final class LineagePage implements Page {
             int accent = Common.factionColor(c.faction());
             ui.g().fill(card.x(), card.y(), card.x() + 3, card.bottom(), accent);
             ui.shadow(Common.displayName(c), card.x() + 8, card.y() + 4, c.status().equals("dead") ? Theme.DIM : Theme.TEXT);
+            if (c.tier() < 1) {
+                ui.chip(Component.translatable("gui.vtm.lineage.rumour"), card.x() + 12 + ui.font().width(Common.displayName(c)) + 4, card.y() + 3, Theme.MUTED);
+            }
             ui.right(Component.translatable("gui.vtm.nemesis.generation", Common.ordinal(c.generation())), card.right() - 6, card.y() + 4, elder ? Theme.GOLD : Theme.MUTED);
             Component stand = c.generation() < me.generation()
                     ? Component.translatable("gui.vtm.lineage.older", me.generation() - c.generation())
@@ -90,9 +93,21 @@ public final class LineagePage implements Page {
                     ? Component.translatable("gui.vtm.lineage.younger", c.generation() - me.generation())
                     : Component.translatable("gui.vtm.lineage.peer");
             ui.clipped(Component.empty().append(Common.factionName(c.faction())).append("  ").append(stand), card.x() + 8, card.y() + 17, card.w() - 16, Theme.DIM);
+            ui.clipped(whereabouts(c), card.x() + 8, card.y() + 29, card.w() - 16, c.place().isPresent() ? Theme.TEXT : Theme.DIM);
             y += CARD + 4;
         }
         scroll.end(ui);
+    }
+
+    private static Component whereabouts(NemesisViews.Core c) {
+        if (c.place().isEmpty()) {
+            return Component.translatable("gui.vtm.lineage.whereabouts_unknown");
+        }
+        var p = c.place().get();
+        var player = Minecraft.getInstance().player;
+        String distance = player != null && player.level().dimension().equals(p.dimension())
+                ? ", " + (int) Math.sqrt(player.distanceToSqr(p.pos().getX(), player.getY(), p.pos().getZ())) + " blocks away" : "";
+        return Component.translatable("gui.vtm.lineage.whereabouts", p.pos().getX() + ", " + p.pos().getZ() + distance);
     }
 
     private static int row(Ui ui, Rect in, int y, String key, String value) {

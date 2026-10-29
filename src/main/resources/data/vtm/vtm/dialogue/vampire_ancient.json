@@ -1,0 +1,171 @@
+{
+  "when": {
+    "npc": "vampire",
+    "player_vampire": true,
+    "person": {
+      "npc_max_generation": 6,
+      "younger_than_npc": 2
+    }
+  },
+  "priority": 9,
+  "start": "hub",
+  "nodes": {
+    "hub": {
+      "text": [
+        {
+          "when": {
+            "min_rapport": 6
+          },
+          "key": "dialogue.vtm.ancient.greet.warm"
+        },
+        {
+          "key": "dialogue.vtm.ancient.greet"
+        }
+      ],
+      "options": [
+        {
+          "text": "dialogue.vtm.ancient.opt.tribute",
+          "require": {
+            "person": {
+              "no_flag_today": "tribute"
+            }
+          },
+          "locked": "dialogue.vtm.ancient.locked.tribute",
+          "effects": [
+            {
+              "blood": -3.0,
+              "flag_today": "tribute",
+              "rapport": 2
+            }
+          ],
+          "next": "tribute"
+        },
+        {
+          "text": "dialogue.vtm.ancient.opt.teach",
+          "require": {
+            "min_rapport": 2,
+            "person": {
+              "no_flag_today": "taught"
+            }
+          },
+          "locked": "dialogue.vtm.ancient.locked.teach",
+          "effects": [
+            {
+              "flag_today": "taught",
+              "experience": 10,
+              "rapport": 1
+            }
+          ],
+          "next": "taught"
+        },
+        {
+          "text": "dialogue.vtm.ancient.opt.others",
+          "require": {
+            "min_rapport": 1,
+            "person": {
+              "no_flag_today": "others"
+            }
+          },
+          "locked": "dialogue.vtm.ancient.locked.others",
+          "effects": [
+            {
+              "flag_today": "others",
+              "nemesis": {
+                "intel": "elder",
+                "count": 1
+              }
+            }
+          ],
+          "next": "others"
+        },
+        {
+          "text": "dialogue.vtm.ancient.opt.blood",
+          "show": {
+            "no_flag": "ascended"
+          },
+          "require": {
+            "min_rapport": 6
+          },
+          "locked": "dialogue.vtm.ancient.locked.blood",
+          "check": {
+            "pool": 3,
+            "discipline": "vtm:presence",
+            "difficulty": 5,
+            "fail": "spurned"
+          },
+          "effects": [
+            {
+              "flag": "ascended",
+              "blood": -4.0,
+              "rapport": 1,
+              "nemesis": {
+                "ascend": true
+              }
+            }
+          ],
+          "fail_effects": [
+            {
+              "rapport": -4
+            }
+          ],
+          "next": "blood"
+        },
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
+    },
+    "tribute": {
+      "text": "dialogue.vtm.ancient.tribute",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.else",
+          "next": "hub"
+        },
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
+    },
+    "taught": {
+      "text": "dialogue.vtm.ancient.taught",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.else",
+          "next": "hub"
+        },
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
+    },
+    "others": {
+      "text": "dialogue.vtm.ancient.others",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.else",
+          "next": "hub"
+        },
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
+    },
+    "blood": {
+      "text": "dialogue.vtm.ancient.blood",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.else",
+          "next": "hub"
+        },
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
+    },
+    "spurned": {
+      "text": "dialogue.vtm.ancient.spurned",
+      "options": []
+    }
+  }
+}

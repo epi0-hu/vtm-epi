@@ -115,6 +115,13 @@ open different dialogue: the young pay tribute and offer intel, the old teach, c
 The **Lineage** page shows your generation on a 1st-to-13th ladder with what it grants, then every vampire whose generation
 you have learned (met or studied), oldest first, with how far above or below you they stand.
 
+**Seeking elders** (generation 6 or older): an elder is rumoured before they are met. Ask any vampire "what have they heard of the
+ancients" (or an elder, after you have earned their regard) and you learn a name, how old they are and where they were last
+seen, which the Lineage page shows as a rumour with a distance. Find them and an elder grants an **audience** (they must be at
+least two generations older than you): tribute (3 blood) wins regard, regard buys lessons (+10 XP a day) and the names of other
+elders, and at high regard a Presence check asks for **a measure of their blood**, which lowers your generation by one, once
+per elder and never to their own. Each elder you win over makes you stronger, so the ancients are worth the journey.
+
 **Hunters** (`city/Hunters`): mortals who know what is out there. Every time a vampire is seen feeding, in frenzy, or killing a
 citizen, the city's mortals work out a little more of what they are (**exposure**, per player per city, fading slowly; the
 second bar on the HUD plate). At 30 an unarmed stranger starts to watch; at 50 armed hunters come for you and will not talk;

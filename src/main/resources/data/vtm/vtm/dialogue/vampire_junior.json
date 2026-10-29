@@ -75,6 +75,25 @@
           "next": "pledged"
         },
         {
+          "text": "dialogue.vtm.whisper.opt",
+          "require": {
+            "person": {
+              "no_flag_today": "whispers"
+            }
+          },
+          "locked": "dialogue.vtm.whisper.locked",
+          "effects": [
+            {
+              "flag_today": "whispers",
+              "nemesis": {
+                "intel": "elder",
+                "count": 1
+              }
+            }
+          ],
+          "next": "whisper"
+        },
+        {
           "text": "dialogue.vtm.opt.leave"
         }
       ]
@@ -105,6 +124,18 @@
     },
     "pledged": {
       "text": "dialogue.vtm.junior.pledged",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.else",
+          "next": "hub"
+        },
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
+    },
+    "whisper": {
+      "text": "dialogue.vtm.whisper.text",
       "options": [
         {
           "text": "dialogue.vtm.opt.else",

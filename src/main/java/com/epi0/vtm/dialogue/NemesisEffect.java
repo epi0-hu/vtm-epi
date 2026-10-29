@@ -30,14 +30,15 @@ import java.util.Optional;
  * @param tithe       feed a bound vampire some blood to keep them loyal
  * @param release     free a bound vampire
  * @param intel       tell the player something (or {@code city}: of a city they do not know): of the NPC itself ({@code self}), its kin and rivals ({@code kin}), the
- *                    NPC's faction's court ({@code faction}), its enemies' courts ({@code enemies}), or anyone ({@code any})
+ *                    NPC's faction's court ({@code faction}), its enemies' courts ({@code enemies}), or anyone ({@code any}), or only the ancients ({@code elder})
  * @param count       how many things {@code intel} reveals
+ * @param ascend      an elder lets the player's blood run a generation closer to theirs (needs a vampire player two or more generations younger)
  * @param enmity      change to the NPC's hatred of the player
  * @param respect     change to the NPC's respect for the player
  * @param loyalty     change to the NPC's loyalty to the player's court
  */
 public record NemesisEffect(boolean execute, boolean spare, boolean humiliate, boolean interrogate, boolean bind,
-                            boolean tithe, boolean release, Optional<String> intel, int count, Optional<Integer> enmity,
+                            boolean tithe, boolean release, boolean ascend, Optional<String> intel, int count, Optional<Integer> enmity,
                             Optional<Integer> respect, Optional<Integer> loyalty) {
     public static final Codec<NemesisEffect> CODEC = RecordCodecBuilder.create(i -> i.group(
             Codec.BOOL.optionalFieldOf("execute", false).forGetter(NemesisEffect::execute),
@@ -47,6 +48,7 @@ public record NemesisEffect(boolean execute, boolean spare, boolean humiliate, b
             Codec.BOOL.optionalFieldOf("bind", false).forGetter(NemesisEffect::bind),
             Codec.BOOL.optionalFieldOf("tithe", false).forGetter(NemesisEffect::tithe),
             Codec.BOOL.optionalFieldOf("release", false).forGetter(NemesisEffect::release),
+            Codec.BOOL.optionalFieldOf("ascend", false).forGetter(NemesisEffect::ascend),
             Codec.STRING.optionalFieldOf("intel").forGetter(NemesisEffect::intel),
             Codec.INT.optionalFieldOf("count", 1).forGetter(NemesisEffect::count),
             Codec.INT.optionalFieldOf("enmity").forGetter(NemesisEffect::enmity),
@@ -80,6 +82,9 @@ public record NemesisEffect(boolean execute, boolean spare, boolean humiliate, b
             }
         });
 
+        if (ascend && body != null) {
+            com.epi0.vtm.vampire.Lineage.ascend(player, body.generation());
+        }
         if (r != null) {
             enmity.ifPresent(d -> {
                 r.feud(player.getUUID()).enmity += d;
@@ -136,6 +141,8 @@ public record NemesisEffect(boolean execute, boolean spare, boolean humiliate, b
                     });
                 }
             }
+            case "elder" -> data.all().stream().filter(e -> e.generation <= com.epi0.vtm.vampire.VampireRules.ELDER_MAX
+                    && (self == null || !e.id.equals(self.id))).forEach(pool::add);
             case "faction" -> pool.addAll(data.inFaction(npc.factionId()));
             case "enemies" -> VtmRegistries.faction(npc.level().registryAccess(), npc.factionId())
                     .map(Faction::enemies).orElse(List.of()).forEach(f -> pool.addAll(data.inFaction(f)));

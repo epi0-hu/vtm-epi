@@ -824,8 +824,8 @@ public final class Harness {
         then(25, () -> {
             java.util.function.BiFunction<String, Integer, com.epi0.vtm.nemesis.NemesisViews.Entry> elder = (name, gen) ->
                     new com.epi0.vtm.nemesis.NemesisViews.Entry(new com.epi0.vtm.nemesis.NemesisViews.Core(java.util.UUID.randomUUID(), name,
-                            VtmMod.id(gen > 6 ? "camarilla" : "sabbat"), 1, java.util.Optional.empty(), java.util.Optional.empty(), 3, "alive",
-                            java.util.List.of(), 0, java.util.List.of(), java.util.Optional.empty(), java.util.Optional.empty(), gen),
+                            VtmMod.id(gen > 6 ? "camarilla" : "sabbat"), gen == 3 ? 0 : 1, java.util.Optional.empty(), java.util.Optional.empty(), 3, "alive",
+                            java.util.List.of(), 0, java.util.List.of(), gen > 7 ? java.util.Optional.empty() : java.util.Optional.of(net.minecraft.core.GlobalPos.of(mc.level.dimension(), mc.player.blockPosition().offset(300, 0, -150))), java.util.Optional.empty(), gen),
                             new com.epi0.vtm.nemesis.NemesisViews.History(0, 0, 0, 0, 0, false),
                             new com.epi0.vtm.nemesis.NemesisViews.Bond(-1, java.util.Optional.empty(), 0, 0), java.util.List.of());
             ClientWorld.receive(new com.epi0.vtm.nemesis.NemesisViews.Snapshot(java.util.List.of(elder.apply("Hardestadt", 3), elder.apply("Lucita", 7),

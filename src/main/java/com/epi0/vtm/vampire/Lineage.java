@@ -52,6 +52,22 @@ public record Lineage(int generation) {
         return true;
     }
 
+    /**
+     * An elder of {@code elderGeneration} shares their blood with the player: their generation falls by one, but never to
+     * the elder's own or below. Returns the new generation, or 0 if nothing changed.
+     */
+    public static int ascend(ServerPlayer player, int elderGeneration) {
+        VampireData data = VampireData.of(player);
+        if (!data.isVampire() || data.generation() < elderGeneration + 2) {
+            return 0;
+        }
+        int next = data.generation() - 1;
+        VampireManager.set(player, VampireData.of(player).withGeneration(next));
+        player.setData(ModAttachments.LINEAGE, new Lineage(next));
+        player.displayClientMessage(Component.translatable("message.vtm.lineage.ascended", VampireRules.ordinal(next)), false);
+        return next;
+    }
+
     @EventBusSubscriber(modid = VtmMod.MOD_ID)
     public static final class Events {
         @SubscribeEvent

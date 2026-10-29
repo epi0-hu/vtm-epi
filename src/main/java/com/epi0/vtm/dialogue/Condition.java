@@ -137,10 +137,11 @@ public record Condition(CoreCondition core, Optional<NemesisReq> nemesis, Option
      * @param olderThanNpc the player's blood is at least this many generations older than the NPC's
      * @param youngerThanNpc the NPC's blood is at least this many generations older than the player's
      * @param maxGeneration the player's generation is at most this (so: this old or older)
+     * @param npcMaxGeneration the NPC is a vampire of this generation or older
      */
     public record PersonReq(Optional<String> temperament, Optional<String> age, Optional<Boolean> family,
                             Optional<String> noFlagToday, Optional<Integer> olderThanNpc, Optional<Integer> youngerThanNpc,
-                            Optional<Integer> maxGeneration) {
+                            Optional<Integer> maxGeneration, Optional<Integer> npcMaxGeneration) {
         public static final Codec<PersonReq> CODEC = RecordCodecBuilder.create(i -> i.group(
                 Codec.STRING.optionalFieldOf("temperament").forGetter(PersonReq::temperament),
                 Codec.STRING.optionalFieldOf("age").forGetter(PersonReq::age),
@@ -148,7 +149,8 @@ public record Condition(CoreCondition core, Optional<NemesisReq> nemesis, Option
                 Codec.STRING.optionalFieldOf("no_flag_today").forGetter(PersonReq::noFlagToday),
                 Codec.INT.optionalFieldOf("older_than_npc").forGetter(PersonReq::olderThanNpc),
                 Codec.INT.optionalFieldOf("younger_than_npc").forGetter(PersonReq::youngerThanNpc),
-                Codec.INT.optionalFieldOf("max_generation").forGetter(PersonReq::maxGeneration)
+                Codec.INT.optionalFieldOf("max_generation").forGetter(PersonReq::maxGeneration),
+                Codec.INT.optionalFieldOf("npc_max_generation").forGetter(PersonReq::npcMaxGeneration)
         ).apply(i, PersonReq::new));
 
         boolean test(ServerPlayer player, VtmNpc npc) {
@@ -157,6 +159,9 @@ public record Condition(CoreCondition core, Optional<NemesisReq> nemesis, Option
             }
             com.epi0.vtm.vampire.VampireData data = com.epi0.vtm.vampire.VampireData.of(player);
             if (maxGeneration.isPresent() && !(data.isVampire() && data.generation() <= maxGeneration.get())) {
+                return false;
+            }
+            if (npcMaxGeneration.isPresent() && !(npc instanceof com.epi0.vtm.npc.VampireNpc elder && elder.generation() <= npcMaxGeneration.get())) {
                 return false;
             }
             if (olderThanNpc.isPresent() || youngerThanNpc.isPresent()) {

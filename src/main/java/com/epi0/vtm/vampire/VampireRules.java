@@ -35,6 +35,9 @@ public final class VampireRules {
     public static final float RESPAWN_BLOOD = 3F;
 
     /** 13th -> 2, 12th -> 3, ... 5th -> 10, and past it the ancients: 1st -> 14. */
+    /** Vampires of this generation or older are elders: rumoured before they are met, and worth seeking out. */
+    public static final int ELDER_MAX = 6;
+
     public static int maxBloodPotency(int generation) {
         return Mth.clamp(15 - generation, 1, 14);
     }

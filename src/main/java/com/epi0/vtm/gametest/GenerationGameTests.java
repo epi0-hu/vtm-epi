@@ -198,11 +198,58 @@ public final class GenerationGameTests {
         DialogueManager.end(player);
 
         // NPC far older: they condescend, and teach.
-        npc.setGeneration(3);
-        VampireManager.set(player, VampireManager.embraced(VtmMod.id("gangrel"), 12).withExperience(0));
+        npc.setGeneration(8);
+        VampireManager.set(player, VampireManager.embraced(VtmMod.id("gangrel"), 13).withExperience(0));
         helper.assertTrue(DialogueManager.open(player, npc) && DialogueManager.session(player).tree().equals(VtmMod.id("vampire_elder")), "the old look down on the young");
         DialogueManager.choose(player, VtmGameTests.option(player, "dialogue.vtm.elder.opt.teach"));
         helper.assertTrue(VampireData.of(player).experience() == 3, "and may teach them something");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "gen_elders")
+    public static void eldersAreRumouredAndWillShareTheirBlood(GameTestHelper helper) {
+        helper.setDayTime(18000);
+        ServerPlayer player = VtmGameTests.vampire(helper, "gangrel");
+        var server = helper.getLevel().getServer();
+        var ancient = NemesisManager.create(server, VtmMod.id("camarilla"), Role.LEADER, RandomSource.create(1));
+        ancient.generation = 4;
+        var young = NemesisManager.create(server, VtmMod.id("camarilla"), Role.AGENT, RandomSource.create(2));
+        young.generation = 12;
+
+        // Rumour: only elders turn up, and a rumour already shows how old they are.
+        var learned = com.epi0.vtm.nemesis.Intel.revealAbout(player, java.util.List.of(ancient), RandomSource.create(3));
+        helper.assertTrue(learned.isPresent(), "a rumour of an elder reaches the player");
+        var core = com.epi0.vtm.nemesis.NemesisViews.build(server, player).entries().stream()
+                .map(com.epi0.vtm.nemesis.NemesisViews.Entry::core).filter(c -> c.id().equals(ancient.id)).findFirst().orElse(null);
+        helper.assertTrue(core != null && core.tier() == 0 && core.generation() == 4, "an elder's generation is known by rumour alone");
+        helper.assertTrue(com.epi0.vtm.nemesis.NemesisViews.build(server, player).entries().stream()
+                .noneMatch(e -> e.core().id().equals(young.id)), "a mere agent is not rumoured");
+
+        // The blood: the elder lets a much younger vampire one generation closer, never past them.
+        helper.assertTrue(Lineage.ascend(player, 13) == 0, "nothing to share with an equal");
+        VampireManager.set(player, VampireManager.embraced(VtmMod.id("gangrel"), 6));
+        helper.assertTrue(Lineage.ascend(player, 4) == 5 && VampireData.of(player).generation() == 5, "one step closer");
+        helper.assertTrue(Lineage.ascend(player, 4) == 0 && VampireData.of(player).generation() == 5, "but never to their own generation");
+        helper.assertTrue(Lineage.of(player).generation() == 5, "and it is remembered");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", batch = "gen_talk")
+    public static void anAudienceWithAnElderIsEarned(GameTestHelper helper) {
+        helper.setDayTime(18000);
+        ServerPlayer player = VtmGameTests.vampire(helper, "gangrel");
+        VampireNpc npc = NpcSpawner.vampire(helper.getLevel(), helper.absoluteVec(new Vec3(4.5, 2, 6.5)), VtmMod.id("ventrue"));
+        npc.setGeneration(4);
+        VampireManager.set(player, VampireManager.embraced(VtmMod.id("gangrel"), 9).withBlood(20F).withExperience(0));
+        helper.assertTrue(DialogueManager.open(player, npc) && DialogueManager.session(player).tree().equals(VtmMod.id("vampire_ancient")), "an elder grants an audience");
+        DialogueManager.choose(player, VtmGameTests.option(player, "dialogue.vtm.ancient.opt.teach"));
+        helper.assertTrue(VampireData.of(player).experience() == 0, "no lessons for strangers");
+        DialogueManager.choose(player, VtmGameTests.option(player, "dialogue.vtm.ancient.opt.tribute"));
+        npc.memory().adjustRapport(player.getUUID(), 6, helper.getLevel().getGameTime());
+        DialogueManager.choose(player, VtmGameTests.option(player, "dialogue.vtm.opt.else"));
+        DialogueManager.choose(player, VtmGameTests.option(player, "dialogue.vtm.ancient.opt.teach"));
+        helper.assertTrue(VampireData.of(player).experience() == 10, "tribute earns a lesson");
+        DialogueManager.end(player);
         helper.succeed();
     }
 }

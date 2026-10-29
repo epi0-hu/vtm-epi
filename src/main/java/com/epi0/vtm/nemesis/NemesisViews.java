@@ -245,7 +245,7 @@ public final class NemesisViews {
                 met ? Optional.of(r.role.id()) : Optional.empty(),
                 met ? r.level : 0, r.status.id(), traits, r.traits.size() - traits.size(),
                 met ? r.scars.stream().map(Scar::id).toList() : List.of(),
-                known.place(), met ? NemesisManager.epithet(r) : Optional.empty(), met ? r.generation : 0);
+                known.place(), met ? NemesisManager.epithet(r) : Optional.empty(), met || r.generation <= com.epi0.vtm.vampire.VampireRules.ELDER_MAX ? r.generation : 0);
 
         Feud feud = r.feudOrNull(player.getUUID());
         History history = feud == null ? History.NONE
