@@ -68,6 +68,8 @@ public final class Harness {
                 domainsScript(mc);
             } else if (SCENARIO.equals("city")) {
                 cityScript(mc);
+            } else if (SCENARIO.equals("people")) {
+                peopleScript(mc);
             } else if (SCENARIO.equals("metropolis")) {
                 metropolisScript(mc);
             } else if (SCENARIO.equals("sewer")) {
@@ -782,6 +784,65 @@ public final class Harness {
     }
 
     /** Opens real conversations with a civilian and a vampire and walks through a few branches. */
+    /** Conversations that show off the human side: housemates, a priest, a detective, a friend who might become a vessel. */
+    private static void peopleScript(Minecraft mc) {
+        mc.options.pauseOnLostFocus = false;
+        server(mc, 3, p -> com.epi0.vtm.city.CityData.get(p.getServer()).all().forEach(c -> c.heat.clear()));
+        cmd(mc, 3, "forceload add 0 0");
+        then(40, () -> {});
+        cmd(mc, 3, "fill -14 199 -14 14 199 14 minecraft:smooth_stone");
+        cmd(mc, 3, "tp @s 0.5 200 0.5");
+        then(20, () -> {});
+        for (String c : new String[]{"gamerule sendCommandFeedback false", "time set 18000", "gamerule doDaylightCycle false",
+                "gamerule doMobSpawning false", "weather clear", "effect give @s minecraft:night_vision infinite 0 true",
+                "execute at @s run fill ~-12 ~-1 ~-12 ~12 ~-1 ~12 minecraft:smooth_stone",
+                "execute at @s run fill ~-12 ~ ~-12 ~12 ~8 ~12 minecraft:air", "tp @s ~ ~ ~ 0 8",
+                "vtm embrace @s gangrel", "vtm discipline @s presence 2", "vtm set @s blood 6"}) {
+            cmd(mc, 3, c);
+        }
+        String[] specs = {"RESIDENT:NERVOUS", "RESIDENT:LONELY", "PRIEST:DEVOUT", "DETECTIVE:BRAVE", "RESIDENT:CURIOUS"};
+        for (int n = 0; n < specs.length; n++) {
+            String[] spec = specs[n].split(":");
+            int index = n;
+            server(mc, 10, p -> {
+                if (talker != null) {
+                    com.epi0.vtm.dialogue.DialogueManager.end(p);
+                    talker.discard();
+                }
+                var city = new com.epi0.vtm.city.City(java.util.UUID.nameUUIDFromBytes("people".getBytes()), "Peopleton", net.minecraft.world.level.Level.OVERWORLD,
+                        p.blockPosition(), VtmMod.id("camarilla"));
+                var bed = p.blockPosition().offset(8 + index * 20, 0, 8);
+                var person = com.epi0.vtm.npc.NpcSpawner.civilian(p.serverLevel(), p.position().add(0, 0, 2.5));
+                person.setNoAi(true);
+                person.setYRot(180F);
+                person.yHeadRot = 180F;
+                person.yBodyRot = 180F;
+                person.settle(city, bed, com.epi0.vtm.npc.Job.valueOf(spec[0]), null);
+                person.setPos(p.position().add(0, 0, 2.5));
+                person.usePersona(new com.epi0.vtm.npc.Persona(com.epi0.vtm.npc.Persona.Temperament.valueOf(spec[1]), com.epi0.vtm.npc.Persona.Age.ADULT));
+                // A housemate, so that the family line has someone in it.
+                var kin = com.epi0.vtm.npc.NpcSpawner.civilian(p.serverLevel(), p.position().add(5, 0, 5));
+                kin.setNoAi(true);
+                kin.settle(city, bed.offset(2, 0, 0), com.epi0.vtm.npc.Job.RESIDENT, null);
+                kin.setPos(p.position().add(5, 0, 5));
+                person.memory().adjustRapport(p.getUUID(), index == 4 ? 6 : 2, 0);
+                person.memory().remember(p.getUUID(), com.epi0.vtm.npc.NpcMemory.Event.SEEN, 0);
+                person.memory().remember(p.getUUID(), com.epi0.vtm.npc.NpcMemory.Event.SEEN, 0);
+                talker = person;
+                com.epi0.vtm.dialogue.DialogueManager.open(p, talker);
+            });
+            shotAfter(mc, 70, "people_" + index);
+            if (n == 0) {
+                choose(mc, "dialogue.vtm.opt.family");
+                shotAfter(mc, 60, "people_0_family");
+            }
+        }
+        then(10, () -> {
+            VtmMod.LOGGER.info("HARNESS DONE");
+            mc.stop();
+        });
+    }
+
     private static void dialogueScript(Minecraft mc) {
         mc.options.pauseOnLostFocus = false;
         // Leave any city (and its grudges) the harness world was last saved in.

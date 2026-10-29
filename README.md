@@ -104,6 +104,17 @@ nightclub in a derelict sanatorium: a forecourt and marquee, a chequered dance f
 gallery railed over the floor, padded cells below and the owner's quarters behind them. Each is one entry of the
 `lairs` / `sewers` structure sets.
 
+**People** (`npc/Persona`, `Household`, `Gossip`): every mortal has a temperament (cheerful, nervous, brave, suspicious,
+lonely, devout, curious) and an age, worked out from their identity. Temperament sets how much trouble frightens them,
+how much rapport makes a friend, and whether they take offence easily; the devout can feel a soul that has slipped far.
+People whose beds share a floor are a household: they share a surname, are kin, hear at once what befalls one another,
+and a death is not forgiven without amends. Neighbours gossip: a bad word (or a good one) travels between mortals who stop
+to talk, heats the city a little, and fades. New trades with their own conversations: a priest (confession, once a day,
+restores Humanity), a clerk (the ledger), a detective (being questioned when you are wanted). A friend can become your
+**vessel** (drink once a day, no harm) and, with deeper trust and some of your blood, a **ghoul**: a retainer who follows and
+fights for you. Dialogue trees gain `person` conditions, once-a-day flags (`flag_today`) and housemate arguments.
+`-Pharness=people` shows these conversations.
+
 **Metropolis** (`world/MetropolisPiece`, `world/CityPlan`, `world/CityKit`; plan in `docs/huge-cities.md`): a 228 x 228 city of
 districts, avenues, towers of up to 13 floors, a church, markets, parks, depots, a wall with eight gates and The Asylum
 as a landmark. It is drawn from a plan that is a pure function of its seed, one chunk at a time; a city has its own
@@ -202,6 +213,6 @@ dilation for Celerity) remain options if NPC navigation or Celerity ever need th
 ## Tests and dev tools
 - `./gradlew runGameTestServer`: GameTests in `gametest/VtmGameTests` (data, embrace/learn, passives, feeding, every
   power, mob control, every bane, frenzy, forms, sense link, NPC behaviour, conversations, sects, the nemesis simulation and its combat rules, lairs, cities, territory, courts).
-- `./gradlew runClient -Pharness=player|npc|dialogue|sect|nemesis|lairs|sewer|asylum|city|domains|court`: scripted walkthrough of the real client that writes screenshots to
+- `./gradlew runClient -Pharness=player|npc|dialogue|sect|nemesis|people|lairs|sewer|asylum|city|domains|court`: scripted walkthrough of the real client that writes screenshots to
   `run/screenshots/` (player: every Codex page, HUD, city banner, forms, sense link, frenzy; npc: a lineup in every animation; dialogue: a conversation with a civilian and a vampire; sect: the Sect tab and a member's conversation; nemesis: the Nemesis tabs and a verdict conversation; lairs, city, domains, court: the world and the Court tab). Needs a
   world at `run/saves/harness` and, on a headless machine, `xvfb-run`. Inert without the property.
