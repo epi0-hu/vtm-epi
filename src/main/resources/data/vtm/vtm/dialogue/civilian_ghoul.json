@@ -1,0 +1,45 @@
+{
+  "when": {
+    "npc": "civilian",
+    "flag": "ghoul"
+  },
+  "priority": 45,
+  "start": "hub",
+  "nodes": {
+    "hub": {
+      "text": "dialogue.vtm.ghoul.greet",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.vessel_drink",
+          "show": {
+            "player_vampire": true
+          },
+          "require": {
+            "person": {
+              "no_flag_today": "drank"
+            }
+          },
+          "locked": "dialogue.vtm.locked.drank",
+          "effects": [
+            {
+              "blood": 2.0,
+              "flag_today": "drank"
+            }
+          ],
+          "next": "drink"
+        },
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
+    },
+    "drink": {
+      "text": "dialogue.vtm.vessel.drink",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
+    }
+  }
+}

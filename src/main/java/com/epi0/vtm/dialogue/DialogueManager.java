@@ -224,7 +224,7 @@ public final class DialogueManager {
                 : npc.getDisplayName();
     }
 
-    /** {@code %1$s} NPC name, {@code %2$s} player, {@code %3$s} clan, {@code %4$s} faction, {@code %5$s} clan description, {@code %6$s} city, {@code %7$s} the city's ruling faction. */
+    /** {@code %1$s} NPC name, {@code %2$s} player, {@code %3$s} clan, {@code %4$s} faction, {@code %5$s} clan description, {@code %6$s} city, {@code %7$s} the city's ruling faction, {@code %8$s} a housemate's first name, {@code %9$s} what they are to the NPC. */
     private static Object[] args(ServerPlayer player, VtmNpc npc) {
         Component clan = Component.translatable("dialogue.vtm.no_clan");
         Component description = Component.empty();
@@ -233,10 +233,20 @@ public final class DialogueManager {
             description = VtmRegistries.text("clan", vampire.clanId(), "desc");
         }
         com.epi0.vtm.city.City city = DialogueCity.of(npc);
+        Component relative = Component.empty();
+        Component relation = Component.translatable("relation.vtm.family.none");
+        if (npc instanceof com.epi0.vtm.npc.CivilianNpc civilian) {
+            var kin = com.epi0.vtm.npc.Household.relative(civilian);
+            if (kin != null) {
+                relative = Component.literal(com.epi0.vtm.npc.Household.firstNameOf(kin));
+                relation = Component.translatable("relation.vtm.family." + com.epi0.vtm.npc.Household.relation(civilian, kin));
+            }
+        }
         return new Object[]{npc.getDisplayName(), player.getDisplayName(), clan,
                 VtmRegistries.name("faction", npc.factionId()), description,
                 city == null ? Component.translatable("dialogue.vtm.no_city") : Component.literal(city.name),
-                city == null ? Component.translatable("dialogue.vtm.no_city") : VtmRegistries.name("faction", city.owner)};
+                city == null ? Component.translatable("dialogue.vtm.no_city") : VtmRegistries.name("faction", city.owner),
+                relative, relation};
     }
 
     // ---------------------------------------------------------------- housekeeping

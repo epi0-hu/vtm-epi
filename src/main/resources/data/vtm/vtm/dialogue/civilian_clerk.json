@@ -1,0 +1,66 @@
+{
+  "when": {
+    "npc": "civilian",
+    "place": {
+      "job": "clerk"
+    }
+  },
+  "priority": 40,
+  "start": "hub",
+  "nodes": {
+    "hub": {
+      "text": "dialogue.vtm.clerk.greet",
+      "options": [
+        {
+          "text": "dialogue.vtm.clerk.opt.ledger",
+          "require": {
+            "person": {
+              "no_flag_today": "ledger"
+            }
+          },
+          "locked": "dialogue.vtm.clerk.locked",
+          "effects": [
+            {
+              "flag_today": "ledger",
+              "nemesis": {
+                "intel": "city"
+              }
+            }
+          ],
+          "next": "ledger"
+        },
+        {
+          "text": "dialogue.vtm.clerk.opt.tenants",
+          "next": "tenants"
+        },
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
+    },
+    "ledger": {
+      "text": "dialogue.vtm.clerk.ledger",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.else",
+          "next": "hub"
+        },
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
+    },
+    "tenants": {
+      "text": "dialogue.vtm.clerk.tenants",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.else",
+          "next": "hub"
+        },
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
+    }
+  }
+}

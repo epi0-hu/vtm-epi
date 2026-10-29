@@ -47,6 +47,64 @@
           "next": "friend_strange"
         },
         {
+          "text": "dialogue.vtm.opt.ghoul_offer",
+          "show": {
+            "player_vampire": true,
+            "flag": "vessel",
+            "no_flag": "ghoul"
+          },
+          "require": {
+            "min_rapport": 8
+          },
+          "locked": "dialogue.vtm.locked.ghoul",
+          "effects": [
+            {
+              "blood": -2.0,
+              "flag": "ghoul",
+              "ghoul": true
+            }
+          ],
+          "next": "ghoul_made"
+        },
+        {
+          "text": "dialogue.vtm.opt.vessel_drink",
+          "show": {
+            "player_vampire": true,
+            "flag": "vessel"
+          },
+          "require": {
+            "person": {
+              "no_flag_today": "drank"
+            }
+          },
+          "locked": "dialogue.vtm.locked.drank",
+          "effects": [
+            {
+              "blood": 2.0,
+              "flag_today": "drank"
+            }
+          ],
+          "next": "vessel_drink"
+        },
+        {
+          "text": "dialogue.vtm.opt.vessel_ask",
+          "show": {
+            "player_vampire": true,
+            "no_flag": "vessel"
+          },
+          "require": {
+            "min_rapport": 5
+          },
+          "locked": "dialogue.vtm.locked.vessel",
+          "effects": [
+            {
+              "flag": "vessel",
+              "rapport": 1
+            }
+          ],
+          "next": "vessel_yes"
+        },
+        {
           "text": "dialogue.vtm.opt.leave"
         }
       ]
@@ -92,6 +150,64 @@
           "next": "friend_strange"
         },
         {
+          "text": "dialogue.vtm.opt.ghoul_offer",
+          "show": {
+            "player_vampire": true,
+            "flag": "vessel",
+            "no_flag": "ghoul"
+          },
+          "require": {
+            "min_rapport": 8
+          },
+          "locked": "dialogue.vtm.locked.ghoul",
+          "effects": [
+            {
+              "blood": -2.0,
+              "flag": "ghoul",
+              "ghoul": true
+            }
+          ],
+          "next": "ghoul_made"
+        },
+        {
+          "text": "dialogue.vtm.opt.vessel_drink",
+          "show": {
+            "player_vampire": true,
+            "flag": "vessel"
+          },
+          "require": {
+            "person": {
+              "no_flag_today": "drank"
+            }
+          },
+          "locked": "dialogue.vtm.locked.drank",
+          "effects": [
+            {
+              "blood": 2.0,
+              "flag_today": "drank"
+            }
+          ],
+          "next": "vessel_drink"
+        },
+        {
+          "text": "dialogue.vtm.opt.vessel_ask",
+          "show": {
+            "player_vampire": true,
+            "no_flag": "vessel"
+          },
+          "require": {
+            "min_rapport": 5
+          },
+          "locked": "dialogue.vtm.locked.vessel",
+          "effects": [
+            {
+              "flag": "vessel",
+              "rapport": 1
+            }
+          ],
+          "next": "vessel_yes"
+        },
+        {
           "text": "dialogue.vtm.opt.leave"
         }
       ]
@@ -127,6 +243,38 @@
           "text": "dialogue.vtm.opt.else",
           "next": "more"
         },
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
+    },
+    "vessel_yes": {
+      "text": "dialogue.vtm.vessel.yes",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.else",
+          "next": "more"
+        },
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
+    },
+    "vessel_drink": {
+      "text": "dialogue.vtm.vessel.drink",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.else",
+          "next": "more"
+        },
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
+    },
+    "ghoul_made": {
+      "text": "dialogue.vtm.ghoul.made",
+      "options": [
         {
           "text": "dialogue.vtm.opt.leave"
         }

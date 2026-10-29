@@ -20,7 +20,7 @@ import java.util.Optional;
  * Fields about the NPC, the player, their sects and their shared memory are described on {@link CoreCondition}; those
  * about a named vampire (a "nemesis") are in {@code nemesis}.
  */
-public record Condition(CoreCondition core, Optional<NemesisReq> nemesis, Optional<PlaceReq> place) {
+public record Condition(CoreCondition core, Optional<NemesisReq> nemesis, Optional<PlaceReq> place, Optional<PersonReq> person) {
 
     /**
      * Requirements on the NPC as a named vampire and on its history with this player.
@@ -120,20 +120,56 @@ public record Condition(CoreCondition core, Optional<NemesisReq> nemesis, Option
         }
     }
 
+    /**
+     * Requirements on who the NPC is as a person.
+     *
+     * @param temperament  cheerful, nervous, brave, suspicious, lonely, devout or curious
+     * @param age          young, adult or elder
+     * @param family       whether they live with other people
+     * @param noFlagToday  a flag the pair has not set yet today (see {@code flag_today} in effects)
+     */
+    public record PersonReq(Optional<String> temperament, Optional<String> age, Optional<Boolean> family,
+                            Optional<String> noFlagToday) {
+        public static final Codec<PersonReq> CODEC = RecordCodecBuilder.create(i -> i.group(
+                Codec.STRING.optionalFieldOf("temperament").forGetter(PersonReq::temperament),
+                Codec.STRING.optionalFieldOf("age").forGetter(PersonReq::age),
+                Codec.BOOL.optionalFieldOf("family").forGetter(PersonReq::family),
+                Codec.STRING.optionalFieldOf("no_flag_today").forGetter(PersonReq::noFlagToday)
+        ).apply(i, PersonReq::new));
+
+        boolean test(ServerPlayer player, VtmNpc npc) {
+            if (noFlagToday.isPresent() && npc.memory().hasFlag(player.getUUID(), todayFlag(npc, noFlagToday.get()))) {
+                return false;
+            }
+            if (!(npc instanceof com.epi0.vtm.npc.CivilianNpc civilian)) {
+                return temperament.isEmpty() && age.isEmpty() && family.isEmpty();
+            }
+            return temperament.map(v -> civilian.persona().temperament().id().equals(v)).orElse(true)
+                    && age.map(v -> civilian.persona().age().id().equals(v)).orElse(true)
+                    && family.map(v -> v == !com.epi0.vtm.npc.Household.members(civilian).isEmpty()).orElse(true);
+        }
+    }
+
+    /** The name a once-a-day flag takes today. */
+    public static String todayFlag(VtmNpc npc, String flag) {
+        return flag + ":" + npc.level().getDayTime() / 24000L;
+    }
+
     public static final MapCodec<Condition> MAP = RecordCodecBuilder.mapCodec(i -> i.group(
             CoreCondition.MAP.forGetter(Condition::core),
             NemesisReq.CODEC.optionalFieldOf("nemesis").forGetter(Condition::nemesis),
-            PlaceReq.CODEC.optionalFieldOf("place").forGetter(Condition::place)
+            PlaceReq.CODEC.optionalFieldOf("place").forGetter(Condition::place),
+            PersonReq.CODEC.optionalFieldOf("person").forGetter(Condition::person)
     ).apply(i, Condition::new));
 
     public static final Codec<Condition> CODEC = MAP.codec();
 
-    public static final Condition ANY = new Condition(CoreCondition.NONE, Optional.empty(), Optional.empty());
+    public static final Condition ANY = new Condition(CoreCondition.NONE, Optional.empty(), Optional.empty(), Optional.empty());
 
     public static final MapCodec<Condition> WHEN = CODEC.optionalFieldOf("when", ANY);
 
     public boolean test(ServerPlayer player, VtmNpc npc) {
         return core.test(player, npc) && nemesis.map(n -> n.test(player, npc)).orElse(true)
-                && place.map(p -> p.test(player, npc)).orElse(true);
+                && place.map(p -> p.test(player, npc)).orElse(true) && person.map(p -> p.test(player, npc)).orElse(true);
     }
 }

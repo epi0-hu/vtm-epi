@@ -1,0 +1,46 @@
+{
+  "when": {
+    "npc": "civilian",
+    "flag": "kin_slain"
+  },
+  "priority": 90,
+  "start": "hub",
+  "nodes": {
+    "hub": {
+      "text": "dialogue.vtm.grieving.hub",
+      "options": [
+        {
+          "text": "dialogue.vtm.grieving.opt.forgive",
+          "check": {
+            "pool": 2,
+            "discipline": "vtm:presence",
+            "difficulty": 4,
+            "fail": "refuse"
+          },
+          "effects": [
+            {
+              "rapport": 4,
+              "clear_flag": "kin_slain"
+            }
+          ],
+          "next": "forgiven"
+        },
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
+    },
+    "forgiven": {
+      "text": "dialogue.vtm.grieving.forgiven",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
+    },
+    "refuse": {
+      "text": "dialogue.vtm.grieving.refuse",
+      "options": []
+    }
+  }
+}

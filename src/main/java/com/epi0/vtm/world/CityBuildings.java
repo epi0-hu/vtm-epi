@@ -212,6 +212,7 @@ final class CityBuildings {
         f.set(6, 2, 4, Blocks.LANTERN);
         city.works.add(new City.Work(Job.WATCHMAN, f.pos(5, 0, 9)));
         city.works.add(new City.Work(Job.WATCHMAN, f.pos(8, 0, 9)));
+        city.works.add(new City.Work(Job.DETECTIVE, f.pos(7, 0, 7)));
         city.watch = f.pos(6, 0, 9);
     }
 

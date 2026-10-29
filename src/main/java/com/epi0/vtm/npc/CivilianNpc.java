@@ -52,6 +52,10 @@ public class CivilianNpc extends VtmNpc {
     public static final int HOT = 60;
     public static final int FRIGHTENED = 40;
 
+    private Persona persona;
+    @Nullable
+    private UUID ghoulOwner;
+
     private static final EntityDataAccessor<Integer> DATA_JOB = SynchedEntityData.defineId(CivilianNpc.class, EntityDataSerializers.INT);
 
     @Nullable
@@ -71,6 +75,35 @@ public class CivilianNpc extends VtmNpc {
     }
 
     // ---------------------------------------------------------------- city life
+
+    /** The vampire whose blood this person drinks and whom they serve, if any. */
+    @Nullable
+    public UUID ghoulOwner() {
+        return ghoulOwner;
+    }
+
+    /** The vampire gives this mortal their blood; they are stronger for it, and theirs from then on. */
+    public void makeGhoul(Player master) {
+        this.ghoulOwner = master.getUUID();
+        getAttribute(Attributes.MAX_HEALTH).setBaseValue(30);
+        setHealth(30F);
+        setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.IRON_SWORD));
+        setDropChance(EquipmentSlot.MAINHAND, 0F);
+        memory().adjustRapport(master.getUUID(), NpcMemory.MAX_RAPPORT, level().getGameTime());
+    }
+
+    /** Gives this person a particular personality (tests and tools; it is not saved). */
+    public void usePersona(Persona persona) {
+        this.persona = persona;
+    }
+
+    /** Who this person is. */
+    public Persona persona() {
+        if (persona == null) {
+            persona = Persona.of(getUUID());
+        }
+        return persona;
+    }
 
     public Job job() {
         return Job.of(entityData.get(DATA_JOB));
@@ -92,6 +125,7 @@ public class CivilianNpc extends VtmNpc {
         this.work = work;
         entityData.set(DATA_JOB, job.ordinal());
         setHome(bed);
+        Household.takeFamilyName(this);
         if (job == Job.WATCHMAN) {
             setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.IRON_SWORD));
             setItemSlot(EquipmentSlot.HEAD, new ItemStack(Items.IRON_HELMET));
@@ -175,12 +209,13 @@ public class CivilianNpc extends VtmNpc {
         goalSelector.addGoal(1, new AvoidEntityGoal<>(this, Player.class, 12F, 1.0, 1.5,
                 player -> job() != Job.WATCHMAN && attitudeTo(player).compareTo(Attitude.WARY) >= 0));
         goalSelector.addGoal(2, new WatchmanAttackGoal(this, 1.2));
+        goalSelector.addGoal(2, new com.epi0.vtm.npc.goal.FollowMasterGoal(this));
         goalSelector.addGoal(3, new ScheduleGoal(this));
         targetSelector.addGoal(1, new HurtByTargetGoal(this));
         targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, 10, true, false,
                 player -> job() == Job.WATCHMAN && attitudeTo(player) == Attitude.HOSTILE));
         targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, Monster.class, 10, true, false,
-                monster -> job() == Job.WATCHMAN));
+                monster -> job() == Job.WATCHMAN || ghoulOwner != null));
         goalSelector.addGoal(1, new AvoidEntityGoal<>(this, VampireNpc.class, 14F, 1.0, 1.5,
                 vampire -> attitudeTo(vampire).compareTo(Attitude.WARY) >= 0));
         goalSelector.addGoal(1, new AvoidEntityGoal<>(this, LivingEntity.class, 8F, 1.0, 1.4,
@@ -209,13 +244,30 @@ public class CivilianNpc extends VtmNpc {
             if (city != null) {
                 com.epi0.vtm.city.CityLife.crime(player, city, 8);
             }
+            for (CivilianNpc kin : Household.members(this)) { // what befalls one is told to the whole household
+                kin.witness(player, NpcMemory.Event.HARMED);
+            }
         }
         return hurt;
     }
 
     @Override
+    public void die(net.minecraft.world.damagesource.DamageSource source) {
+        super.die(source);
+        if (!level().isClientSide && source.getEntity() instanceof net.minecraft.server.level.ServerPlayer player) {
+            long now = level().getGameTime();
+            for (CivilianNpc kin : Household.members(this)) {
+                kin.memory().setFlag(player.getUUID(), "kin_slain", true, now);
+                kin.memory().adjustRapport(player.getUUID(), -10, now);
+                kin.witness(player, NpcMemory.Event.HARMED);
+            }
+        }
+    }
+
+    @Override
     protected void serverSecond() {
         super.serverSecond();
+        Gossip.tick(this);
         if (expireAt > 0 && level().getGameTime() > expireAt && getTarget() == null) {
             discard();
         }
@@ -224,6 +276,9 @@ public class CivilianNpc extends VtmNpc {
     @Override
     public Attitude attitudeTo(LivingEntity other) {
         if (other instanceof Player player) {
+            if (player.getUUID().equals(ghoulOwner)) {
+                return Attitude.FRIENDLY;
+            }
             City city = city();
             int heat = city == null ? 0 : city.heatOf(player.getUUID());
             if (job() == Job.WATCHMAN) {
@@ -233,16 +288,23 @@ public class CivilianNpc extends VtmNpc {
                 if (heat >= SUSPICIOUS) {
                     return Attitude.WARY;
                 }
-            } else if (heat >= FRIGHTENED) {
+            } else if (heat >= persona().fearHeat()) {
                 return Attitude.WARY;
             }
             int rapport = memory().rapport(player.getUUID());
             // Fear is forgotten only once the player has genuinely made amends.
-            boolean afraid = Frenzy.isFrenzied(player) || memory().isThreat(player.getUUID()) && rapport < FORGIVEN_RAPPORT;
+            boolean afraid = Frenzy.isFrenzied(player) || memory().isThreat(player.getUUID()) && rapport < FORGIVEN_RAPPORT
+                    || memory().hasFlag(player.getUUID(), "kin_slain")
+                    || memory().hasFlag(player.getUUID(), "rumour") && rapport < FRIENDLY_RAPPORT;
             if (afraid) {
                 return Attitude.WARY;
             }
-            return rapport >= FRIENDLY_RAPPORT ? Attitude.FRIENDLY : Attitude.NEUTRAL;
+            // The devout can feel what has become of a soul that has slipped far.
+            if (persona().temperament() == Persona.Temperament.DEVOUT && rapport < FORGIVEN_RAPPORT
+                    && com.epi0.vtm.vampire.VampireData.of(player).isVampire() && com.epi0.vtm.vampire.VampireData.of(player).humanity() <= 3) {
+                return Attitude.WARY;
+            }
+            return rapport >= persona().friendRapport() ? Attitude.FRIENDLY : Attitude.NEUTRAL;
         }
         if (other instanceof VampireNpc vampire) {
             return vampire.isHunting() ? Attitude.WARY : Attitude.NEUTRAL;
@@ -268,6 +330,9 @@ public class CivilianNpc extends VtmNpc {
             tag.putLong("Work", work.asLong());
         }
         tag.putLong("ExpireAt", expireAt);
+        if (ghoulOwner != null) {
+            tag.putUUID("GhoulOwner", ghoulOwner);
+        }
     }
 
     @Override
@@ -277,5 +342,6 @@ public class CivilianNpc extends VtmNpc {
         cityId = tag.hasUUID("City") ? tag.getUUID("City") : null;
         work = tag.contains("Work") ? BlockPos.of(tag.getLong("Work")) : null;
         expireAt = tag.getLong("ExpireAt");
+        ghoulOwner = tag.hasUUID("GhoulOwner") ? tag.getUUID("GhoulOwner") : null;
     }
 }

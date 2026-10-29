@@ -98,6 +98,22 @@ public final class NpcMemory {
         }
     }
 
+    /** Everyone this NPC has dealt with. */
+    public Set<UUID> players() {
+        return Set.copyOf(encounters.keySet());
+    }
+
+    /** Forgets every flag of the pair that starts with {@code prefix}. */
+    public void clearFlagsWithPrefix(UUID player, String prefix, long now) {
+        about(player).ifPresent(e -> {
+            for (String flag : List.copyOf(e.flags())) {
+                if (flag.startsWith(prefix)) {
+                    setFlag(player, flag, false, now);
+                }
+            }
+        });
+    }
+
     public int rapport(UUID player) {
         return about(player).map(Encounter::rapport).orElse(0);
     }

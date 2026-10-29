@@ -1,0 +1,166 @@
+{
+  "when": {
+    "npc": "civilian",
+    "place": {
+      "job": "detective"
+    }
+  },
+  "priority": 40,
+  "start": "hub",
+  "nodes": {
+    "hub": {
+      "text": [
+        {
+          "when": {
+            "place": {
+              "min_heat": 30
+            }
+          },
+          "key": "dialogue.vtm.detective.greet.hot"
+        },
+        {
+          "key": "dialogue.vtm.detective.greet"
+        }
+      ],
+      "options": [
+        {
+          "text": "dialogue.vtm.detective.opt.lie",
+          "show": {
+            "place": {
+              "min_heat": 30
+            }
+          },
+          "check": {
+            "pool": 3,
+            "discipline": "vtm:presence",
+            "difficulty": 2,
+            "fail": "lie_bad"
+          },
+          "effects": [
+            {
+              "heat": -15
+            }
+          ],
+          "fail_effects": [
+            {
+              "heat": 10,
+              "rapport": -2
+            }
+          ],
+          "next": "lie_ok"
+        },
+        {
+          "text": "dialogue.vtm.detective.opt.cooperate",
+          "show": {
+            "place": {
+              "min_heat": 30
+            }
+          },
+          "effects": [
+            {
+              "heat": -8,
+              "rapport": 1
+            }
+          ],
+          "next": "cooperate"
+        },
+        {
+          "text": "dialogue.vtm.detective.opt.intimidate",
+          "show": {
+            "place": {
+              "min_heat": 30
+            },
+            "player_vampire": true
+          },
+          "require": {
+            "discipline": {
+              "id": "vtm:dominate",
+              "level": 1
+            }
+          },
+          "locked": "dialogue.vtm.detective.locked.dominate",
+          "check": {
+            "pool": 3,
+            "discipline": "vtm:dominate",
+            "difficulty": 3,
+            "fail": "intimidate_bad"
+          },
+          "effects": [
+            {
+              "heat": -25,
+              "rapport": -3,
+              "alarm": true
+            }
+          ],
+          "fail_effects": [
+            {
+              "heat": 15
+            }
+          ],
+          "next": "intimidated"
+        },
+        {
+          "text": "dialogue.vtm.detective.opt.cases",
+          "show": {
+            "place": {
+              "max_heat": 29
+            },
+            "no_flag": "asked_cases"
+          },
+          "effects": [
+            {
+              "flag": "asked_cases",
+              "nemesis": {
+                "intel": "any"
+              }
+            }
+          ],
+          "next": "cases"
+        },
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
+    },
+    "lie_ok": {
+      "text": "dialogue.vtm.detective.lie_ok",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
+    },
+    "lie_bad": {
+      "text": "dialogue.vtm.detective.lie_bad",
+      "options": []
+    },
+    "cooperate": {
+      "text": "dialogue.vtm.detective.cooperate",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
+    },
+    "intimidated": {
+      "text": "dialogue.vtm.detective.intimidated",
+      "options": []
+    },
+    "intimidate_bad": {
+      "text": "dialogue.vtm.detective.intimidate_bad",
+      "options": []
+    },
+    "cases": {
+      "text": "dialogue.vtm.detective.cases",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.else",
+          "next": "hub"
+        },
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
+    }
+  }
+}

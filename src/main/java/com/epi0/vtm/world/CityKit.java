@@ -101,6 +101,7 @@ final class CityKit {
         f.door(7, 12, Blocks.IRON_DOOR);
         f.fill(3, 0, 9, 9, 0, 9, s(Blocks.DARK_OAK_PLANKS));
         f.fill(3, 1, 9, 9, 1, 9, s(Blocks.DARK_OAK_SLAB));
+        city.works.add(new City.Work(Job.CLERK, f.pos(6, 0, 8)));
         f.set(2, 0, 3, Blocks.POTTED_FERN);
         f.set(11, 0, 3, Blocks.POTTED_FERN);
         f.fill(4, 0, 4, 9, 0, 6, s(Blocks.GRAY_CARPET));
@@ -244,6 +245,7 @@ final class CityKit {
         f.set(6, 0, 6, Blocks.LECTERN);
         f.fill(5, 0, 4, 8, 0, 4, s(Blocks.RED_CARPET));
         f.set(6, 5, 4, Blocks.SOUL_LANTERN);
+        city.works.add(new City.Work(Job.PRIEST, f.pos(7, 0, 6)));
         for (int v = 6; v <= 12; v += 2) {
             f.set(4, 5, v, s(Blocks.LANTERN).setValue(net.minecraft.world.level.block.LanternBlock.HANGING, true));
             f.set(9, 5, v, s(Blocks.LANTERN).setValue(net.minecraft.world.level.block.LanternBlock.HANGING, true));

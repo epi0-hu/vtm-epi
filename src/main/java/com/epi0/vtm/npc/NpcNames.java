@@ -15,6 +15,14 @@ public final class NpcNames {
             "Sinclair", "Thorne", "Underhill", "Vance", "Whitlock", "Yarrow", "Zeller", "Abbot", "Brandt", "Corvin",
             "Dunmore", "Everhart"};
 
+    public static String first(RandomSource random) {
+        return FIRST[random.nextInt(FIRST.length)];
+    }
+
+    public static String last(RandomSource random) {
+        return LAST[random.nextInt(LAST.length)];
+    }
+
     public static String random(RandomSource random) {
         return FIRST[random.nextInt(FIRST.length)] + " " + LAST[random.nextInt(LAST.length)];
     }

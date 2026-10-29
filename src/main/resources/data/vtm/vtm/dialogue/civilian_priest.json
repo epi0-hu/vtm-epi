@@ -1,0 +1,122 @@
+{
+  "when": {
+    "npc": "civilian",
+    "place": {
+      "job": "priest"
+    }
+  },
+  "priority": 40,
+  "start": "hub",
+  "nodes": {
+    "hub": {
+      "text": [
+        {
+          "when": {
+            "attitude": "wary"
+          },
+          "key": "dialogue.vtm.priest.greet.wary"
+        },
+        {
+          "key": "dialogue.vtm.priest.greet"
+        }
+      ],
+      "options": [
+        {
+          "text": "dialogue.vtm.priest.opt.confess",
+          "show": {
+            "player_vampire": true
+          },
+          "require": {
+            "person": {
+              "no_flag_today": "confessed"
+            }
+          },
+          "locked": "dialogue.vtm.priest.locked.confessed",
+          "effects": [
+            {
+              "humanity": 1,
+              "flag_today": "confessed",
+              "rapport": 1
+            }
+          ],
+          "next": "confessed"
+        },
+        {
+          "text": "dialogue.vtm.priest.opt.faith",
+          "next": "faith"
+        },
+        {
+          "text": "dialogue.vtm.priest.opt.sleepers",
+          "show": {
+            "no_flag": "asked_sleepers"
+          },
+          "effects": [
+            {
+              "flag": "asked_sleepers",
+              "nemesis": {
+                "intel": "any"
+              }
+            }
+          ],
+          "next": "sleepers"
+        },
+        {
+          "text": "dialogue.vtm.priest.opt.reveal",
+          "show": {
+            "player_vampire": true
+          },
+          "effects": [
+            {
+              "alarm": true,
+              "rapport": -3
+            }
+          ],
+          "next": "revealed"
+        },
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
+    },
+    "confessed": {
+      "text": "dialogue.vtm.priest.confessed",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.else",
+          "next": "hub"
+        },
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
+    },
+    "faith": {
+      "text": "dialogue.vtm.priest.faith",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.else",
+          "next": "hub"
+        },
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
+    },
+    "sleepers": {
+      "text": "dialogue.vtm.priest.sleepers",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.else",
+          "next": "hub"
+        },
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
+    },
+    "revealed": {
+      "text": "dialogue.vtm.priest.revealed",
+      "options": []
+    }
+  }
+}

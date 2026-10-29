@@ -611,6 +611,7 @@ public final class VtmGameTests {
         helper.setDayTime(18000);
         ServerPlayer player = vampire(helper, "toreador");
         var civilian = NpcSpawner.civilian(helper.getLevel(), at(helper, 4.5, 2, 6.5));
+        civilian.usePersona(new com.epi0.vtm.npc.Persona(com.epi0.vtm.npc.Persona.Temperament.CURIOUS, com.epi0.vtm.npc.Persona.Age.ADULT));
         // A tree whose single option always passes (difficulty 0) and one that always fails (difficulty 99).
         com.google.gson.JsonElement json = com.google.gson.JsonParser.parseString("""
                 {"start": "a", "nodes": {

@@ -25,12 +25,14 @@ import java.util.Optional;
  * @param leave      the player renounces their faction
  * @param promote    the player advances a rank (only if they have the standing)
  * @param heat       change to the player's heat (trouble) in the NPC's city
+ * @param flagToday  a flag that lasts until dawn (clears the previous days' ones)
+ * @param ghoul      the NPC, a mortal, drinks the player's blood and becomes their retainer
  * @param alarm      the NPC glimpses something frightening in the player and will remember it as a threat
  */
 public record Effect(Optional<Integer> rapport, Optional<String> flag, Optional<String> clearFlag, Optional<Float> blood,
                      Optional<Integer> experience, Optional<Integer> humanity, boolean alarm, Optional<Integer> standing,
                      boolean join, boolean leave, boolean promote, Optional<NemesisEffect> nemesis,
-                     Optional<Integer> heat) {
+                     Optional<Integer> heat, Optional<String> flagToday, boolean ghoul) {
     public static final Codec<Effect> CODEC = RecordCodecBuilder.create(i -> i.group(
             Codec.INT.optionalFieldOf("rapport").forGetter(Effect::rapport),
             Codec.STRING.optionalFieldOf("flag").forGetter(Effect::flag),
@@ -44,13 +46,23 @@ public record Effect(Optional<Integer> rapport, Optional<String> flag, Optional<
             Codec.BOOL.optionalFieldOf("leave", false).forGetter(Effect::leave),
             Codec.BOOL.optionalFieldOf("promote", false).forGetter(Effect::promote),
             NemesisEffect.CODEC.optionalFieldOf("nemesis").forGetter(Effect::nemesis),
-            Codec.INT.optionalFieldOf("heat").forGetter(Effect::heat)
+            Codec.INT.optionalFieldOf("heat").forGetter(Effect::heat),
+            Codec.STRING.optionalFieldOf("flag_today").forGetter(Effect::flagToday),
+            Codec.BOOL.optionalFieldOf("ghoul", false).forGetter(Effect::ghoul)
     ).apply(i, Effect::new));
 
     public void apply(ServerPlayer player, VtmNpc npc) {
         long now = npc.level().getGameTime();
         var uuid = player.getUUID();
-        rapport.ifPresent(delta -> npc.memory().adjustRapport(uuid, delta, now));
+        rapport.ifPresent(delta -> npc.memory().adjustRapport(uuid,
+                npc instanceof com.epi0.vtm.npc.CivilianNpc civilian ? civilian.persona().scaleRapport(delta) : delta, now));
+        flagToday.ifPresent(f -> {
+            npc.memory().clearFlagsWithPrefix(uuid, f + ":", now);
+            npc.memory().setFlag(uuid, Condition.todayFlag(npc, f), true, now);
+        });
+        if (ghoul && npc instanceof com.epi0.vtm.npc.CivilianNpc civilian) {
+            civilian.makeGhoul(player);
+        }
         flag.ifPresent(f -> npc.memory().setFlag(uuid, f, true, now));
         clearFlag.ifPresent(f -> npc.memory().setFlag(uuid, f, false, now));
         if (alarm) {
@@ -85,7 +97,7 @@ public record Effect(Optional<Integer> rapport, Optional<String> flag, Optional<
         }
         data = VampireData.of(player);
         if (blood.isPresent()) {
-            data = data.withBlood(Math.min(data.maxBlood(), data.blood() + blood.get()));
+            data = data.withBlood(Math.max(0F, Math.min(data.maxBlood(), data.blood() + blood.get())));
         }
         if (experience.isPresent()) {
             data = data.withExperience(data.experience() + experience.get());

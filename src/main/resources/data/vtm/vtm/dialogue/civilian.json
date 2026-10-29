@@ -9,6 +9,69 @@
       "text": [
         {
           "when": {
+            "person": {
+              "temperament": "cheerful"
+            },
+            "min_seen": 2
+          },
+          "key": "dialogue.vtm.civilian.greet.cheerful"
+        },
+        {
+          "when": {
+            "person": {
+              "temperament": "nervous"
+            },
+            "min_seen": 2
+          },
+          "key": "dialogue.vtm.civilian.greet.nervous"
+        },
+        {
+          "when": {
+            "person": {
+              "temperament": "brave"
+            },
+            "min_seen": 2
+          },
+          "key": "dialogue.vtm.civilian.greet.brave"
+        },
+        {
+          "when": {
+            "person": {
+              "temperament": "suspicious"
+            },
+            "min_seen": 2
+          },
+          "key": "dialogue.vtm.civilian.greet.suspicious"
+        },
+        {
+          "when": {
+            "person": {
+              "temperament": "lonely"
+            },
+            "min_seen": 2
+          },
+          "key": "dialogue.vtm.civilian.greet.lonely"
+        },
+        {
+          "when": {
+            "person": {
+              "temperament": "devout"
+            },
+            "min_seen": 2
+          },
+          "key": "dialogue.vtm.civilian.greet.devout"
+        },
+        {
+          "when": {
+            "person": {
+              "temperament": "curious"
+            },
+            "min_seen": 2
+          },
+          "key": "dialogue.vtm.civilian.greet.curious"
+        },
+        {
+          "when": {
             "min_seen": 4
           },
           "key": "dialogue.vtm.civilian.greet.familiar"
@@ -51,6 +114,15 @@
               }
             }
           ]
+        },
+        {
+          "text": "dialogue.vtm.opt.family",
+          "show": {
+            "person": {
+              "family": true
+            }
+          },
+          "next": "family"
         },
         {
           "text": "dialogue.vtm.opt.charm",
@@ -152,6 +224,15 @@
           ]
         },
         {
+          "text": "dialogue.vtm.opt.family",
+          "show": {
+            "person": {
+              "family": true
+            }
+          },
+          "next": "family"
+        },
+        {
           "text": "dialogue.vtm.opt.charm",
           "show": {
             "player_vampire": true
@@ -220,7 +301,67 @@
       ]
     },
     "smalltalk": {
-      "text": "dialogue.vtm.civilian.smalltalk",
+      "text": [
+        {
+          "when": {
+            "person": {
+              "temperament": "cheerful"
+            }
+          },
+          "key": "dialogue.vtm.civilian.smalltalk.cheerful"
+        },
+        {
+          "when": {
+            "person": {
+              "temperament": "nervous"
+            }
+          },
+          "key": "dialogue.vtm.civilian.smalltalk.nervous"
+        },
+        {
+          "when": {
+            "person": {
+              "temperament": "brave"
+            }
+          },
+          "key": "dialogue.vtm.civilian.smalltalk.brave"
+        },
+        {
+          "when": {
+            "person": {
+              "temperament": "suspicious"
+            }
+          },
+          "key": "dialogue.vtm.civilian.smalltalk.suspicious"
+        },
+        {
+          "when": {
+            "person": {
+              "temperament": "lonely"
+            }
+          },
+          "key": "dialogue.vtm.civilian.smalltalk.lonely"
+        },
+        {
+          "when": {
+            "person": {
+              "temperament": "devout"
+            }
+          },
+          "key": "dialogue.vtm.civilian.smalltalk.devout"
+        },
+        {
+          "when": {
+            "person": {
+              "temperament": "curious"
+            }
+          },
+          "key": "dialogue.vtm.civilian.smalltalk.curious"
+        },
+        {
+          "key": "dialogue.vtm.civilian.smalltalk"
+        }
+      ],
       "options": [
         {
           "text": "dialogue.vtm.opt.else",
@@ -273,6 +414,18 @@
     },
     "slip": {
       "text": "dialogue.vtm.civilian.slip"
+    },
+    "family": {
+      "text": "dialogue.vtm.civilian.family",
+      "options": [
+        {
+          "text": "dialogue.vtm.opt.else",
+          "next": "more"
+        },
+        {
+          "text": "dialogue.vtm.opt.leave"
+        }
+      ]
     }
   }
 }

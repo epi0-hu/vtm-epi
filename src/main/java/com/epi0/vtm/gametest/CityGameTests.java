@@ -191,6 +191,8 @@ public final class CityGameTests {
                     && city.works.stream().anyMatch(w -> w.job() == Job.BARTENDER)
                     && city.works.stream().filter(w -> w.job() == Job.WATCHMAN).count() >= 4, "and work: " + city.works.size());
             helper.assertTrue(city.plaza != null && city.club != null && city.watch != null && city.haven != null, "a plaza, a club, a watch station and a haven");
+            helper.assertTrue(city.works.stream().anyMatch(w -> w.job() == Job.PRIEST) && city.works.stream().anyMatch(w -> w.job() == Job.CLERK)
+                    && city.works.stream().anyMatch(w -> w.job() == Job.DETECTIVE), "a priest, a clerk and a detective");
             helper.assertTrue(level.getBlockState(city.center).is(com.epi0.vtm.registry.ModBlocks.CITY_HEART.get()), "the Domain Stone stands in the plaza");
             int checked = 0;
             for (BlockPos bed : city.homes) {
@@ -264,6 +266,7 @@ public final class CityGameTests {
         ServerPlayer player = player(helper);
         CivilianNpc watchman = CityLife.spawn(level, city, city.homes.get(0), city.homes.get(0), Job.WATCHMAN, null);
         CivilianNpc citizen = CityLife.spawn(level, city, city.homes.get(1), city.homes.get(1), Job.RESIDENT, null);
+        citizen.usePersona(new com.epi0.vtm.npc.Persona(com.epi0.vtm.npc.Persona.Temperament.CURIOUS, com.epi0.vtm.npc.Persona.Age.ADULT)); // (an ordinary temper)
         helper.assertTrue(watchman.attitudeTo(player) == Attitude.NEUTRAL && citizen.attitudeTo(player) == Attitude.NEUTRAL, "a clean record");
 
         CityLife.crime(player, city, 35);
